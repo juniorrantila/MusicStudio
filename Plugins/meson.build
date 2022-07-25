@@ -1,0 +1,2 @@
+subdir('AudioPlugin')
+subdir('BareMinimum')

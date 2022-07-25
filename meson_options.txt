@@ -1,0 +1,7 @@
+option(
+  'build_windows_vst',
+  type: 'boolean',
+  description: 'cross-compile plugins as vst for windows',
+  value: true
+  )
+

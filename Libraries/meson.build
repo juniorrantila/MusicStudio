@@ -1,0 +1,5 @@
+includes += include_directories('LibJR')
+subdir('LibJR')
+subdir('GUI')
+subdir('Midi')
+subdir('Vst')

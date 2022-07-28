@@ -1,5 +1,6 @@
 #include <Midi/Note.h>
 #include <Midi/Packet.h>
+#include <SDL2/SDL_thread.h>
 #include <Vst/Vst.h>
 
 #include <JR/Defer.h>
@@ -18,6 +19,7 @@
 #include <JR/ErrorOr.h>
 
 #include <fcntl.h>
+#include <MainWindow.h>
 
 ErrorOr<Midi::Note> keyboard_key_to_midi_note(GUI::Key key)
 {
@@ -117,6 +119,47 @@ ErrorOr<int> main(int argc, char const* argv[])
         return fprintf(stderr, "USAGE: %s plugin-path\n", argv[0]), 1;
     auto plugin_path = argv[1];
 
+    SDL_SetHint(SDL_HINT_VIDEO_WINDOW_SHARE_PIXEL_FORMAT, "true");
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS) < 0)
+        return Error::from_string_literal(SDL_GetError());
+    Defer quit_sdl = [&] {
+        SDL_Quit();
+    };
+
+    auto main_window = TRY(MainWindow::create("MusicStudio", 1600, 900));
+    Defer destroy_main_window = [&] {
+        main_window.destroy();
+    };
+
+    auto main_gui_thread = SDL_CreateThread([](void* argument) -> i32 {
+        auto& main_window = *(MainWindow*)argument;
+        main_window.show();
+        bool should_quit = false;
+        while (!should_quit) {
+            ImGui::SetCurrentContext(main_window.imgui.context);
+
+            SDL_Event event;
+            while (SDL_PollEvent(&event)) {
+                main_window.imgui.process_event(&event);
+                if (event.type == SDL_QUIT)
+                    should_quit = true;
+                if (event.type == SDL_KEYUP) {
+                    if (event.key.keysym.sym == SDLK_ESCAPE)
+                        should_quit = true;
+                }
+            }
+
+            main_window.imgui.begin_frame();
+            Defer end_frame = [&] {
+                main_window.imgui.end_frame();
+            };
+
+            ImGui::Text("Hello World!");
+        }
+
+        return 0;
+    }, "MainWindow", &main_window);
+
     auto plugin = TRY(Plugin::create_from(plugin_path));
     Defer destroy_plugin = [&] {
         plugin.destroy();
@@ -153,11 +196,6 @@ ErrorOr<int> main(int argc, char const* argv[])
     printf("        Is synth: %s\n", plugin.is_synth() ? "yes" : "no");
     printf("  Silent stopped: %s\n", plugin.is_silent_when_stopped() ? "yes" : "no");
     printf("----------------------------------\n\n");
-
-#ifdef _WIN32
-    printf("Host for windows can't currently view plugin editor.\n");
-    return 0;
-#endif
 
     if (!plugin.has_editor()) {
         return 0;
@@ -207,30 +245,7 @@ ErrorOr<int> main(int argc, char const* argv[])
     // Change DPI.
     plugin.vst->vendor_specific(1349674323, 1097155443, nullptr, 1.5);
 
-#if 0
-    pthread_t thread;
-    pthread_create(&thread, nullptr, [](void* argument) -> void* {
-        auto host = (Host*)argument;
-        constexpr bool should_log_midi_packet = true;
-        auto midi_device = open("/dev/midi1", O_RDONLY);
-        while (1) {
-            u8 midi_buffer[4];
-            read(midi_device, midi_buffer, sizeof(midi_buffer));
-            LOG_IF(should_log_midi_packet, "midi packet: %.2x %.2x %.2x",
-                midi_buffer[0], midi_buffer[1], midi_buffer[2]);
-            host->send_midi_packet({midi_buffer[0],
-                                    midi_buffer[1],
-                                    midi_buffer[2]});
-        }
-
-        if (host->has_midi_input_port())
-            host->handle_midi_input_events_loop();
-        
-        return nullptr;
-    }, plugin.host);
-#endif
-
-    while(!window.should_close()) { }
+    SDL_WaitThread(main_gui_thread, nullptr);
 
     return 0;
 }

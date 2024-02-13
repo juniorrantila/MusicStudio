@@ -1,4 +1,3 @@
-#include <JR/Log.h>
 #include <Vst/AEffect.h>
 #include <Vst/AudioPlugin.h>
 #include <Vst/ChunkType.h>
@@ -8,11 +7,14 @@
 #include <Vst/Rectangle.h>
 #include <Vst/Vst.h>
 
+#define LOG_IF(cond, ...) ((void)cond)
+#define LOG(...)
+
 namespace Vst {
 
-static intptr_t plugin_callback_(Effect* effect,
+static iptr plugin_callback_(Effect* effect,
     PluginOpcode opcode, i32 index,
-    intptr_t value, void* ptr,
+    iptr value, void* ptr,
     f32 opt)
 {
     constexpr auto log_plugin_callback = true;

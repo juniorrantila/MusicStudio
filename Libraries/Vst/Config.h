@@ -1,5 +1,5 @@
 #pragma once
-#include <JR/Types.h>
+#include <Ty/Base.h>
 #include <Vst/Vst.h>
 #include <Vst/AEffect.h>
 

@@ -1,5 +1,7 @@
-includes += include_directories('LibJR')
-subdir('LibJR')
-subdir('GUI')
+subdir('Ty')
+subdir('Core')
+subdir('CLI')
+subdir('Main')
+
 subdir('Midi')
 subdir('Vst')

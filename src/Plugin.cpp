@@ -1,12 +1,9 @@
 #include <Plugin.h>
-#include <JR/GuardDefer.h>
+#include <Ty/ScopeGuard.h>
 
 ErrorOr<Plugin> Plugin::create_from(const char *path)
 {
-    auto library = TRY(Core::Library::open(path, RTLD_LOCAL|RTLD_NOW));
-    GuardDefer close_library = [&] {
-        library.close();
-    };
+    auto library = TRY(Core::Library::open_local(path));
 
     using Signature = Vst::PluginMainSignature;
     auto create_plugin = library.fetch_symbol<Signature>("VSTPluginMain");
@@ -26,7 +23,7 @@ ErrorOr<Plugin> Plugin::create_from(const char *path)
     // if (!plugin->init())
     //     return Error::from_string_literal("could not initialize plugin");
     (void)plugin->init();
-    GuardDefer deinit_plugin = [&] {
+    ScopeGuard deinit_plugin = [&] {
         (void)plugin->deinit();
     };
 
@@ -36,10 +33,9 @@ ErrorOr<Plugin> Plugin::create_from(const char *path)
     plugin->host_data = host;
 
     deinit_plugin.disarm();
-    close_library.disarm();
 
     return Plugin {
-        library,
+        move(library),
         plugin,
         host
     };
@@ -50,7 +46,6 @@ void Plugin::destroy() const
     if (is_valid()) {
         host->destroy();
         (void)vst->deinit();
-        plugin_library.close();
         const_cast<Plugin*>(this)->invalidate();
     }
 }

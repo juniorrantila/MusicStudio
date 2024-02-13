@@ -3,7 +3,7 @@
 #include <Vst/CanDo.h>
 #include <Vst/Opcodes.h>
 #include <Vst/Vst.h>
-#include <JR/Types.h>
+#include <Ty/Base.h>
 
 namespace Vst {
 
@@ -162,15 +162,15 @@ struct Host {
         return m_name;
     }
 
-    constexpr intptr_t vendor_specific(i32 index, intptr_t value, void* ptr,
+    constexpr iptr vendor_specific(i32 index, iptr value, void* ptr,
         f32 opt) const
     {
         return dispatch(HostOpcode::VendorSpecific, index, value, ptr, opt);
     }
 
 private:
-    constexpr intptr_t dispatch(HostOpcode opcode, i32 index = 0,
-        intptr_t value = 0, void* ptr = nullptr, f32 opt = 0) const
+    constexpr iptr dispatch(HostOpcode opcode, i32 index = 0,
+        iptr value = 0, void* ptr = nullptr, f32 opt = 0) const
     {
         return m_callback(m_effect, opcode, index, value, ptr, opt);
     }

@@ -1,13 +1,11 @@
 #include "Midi/Packet.h"
-#include <JR/Defer.h>
-#include <JR/ErrorOr.h>
-#include <JR/StringView.h>
-#include <JR/Types.h>
+#include <Ty/Defer.h>
+#include <Ty/ErrorOr.h>
+#include <Ty/StringView.h>
+#include <Ty/Base.h>
 #include <Vst/AEffect.h>
 #include <Vst/Opcodes.h>
 #include <Vst/Vst.h>
-#include <jack/jack.h>
-#include <GUI/Window.h>
 
 union Version {
     constexpr Version(u8 major, u8 minor, u8 micro, u8 patch)
@@ -27,14 +25,8 @@ union Version {
 };
 
 struct Host {
-    jack_client_t* client;
     Vst::Effect* effect;
 
-    jack_port_t* midi_input_port;
-    jack_port_t* midi_output_port;
-
-    jack_port_t** input_ports;
-    jack_port_t** output_ports;
     f32** input_buffers;
     f32** output_buffers;
     i32 number_of_inputs;
@@ -42,11 +34,8 @@ struct Host {
 
     u32 sample_rate;
     u32 block_size;
-    bool jack_client_is_ready { false };
     bool effect_is_initialized { false };
     Vst::TimeInfo time_info;
-
-    GUI::Window* window;
 
     static ErrorOr<Host*> create(Vst::Effect* effect);
     void destroy() const;
@@ -56,7 +45,7 @@ struct Host {
 
     void update_time_info(u32 request_mask);
 
-    bool has_midi_input_port() const { return midi_input_port; }
+    bool has_midi_input_port() const { return false; }
     void handle_midi_input_events(u32 number_of_samples) const;
     void send_midi_packet(Midi::Packet) const;
 
@@ -92,7 +81,7 @@ struct Host {
     StringView host_name() { return "MusicStudio"; }
     Version vendor_version() { return { 0, 0, 0, 1 }; }
 
-    intptr_t vendor_specific(i32 index, intptr_t value, void* ptr, f32 opt);
+    iptr vendor_specific(i32 index, iptr value, void* ptr, f32 opt);
 
     bool can_do(char const* thing);
 
@@ -111,6 +100,6 @@ struct Host {
     bool open_file_selector(Vst::FileSelect*);
     void close_file_selector(Vst::FileSelect*);
 
-    static intptr_t dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
-        i32 index, intptr_t value, void* ptr, f32 opt);
+    static iptr dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
+        i32 index, iptr value, void* ptr, f32 opt);
 };

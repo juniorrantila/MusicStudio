@@ -1,7 +1,7 @@
 #pragma once
 #include <Vst/AEffect.h>
 #include <Vst/Vst.h>
-#include <JR/Types.h>
+#include <Ty/Base.h>
 #include <Vst/KnobMode.h>
 #include <Vst/Precision.h>
 #include <Vst/Rectangle.h>
@@ -85,7 +85,7 @@ public:
     [[nodiscard]] virtual bool set_bypass(bool value) = 0;
 
 private:
-    intptr_t internal_vendor_specific(i32 index, intptr_t value,
+    iptr internal_vendor_specific(i32 index, iptr value,
                                       void* ptr, f32 opt)
     {
         if (index == 1349674323 && value == 1097155443)
@@ -93,7 +93,7 @@ private:
         return vendor_specific(index, value, ptr, opt);
     }
 public:
-    virtual intptr_t vendor_specific(i32 index, intptr_t value,
+    virtual iptr vendor_specific(i32 index, iptr value,
                                      void* ptr, f32 opt)
     {
         (void)index;
@@ -135,7 +135,7 @@ public:
 
     [[nodiscard]] virtual bool set_knob_mode(KnobMode mode) = 0;
 
-    intptr_t dispatch(PluginOpcode opcode, i32 index, intptr_t value, void* ptr, f32 opt);
+    iptr dispatch(PluginOpcode opcode, i32 index, iptr value, void* ptr, f32 opt);
 
 #if 0
     ImGuiContext* m_imgui_context { nullptr };

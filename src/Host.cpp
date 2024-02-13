@@ -1,203 +1,28 @@
-#include <JR/GuardDefer.h>
-#include <JR/Types.h>
+#include <Ty/ScopeGuard.h>
+#include <Ty/Base.h>
 #include <Vst/AEffect.h>
 #include <Vst/Opcodes.h>
 #include <Vst/PluginData.h>
 #include <Vst/Rectangle.h>
 #include <Vst/Vst.h>
-#include <X11/Xlib.h>
-#include <jack/jack.h>
-#include <jack/midiport.h>
-#include <jack/types.h>
 #include <stdio.h>
 
 #include <sys/resource.h> // getpriority
 
 #include <Host.h>
-#include <JR/Log.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 
-static constexpr bool should_log_jack_messages = true;
-
-static ErrorOr<jack_port_t**> register_input_ports(jack_client_t* client,
-    Vst::Effect const* effect)
-{
-    auto number_of_inputs = effect->number_of_inputs;
-    auto inputs = new jack_port_t*[number_of_inputs];
-    auto successful_jack_registrations = 0;
-    Defer unregister_jack_ports = [&] {
-        if (successful_jack_registrations != number_of_inputs) {
-            for (i32 i = 0; i < successful_jack_registrations; i++)
-                jack_port_unregister(client, inputs[i]);
-        }
-    };
-
-    for (i32 i = 0; i < number_of_inputs; i++) {
-        auto properties = effect->input_properties(i);
-        inputs[i] = jack_port_register(client, properties.label,
-            JACK_DEFAULT_AUDIO_TYPE,
-            JackPortIsInput, 0);
-        if (!inputs[i])
-            return Error::from_string_literal("no more JACK inputs available");
-        successful_jack_registrations++;
-    }
-
-    return inputs;
-}
-
-static ErrorOr<jack_port_t**> register_output_ports(jack_client_t* client,
-    Vst::Effect const* effect)
-{
-    auto number_of_outputs = effect->number_of_outputs;
-    auto outputs = new jack_port_t*[number_of_outputs];
-    auto successful_jack_registrations = 0;
-    Defer unregister_jack_ports = [&] {
-        if (number_of_outputs != successful_jack_registrations) {
-            for (i32 i = 0; i < successful_jack_registrations; i++)
-                jack_port_unregister(client, outputs[i]);
-        }
-    };
-
-    for (i32 i = 0; i < number_of_outputs; i++) {
-        auto properties = effect->output_properties(i);
-        outputs[i] = jack_port_register(client, properties.label,
-            JACK_DEFAULT_AUDIO_TYPE,
-            JackPortIsOutput, 0);
-        if (!outputs[i])
-            return Error::from_string_literal("no more JACK outputs available");
-        successful_jack_registrations++;
-    }
-    return outputs;
-}
-
-static ErrorOr<void> connect_to_backend_output_ports(jack_client_t* client,
-    jack_port_t** inputs, u32 inputs_size)
-{
-    auto output_ports = jack_get_ports(client, "capture", nullptr,
-        JackPortIsPhysical | JackPortIsOutput);
-    if (!output_ports)
-        return Error::from_string_literal("no physical capture ports");
-    Defer free_output_ports = [&] {
-        jack_free(output_ports);
-    };
-
-    for (i32 i = 0; i < inputs_size; i++) {
-        auto port_name = jack_port_name(inputs[i]);
-        LOG_IF(should_log_jack_messages, "connect %s -> %s",
-            output_ports[i], port_name);
-        if (jack_connect(client, output_ports[i], port_name))
-            return Error::from_string_literal("could not connect ports");
-        // FIXME: disconnect ports on error.
-    }
-    return {};
-}
-
-static ErrorOr<void> connect_to_backend_input_ports(jack_client_t* client,
-    jack_port_t** outputs, u32 outputs_size)
-{
-    auto input_ports = jack_get_ports(client, nullptr, nullptr,
-        JackPortIsPhysical | JackPortIsInput);
-    if (!input_ports)
-        return Error::from_string_literal("no physical playback ports");
-    Defer free_input_ports = [&] {
-        jack_free(input_ports);
-    };
-
-    for (i32 i = 0; i < outputs_size; i++) {
-        auto port_name = jack_port_name(outputs[i]);
-        LOG_IF(should_log_jack_messages, "connect %s -> %s", port_name,
-            input_ports[i]);
-        if (jack_connect(client, port_name, input_ports[i]))
-            return Error::from_string_literal("could not connect ports");
-        // FIXME: disconnect ports on error.
-    }
-
-    return {};
-}
-
-// FIXME: Handle multiple inputs.
-static ErrorOr<jack_port_t*> register_midi_input(jack_client_t* client, 
-    Vst::Effect* effect)
-{
-    auto number_of_inputs = effect->midi_input_channels_size();
-    if (!number_of_inputs)
-        return nullptr;
-    auto* midi_port = jack_port_register(client, "midi_in",
-        JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
-    if (!midi_port)
-        return Error::from_string_literal("could not register midi input");
-
-    return midi_port;
-}
-
-// FIXME: Handle multiple outputs.
-static ErrorOr<jack_port_t*> register_midi_output(jack_client_t* client,
-    Vst::Effect* effect)
-{
-    auto number_of_inputs = effect->midi_output_channels_size();
-    if (!number_of_inputs)
-        return nullptr;
-    auto* midi_port = jack_port_register(client, "midi_out",
-        JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0);
-    if (!midi_port)
-        return Error::from_string_literal("could not register midi input");
-
-    return midi_port;
-}
-
-ErrorOr<void> connect_to_backend_midi_output_port(jack_client_t* client,
-    jack_port_t* midi_input_port)
-{
-    auto output_ports = jack_get_ports(client, "midi", nullptr,
-         JackPortIsPhysical | JackPortIsOutput);
-    if (!output_ports)
-        return Error::from_string_literal("no physical capture ports");
-    Defer free_output_ports = [&] {
-        jack_free(output_ports);
-    };
-
-    auto port_name = jack_port_name(midi_input_port);
-    LOG_IF(should_log_jack_messages, "connect midi %s -> %s",
-        output_ports[0], port_name);
-    if (jack_connect(client, output_ports[0], port_name))
-        return Error::from_string_literal("could not connect midi port");
-    // FIXME: disconnect ports on error.
-
-    return {};
-}
-
-static int process_audio(u32 number_of_samples, void* argument);
-static void on_shutdown(void* argument);
+#define LOG_IF(cond, ...) ((void)cond)
+#define LOG(...)
 
 ErrorOr<Host*> Host::create(Vst::Effect* effect)
 {
-    auto client_name = effect->name();
-    jack_status_t status;
-    auto client = jack_client_open(client_name, JackNullOption, &status);
-    if (!client) {
-        if (status & JackServerFailed)
-            return Error::from_string_literal("Unable to connect to JACK server");
-        return Error::from_string_literal("jack_client_open() failed");
-    }
-    GuardDefer close_jack_client = [&] {
-        jack_client_close(client);
-    };
-    if (status & JackServerStarted) {
-        LOG_IF(should_log_jack_messages, "JACK server started");
-    }
-    if (status & JackNameNotUnique) {
-        client_name = jack_get_client_name(client);
-        LOG_IF(should_log_jack_messages,
-            "client name was not unique, assigned it '%s'",
-            client_name);
-    }
-
     auto number_of_inputs = effect->number_of_inputs;
     auto number_of_outputs = effect->number_of_outputs;
-    auto sample_rate = jack_get_sample_rate(client);
+    u32 sample_rate = 44000;
     auto host = new Host {
-        .client = client,
         .effect = effect,
         .input_buffers = new f32*[number_of_inputs],
         .output_buffers = new f32*[number_of_outputs],
@@ -206,108 +31,25 @@ ErrorOr<Host*> Host::create(Vst::Effect* effect)
         .sample_rate = sample_rate
     };
 
-    jack_set_process_callback(client, process_audio, host);
-    jack_on_shutdown(client, on_shutdown, host);
-    jack_activate(client);
-
-    auto input_ports = TRY(register_input_ports(client, effect));
-    // FIXME: GuardDefer unregister inputs.
-    host->input_ports = input_ports;
-    (void)(connect_to_backend_output_ports(client, input_ports, number_of_inputs));
-    // FIXME: GuardDefer disconnect inputs.
-
-    auto output_ports = TRY(register_output_ports(client, effect));
-    // FIXME GuardDefer unregister outputs.
-    host->output_ports = output_ports;
-    (void)(connect_to_backend_input_ports(client, output_ports, number_of_outputs));
-    // FIXME GuardDefer disconnect outputs.
-    
-    // FIXME: Handle multiple inputs.
-    auto midi_input_port = TRY(register_midi_input(client, effect));
-    host->midi_input_port = midi_input_port;
-    // FIXME: GuardDefer disconnect inputs.
-    if (midi_input_port)
-        TRY(connect_to_backend_midi_output_port(client, midi_input_port));
-
-    // FIXME: Handle multiple outputs.
-    host->midi_output_port = TRY(register_midi_output(client, effect));
-    // FIXME: GuardDefer disconnect outputs.
-
-    close_jack_client.disarm();
-    host->jack_client_is_ready = true;
     return host;
 }
 
-void Host::handle_midi_input_events(u32 number_of_samples) const
+void Host::handle_midi_input_events(u32) const
 {
-    constexpr auto should_log_midi_inputs = true;
-    if (has_midi_input_port()) {
-        auto port_buffer = jack_port_get_buffer(midi_input_port, number_of_samples);
-        auto event_count = jack_midi_get_event_count(port_buffer);
-        if (event_count > 0)
-            LOG_IF(should_log_midi_inputs, "midi events: %d", event_count);
-        for (i32 i = 0; i < event_count; i++) {
-            jack_midi_event_t midi_event;
-            jack_midi_event_get(&midi_event, port_buffer, i);
-            u8 byte1 = midi_event.buffer[0];
-            u8 byte2 = midi_event.buffer[1];
-            u8 byte3 = midi_event.buffer[2];
-            LOG_IF(should_log_midi_inputs, "midi packet: %.2x %.2x %.2x",
-                    byte1, byte2, byte3);
-            send_midi_packet({byte1, byte2, byte3});
-        }
-    }
 }
 
 void Host::destroy() const
 {
-    jack_client_close(client);
 }
 
-f32 const* const* Host::input_samples(u32 number_of_samples)
+f32 const* const* Host::input_samples(u32)
 {
-    for (i32 i = 0; i < number_of_inputs; i++) {
-        input_buffers[i] = (f32*)jack_port_get_buffer(input_ports[i],
-            number_of_samples);
-    }
-    return input_buffers;
+    return nullptr;
 }
 
-f32* const* Host::output_samples(u32 number_of_samples)
+f32* const* Host::output_samples(u32)
 {
-    for (i32 i = 0; i < number_of_outputs; i++) {
-        auto output_port = output_ports[i];
-        output_buffers[i] = (f32*)jack_port_get_buffer(output_port,
-            number_of_samples);
-    }
-    return output_buffers;
-}
-
-static int process_audio(u32 number_of_samples, void* argument)
-{
-    auto plugin = (Host*)argument;
-    if (!plugin->jack_client_is_ready)
-        return 0;
-    auto effect = plugin->effect;
-    if (!plugin->effect_is_initialized) {
-        plugin->effect_is_initialized = true;
-        (void)effect->set_block_size(number_of_samples);
-    }
-
-    plugin->handle_midi_input_events(number_of_samples);
-
-    auto inputs = plugin->input_samples(number_of_samples);
-    auto outputs = plugin->output_samples(number_of_samples);
-
-    effect->process_f32(effect, inputs, outputs, number_of_samples);
-    return 0;
-}
-
-static void on_shutdown(void* argument)
-{
-    auto plugin = (Host*)argument;
-    (void)plugin;
-    // FIXME: Investigate plugin->destroy() from here.
+    return nullptr;
 }
 
 void Host::send_midi_packet(Midi::Packet packet) const
@@ -335,8 +77,8 @@ void Host::send_midi_packet(Midi::Packet packet) const
     // free(events);
 }
 
-intptr_t Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
-    i32 index, intptr_t value, void* ptr, f32 opt)
+iptr Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
+    i32 index, iptr value, void* ptr, f32 opt)
 {
     constexpr auto should_log_opcodes = true;
 
@@ -382,7 +124,7 @@ intptr_t Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
 
     case GetTime:
         host->update_time_info(index);
-        return (intptr_t)&host->time_info;
+        return (iptr)&host->time_info;
 
     case ProcessEvents:
         return host->process_events((Vst::Events*)ptr);
@@ -430,10 +172,10 @@ intptr_t Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
         return 0;
 
     case GetCurrentProcessLevel:
-        return (intptr_t)host->current_process_level();
+        return (iptr)host->current_process_level();
 
     case GetAutomationState:
-        return (intptr_t)host->automation_state();
+        return (iptr)host->automation_state();
 
     case OfflineStart:
         return host->offline_start(index, value, (Vst::AudioFile*)ptr);
@@ -465,16 +207,16 @@ intptr_t Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
     case GetAuthorName: {
         auto name = host->author_name();
         auto store = (char*)ptr;
-        strncpy(store, name.data(), name.size());
-        store[name.size()] = '\0';
+        strncpy(store, name.data, name.size);
+        store[name.size] = '\0';
         return 1;
     }
 
     case GetHostName: {
         auto name = host->host_name();
         auto store = (char*)ptr;
-        strncpy(store, name.data(), name.size());
-        store[name.size()] = '\0';
+        strncpy(store, name.data, name.size);
+        store[name.size] = '\0';
         return 1;
     }
 
@@ -491,7 +233,7 @@ intptr_t Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
         return host->can_do((char const*)ptr);
 
     case GetLanguage:
-        return (intptr_t)host->language();
+        return (iptr)host->language();
 
     case _OpenWindow:
         return 0;
@@ -500,7 +242,7 @@ intptr_t Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
         return 0;
 
     case GetDirectory:
-        return (intptr_t)host->directory();
+        return (iptr)host->directory();
 
     case UpdateDisplay:
         host->update_display();
@@ -531,22 +273,8 @@ intptr_t Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
     }
 }
 
-void Host::update_time_info(u32 request_mask)
+void Host::update_time_info(u32)
 {
-    (void)request_mask;
-    Vst::TimeInfo time;
-    auto frame_size = 256;
-    auto frames_since_cycle_start = jack_frames_since_cycle_start(client);
-    time.sample_position = frames_since_cycle_start * frame_size;
-    time.time_signature_numerator = 4;
-    time.time_signature_denominator = 4;
-    time.system_time_in_nanoseconds = jack_get_time() * 1000.0;
-    // clang-format off
-    time.flags = (i32)Vst::TimeInfoFlags::CyclePosIsValid
-               | (i32)Vst::TimeInfoFlags::NanosecondsIsValid
-               ;
-    // clang-format on
-
 }
 
 bool Host::begin_parameter_edit(i32 parameter_id)
@@ -591,9 +319,9 @@ bool Host::io_changed()
     return false;
 }
 
-bool Host::resize_window(i32 width, i32 height)
+bool Host::resize_window(i32, i32)
 {
-    return window->resize(width, height);
+    return false;
 }
 
 // u32 sample_rate();
@@ -654,7 +382,7 @@ void Host::current_offline_meta_pass()
 
 }
 
-intptr_t Host::vendor_specific(i32 index, intptr_t value, void* ptr, f32 opt)
+iptr Host::vendor_specific(i32 index, iptr value, void* ptr, f32 opt)
 {
     (void)index;
     (void)value;
@@ -665,9 +393,7 @@ intptr_t Host::vendor_specific(i32 index, intptr_t value, void* ptr, f32 opt)
 
 bool Host::can_do(char const* thing)
 {
-    constexpr bool log_can_do = true;
-    LOG_IF(log_can_do, "can do '%s'?", thing);
-    if (StringView("sizeWindow") == thing)
+    if ("sizeWindow"sv == StringView::from_c_string(thing))
         return true;
     return false;
 }

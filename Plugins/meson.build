@@ -1,2 +1,1 @@
-subdir('AudioPlugin')
 subdir('BareMinimum')

@@ -1,5 +1,5 @@
 #pragma once
-#include <JR/Types.h>
+#include <Ty/Base.h>
 #include <Midi/Note.h>
 
 namespace Midi {

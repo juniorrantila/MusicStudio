@@ -1,5 +1,5 @@
 #pragma once
-#include <JR/Types.h>
+#include <Ty/Base.h>
 
 namespace Vst {
 
@@ -75,7 +75,7 @@ struct Event
 struct Events 
 {
     i32 number_of_events;
-    intptr_t reserved { 0 };
+    iptr reserved { 0 };
     Event* events[];
 };
 
@@ -89,9 +89,9 @@ struct MidiSystemExclusiveEvent
     MidiSystemExclusiveEventFlagsUnderlying flags;
 
     i32 system_exclusive_dump_size;
-    intptr_t reserved1 { 0 };
+    iptr reserved1 { 0 };
     u8* system_exclusive_dump;
-    intptr_t reserved2 { 0 };
+    iptr reserved2 { 0 };
 };
 
 using MidiEventFlagsUnderlying = i32;
@@ -614,7 +614,7 @@ struct FileSelect
     char** multiple_return_paths;   // Use with kVstMultipleFilesLoad.
                                     // Host allocates memory, plugin must call #closeOpenFileSelector!
     i32 multiple_return_paths_size;
-    intptr_t reserved;
+    iptr reserved;
 
     u8 future[116];            ///< reserved for future use
 };

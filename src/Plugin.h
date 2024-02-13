@@ -1,5 +1,5 @@
 #pragma once
-#include <JR/ErrorOr.h>
+#include <Ty/ErrorOr.h>
 #include <Vst/Rectangle.h>
 #include <Vst/Vst.h>
 #include <Host.h>
@@ -20,7 +20,7 @@ struct Plugin {
         auto name = vst->name();
         if (!name)
             return Error::from_string_literal("could not get plugin name");
-        return StringView(name);
+        return StringView::from_c_string(name);
     }
 
     // FIXME: Cache this.
@@ -29,7 +29,7 @@ struct Plugin {
         auto author = vst->author();
         if (!author)
             return Error::from_string_literal("could not get plugin author");
-        return StringView(author);
+        return StringView::from_c_string(author);
     }
 
     u32 product_version() const
@@ -118,14 +118,6 @@ struct Plugin {
     {
         (void)vst->close_editor();
     }
-
-#if 0
-    ErrorOr<void> update_sample_rate() const
-    {
-        // jack_get_sample_rate
-        vst->set_sample_rate(host->sample_rate);
-    }
-#endif
 
     ErrorOr<void> set_sample_rate(f32 sample_rate) const
     {

@@ -1,9 +1,10 @@
-#include <JR/Log.h>
 #include <Vst/AudioPlugin.h>
 #include <Vst/Opcodes.h>
 
 #include <time.h>
 #include <stdio.h>
+
+#define LOG(...)
 
 namespace Vst {
 
@@ -70,7 +71,7 @@ static char* vst_strncpy(char* dest, char const* source, u32 size)
     return ret;
 }
 
-intptr_t AudioPlugin::dispatch(PluginOpcode opcode, i32 index, intptr_t value,
+iptr AudioPlugin::dispatch(PluginOpcode opcode, i32 index, iptr value,
     void* ptr, f32 opt)
 {
     switch (opcode) {
@@ -240,7 +241,7 @@ intptr_t AudioPlugin::dispatch(PluginOpcode opcode, i32 index, intptr_t value,
     }
 
     case PluginOpcode::GetPlugCategory:
-        return (intptr_t)config().category;
+        return (iptr)config().category;
 
 #if 0
 #    if !VST_FORCE_DEPRECATED
@@ -309,7 +310,7 @@ intptr_t AudioPlugin::dispatch(PluginOpcode opcode, i32 index, intptr_t value,
         return vendor_specific(index, value,
             ptr, opt);
     case PluginOpcode::CanDo:
-        return (intptr_t)can_do((char*)ptr);
+        return (iptr)can_do((char*)ptr);
 
     case PluginOpcode::GetTailSize:
         return tail_size();

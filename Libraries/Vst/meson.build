@@ -1,12 +1,22 @@
-libVst = library('Vst', [
+vst_lib = static_library('vst', [
     'AudioPlugin.cpp',
     'Vst.cpp',
-  ],
-  include_directories: includes,
-  link_with: [libJR])
+  ], dependencies: [
+    ty_dep
+  ])
 
-libVstHost = library('VstHost', [
+vst_dep = declare_dependency(
+  include_directories: '..',
+  link_with: vst_lib
+)
+
+vst_host_lib = static_library('vst-host', [
     'VstHost.cpp'
-  ],
-  include_directories: includes,
-  link_with: [libVst])
+  ], dependencies: [
+    vst_dep
+  ])
+
+vst_host_dep = declare_dependency(
+  include_directories: '..',
+  link_with: vst_host_lib
+)

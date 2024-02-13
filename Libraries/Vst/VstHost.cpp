@@ -182,7 +182,7 @@ bool Effect::process_var_io(ProcessVarIo* io)
 bool Effect::set_speaker_arrangement(SpeakerArrangement* input_type, SpeakerArrangement* output_type)
 {
     return dispatch(PluginOpcode::SetSpeakerArrangement, 0,
-                    (intptr_t)input_type, output_type);
+                    (iptr)input_type, output_type);
 }
 
 bool Effect::set_bypass(bool value)
@@ -239,7 +239,7 @@ u32 Effect::product_version()
     return dispatch(PluginOpcode::GetProductVersion);
 }
 
-intptr_t Effect::vendor_specific(i32 index, intptr_t value,
+iptr Effect::vendor_specific(i32 index, iptr value,
         void* ptr, f32 opt)
 {
     return dispatch(PluginOpcode::GetProductVersion, index, value, ptr,
@@ -271,17 +271,17 @@ u32 Effect::vst_version()
 
 bool Effect::key_down(char character, VirtualKey key, ModifierKeyUnderlying modifiers)
 {
-    return dispatch(PluginOpcode::NotifyKeyDown, character, (intptr_t)key, nullptr, modifiers);
+    return dispatch(PluginOpcode::NotifyKeyDown, character, (iptr)key, nullptr, modifiers);
 }
 
 bool Effect::key_up(char character, VirtualKey key, ModifierKeyUnderlying modifiers)
 {
-    return dispatch(PluginOpcode::NotifyKeyUp, character, (intptr_t)key, nullptr, modifiers);
+    return dispatch(PluginOpcode::NotifyKeyUp, character, (iptr)key, nullptr, modifiers);
 }
 
 bool Effect::set_knob_mode(KnobMode mode)
 {
-    return dispatch(PluginOpcode::SetEditKnobMode, 0, (intptr_t)mode);
+    return dispatch(PluginOpcode::SetEditKnobMode, 0, (iptr)mode);
 }
 
 bool Effect::begin_set_program()
@@ -311,12 +311,12 @@ bool Effect::set_total_samples_to_process(i32 value)
 
 bool Effect::set_pan_saw(PanLaw pan_law, f32 gain)
 {
-    return dispatch(PluginOpcode::SetPanLaw, 0, (intptr_t)pan_law, 0, gain);
+    return dispatch(PluginOpcode::SetPanLaw, 0, (iptr)pan_law, 0, gain);
 }
 
 bool Effect::set_process_precision(Precision value)
 {
-    return dispatch(PluginOpcode::SetProcessPrecision, 0, (intptr_t)value);
+    return dispatch(PluginOpcode::SetProcessPrecision, 0, (iptr)value);
 }
 
 u8 Effect::midi_input_channels_size()
@@ -334,14 +334,14 @@ bool Effect::set_tempo(i32 time_per_beat_in_samples, f32 tempo)
     return dispatch(PluginOpcode::SetTempo, time_per_beat_in_samples, 0, 0, tempo);
 }
 
-intptr_t Effect::dispatch(PluginOpcode opcode, i32 index,
-                  intptr_t value, void* ptr, f32 opt)
+iptr Effect::dispatch(PluginOpcode opcode, i32 index,
+                  iptr value, void* ptr, f32 opt)
 {
     return plugin_callback(this, opcode, index, value, ptr, opt);
 }
 
-intptr_t Effect::dispatch(PluginOpcode opcode, i32 index,
-                  intptr_t value, void* ptr, f32 opt) const
+iptr Effect::dispatch(PluginOpcode opcode, i32 index,
+                  iptr value, void* ptr, f32 opt) const
 {
     return plugin_callback((Effect*)this, opcode, index, value, ptr, opt);
 }

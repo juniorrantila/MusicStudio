@@ -3,22 +3,22 @@
 #include "Vst/ChunkType.h"
 #include "Vst/KnobMode.h"
 #include "Vst/Precision.h"
-#include <JR/Types.h>
+#include <Ty/Base.h>
 #include <Vst/Opcodes.h>
 
 namespace Vst {
 
 struct Effect;
 
-using HostCallback = intptr_t(*)(Effect* effect,
+using HostCallback = iptr(*)(Effect* effect,
                                  HostOpcode opcode,
                                  i32 index,
-                                 intptr_t value,
+                                 iptr value,
                                  void* ptr, f32 opt);
-using PluginCallback = intptr_t(*)(Effect* effect,
+using PluginCallback = iptr(*)(Effect* effect,
                                    PluginOpcode opcode,
                                    i32 index,
-                                   intptr_t value,
+                                   iptr value,
                                    void* ptr,
                                    f32 opt);
 using ProcessF32Proc = void(*)(Effect* effect,
@@ -73,8 +73,8 @@ struct Effect
 
 	PluginFlagsUnderlying flags;
 
-	intptr_t reserved1 { 0 };
-	intptr_t reserved2 { 0 };
+	iptr reserved1 { 0 };
+	iptr reserved2 { 0 };
 
 	i32 initial_delay;
  
@@ -159,7 +159,7 @@ struct Effect
     char const* author();
     char const* product_name();
     u32 product_version();
-    intptr_t vendor_specific(i32 index, intptr_t value, void* ptr, f32 opt);
+    iptr vendor_specific(i32 index, iptr value, void* ptr, f32 opt);
     CanDo can_do(char const* thing);
     i32 tail_size();
     ParameterProperties parameter_properties(i32 parameter_id);
@@ -215,10 +215,10 @@ struct Effect
     [[nodiscard]] bool set_tempo(i32 time_per_beat_in_samples, f32 tempo);
 
 private:
-    intptr_t dispatch(PluginOpcode opcode, i32 index = 0, intptr_t value = 0,
+    iptr dispatch(PluginOpcode opcode, i32 index = 0, iptr value = 0,
             void* ptr = nullptr, f32 opt = 0.0);
 
-    intptr_t dispatch(PluginOpcode opcode, i32 index = 0, intptr_t value = 0,
+    iptr dispatch(PluginOpcode opcode, i32 index = 0, iptr value = 0,
             void* ptr = nullptr, f32 opt = 0.0) const;
 };
 

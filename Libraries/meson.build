@@ -2,6 +2,7 @@ subdir('Ty')
 subdir('Core')
 subdir('CLI')
 subdir('Main')
+subdir('Rexim')
 
 subdir('Midi')
 subdir('Vst')

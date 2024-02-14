@@ -13,3 +13,9 @@ executable('sine', [
   ], dependencies: [
     soundio_dep,
   ])
+
+executable('list-devices', [
+    'list-devices.c',
+  ], dependencies: [
+    soundio_dep,
+  ])

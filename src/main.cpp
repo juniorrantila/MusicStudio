@@ -30,8 +30,8 @@ ErrorOr<int> main(int argc, char const* argv[])
         plugin.destroy();
     };
 
-    auto plugin_name = TRY(plugin.name());
-    auto plugin_author = TRY(plugin.author());
+    auto plugin_name = plugin.name().or_else("<none>"sv);
+    auto plugin_author = plugin.author().or_else("<none>"sv);
 
     auto plugin_product_version = plugin.product_version();
     auto plugin_version = plugin.version();

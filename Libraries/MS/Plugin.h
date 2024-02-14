@@ -18,20 +18,20 @@ struct Plugin {
     bool is_valid() const { return plugin_library.is_valid() && vst && host; }
 
     // FIXME: Cache this.
-    ErrorOr<StringView> name() const
+    Optional<StringView> name() const
     {
         auto name = vst->name();
         if (!name)
-            return Error::from_string_literal("could not get plugin name");
+            return {};
         return StringView::from_c_string(name);
     }
 
     // FIXME: Cache this.
-    ErrorOr<StringView> author() const
+    Optional<StringView> author() const
     {
         auto author = vst->author();
         if (!author)
-            return Error::from_string_literal("could not get plugin author");
+            return {};
         return StringView::from_c_string(author);
     }
 

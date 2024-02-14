@@ -7,3 +7,9 @@ executable('plugin-dump', [
     cli_dep,
     main_dep,
   ])
+
+executable('sine', [
+    'sine.c',
+  ], dependencies: [
+    soundio_dep,
+  ])

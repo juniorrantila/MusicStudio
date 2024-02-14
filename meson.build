@@ -5,7 +5,9 @@ project('MusicStudio', ['cpp', 'c'],
     'cpp_rtti=false',
     'default_library=static',
     'prefer_static=true',
-    'warning_level=3'
+    'warning_level=3',
+    'optimization=2',
+    'strip=true',
   ])
 
 add_global_arguments([
@@ -33,7 +35,9 @@ if not freetype2_dep.found()
     'mmap=enabled',
     'png=disabled',
     'tests=disabled',
-    'zlib=disabled'
+    'zlib=disabled',
+    'optimization=2',
+    'strip=true',
   ])
   freetype2_dep = freetype2_proj.get_variable('freetype_dep')
 endif
@@ -46,6 +50,8 @@ if not glew_dep.found() or target_machine.system() == 'darwin'
     'buildtype=release',
     'egl=disabled',
     'glu=disabled',
+    'optimization=2',
+    'strip=true',
   ])
   glew_dep = glew_proj.get_variable('glew_dep')
 endif
@@ -93,6 +99,8 @@ if not sdl2_dep.found()
     'use_filesystem=disabled',
     'use_dummies=false',
     'prefer_dlopen=false',
+    'optimization=2',
+    'strip=true',
   ])
   sdl2_dep = sdl2_proj.get_variable('sdl2_dep')
 endif

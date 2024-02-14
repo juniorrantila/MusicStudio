@@ -28,6 +28,6 @@ ninja -C build
 
 ```sh
 
-./build/src/MusicStudio <path-to-plugin>
+./build/src/music-studio
 
 ```

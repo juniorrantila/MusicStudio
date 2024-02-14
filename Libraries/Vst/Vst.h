@@ -6,6 +6,13 @@
 #include <Ty/Base.h>
 #include <Vst/Opcodes.h>
 
+#if _WIN32
+#    define VST_EXPORT __declspec(dllexport)
+#else
+#    define VST_EXPORT
+#endif
+
+
 namespace Vst {
 
 struct Effect;
@@ -226,10 +233,4 @@ using PluginMainSignature = Vst::Effect*(*)(Vst::HostCallback);
 
 }
 
-#if _WIN32
-#    define export __declspec(dllexport)
-#else
-#    define export
-#endif
-
-export extern "C" Vst::Effect* VSTPluginMain(Vst::HostCallback);
+VST_EXPORT extern "C" Vst::Effect* VSTPluginMain(Vst::HostCallback);

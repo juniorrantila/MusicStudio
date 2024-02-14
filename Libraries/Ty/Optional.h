@@ -79,9 +79,9 @@ struct [[nodiscard]] Optional {
 
     template <typename F>
     constexpr decltype(auto) or_else(F callback) requires
-        requires(F callback)
+        requires(F cb)
     {
-        callback();
+        cb();
     }
     {
         if (!has_value())
@@ -92,7 +92,7 @@ struct [[nodiscard]] Optional {
 
     template <typename U>
     constexpr T or_else(U value) requires(
-        !requires(U value) { value(); })
+        !requires(U v) { v(); })
     {
         if (!has_value())
             return T(value);

@@ -1,9 +1,13 @@
-executable('MusicStudio', [
+executable('music-studio', [
+    'FileBrowser.cpp',
+    'FreeGlyph.cpp',
+    'SimpleRenderer.cpp',
     'main.cpp',
   ], dependencies: [
-    vst_host_dep,
-    core_dep,
+    freetype2_dep,
+    glew_dep,
+    sdl2_dep,
+    ty_dep,
     main_dep,
-    cli_dep,
-    ms_dep,
+    rexim_dep,
   ])

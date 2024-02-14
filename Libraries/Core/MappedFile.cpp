@@ -7,7 +7,7 @@ namespace Core {
 ErrorOr<MappedFile> MappedFile::open(StringView path)
 {
     auto path_buffer = TRY(StringBuffer::create_fill(path, "\0"sv));
-    return TRY(open(path_buffer.view().data));
+    return TRY(open(path_buffer.view().data()));
 }
 
 ErrorOr<MappedFile> MappedFile::open(c_string path)

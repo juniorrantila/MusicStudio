@@ -69,7 +69,7 @@ ArgumentParserResult ArgumentParser::run(int argc,
 
         if (used_positionals < positional_callbacks.size()) {
             auto id = used_positionals++;
-            positional_callbacks[id](argument.data);
+            positional_callbacks[id](argument.data());
             continue;
         }
 
@@ -120,7 +120,7 @@ void ArgumentParser::print_usage_and_exit(c_string program_name,
     out.write("\n\n"sv).ignore();
     out.writeln("FLAGS:"sv).ignore();
     for (auto flag : flags) {
-        auto pad = flag.short_name.size == 2 ? " "sv : ""sv;
+        auto pad = flag.short_name.size() == 2 ? " "sv : ""sv;
         auto bytes = MUST(out.write("        "sv, flag.short_name,
             ", "sv, pad, flag.long_name));
         for (; bytes < 40; bytes++)
@@ -129,7 +129,7 @@ void ArgumentParser::print_usage_and_exit(c_string program_name,
     }
     out.writeln("\nOPTIONS:"sv).ignore();
     for (auto option : options) {
-        auto pad = option.short_name.size == 2 ? " "sv : ""sv;
+        auto pad = option.short_name.size() == 2 ? " "sv : ""sv;
         auto bytes = MUST(out.write("        "sv, option.short_name,
             ", "sv, pad, option.long_name, "  <"sv,
             option.placeholder, "> "sv));

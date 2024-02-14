@@ -15,7 +15,7 @@ template <>
 Optional<u16> Parse<u16>::from(StringView from)
 {
     u32 result = 0;
-    for (u32 i = 0; i < from.size; i++) {
+    for (u32 i = 0; i < from.size(); i++) {
         result *= 10;
         auto maybe_number = character_to_number(from[i]);
         if (!maybe_number.has_value())
@@ -31,7 +31,7 @@ template <>
 Optional<u32> Parse<u32>::from(StringView from)
 {
     u64 result = 0;
-    for (u32 i = 0; i < from.size; i++) {
+    for (u32 i = 0; i < from.size(); i++) {
         result *= 10;
         auto maybe_number = character_to_number(from[i]);
         if (!maybe_number.has_value())
@@ -47,7 +47,7 @@ template <>
 Optional<u64> Parse<u64>::from(StringView from)
 {
     u128 result = 0;
-    for (u32 i = 0; i < from.size; i++) {
+    for (u32 i = 0; i < from.size(); i++) {
         result *= 10;
         auto maybe_number = character_to_number(from[i]);
         if (!maybe_number.has_value())
@@ -73,7 +73,7 @@ Optional<f64> Parse<f64>::from(StringView from)
     bool add_to_fraction = false;
     u128 whole_part = 0;
     u128 fraction_part = 0;
-    for (u32 i = 0; i < from.size; i++) {
+    for (u32 i = 0; i < from.size(); i++) {
         if (add_to_fraction) {
             fraction_part *= 10;
             auto maybe_number = character_to_number(from[i]);

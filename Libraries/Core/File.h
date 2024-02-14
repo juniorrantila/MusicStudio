@@ -124,9 +124,9 @@ private:
 
     constexpr ErrorOr<usize> buffer_or_write(StringView string)
     {
-        if (buffer.capacity() <= string.size)
+        if (buffer.capacity() <= string.size())
             return TRY(Core::System::write(m_fd, string));
-        if (buffer.size_left() <= string.size)
+        if (buffer.size_left() <= string.size())
             TRY(flush());
         return TRY(buffer.write(string));
     }

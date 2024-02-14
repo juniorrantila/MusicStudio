@@ -30,7 +30,7 @@ struct FormatCounter {
 
     static constexpr ErrorOr<u32> write(StringView view)
     {
-        return view.size;
+        return view.size();
     }
 
     template <typename... Args>

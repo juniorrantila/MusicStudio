@@ -9,8 +9,8 @@ ErrorOr<Vector<u32>> StringView::find_all(char character) const
 {
     auto occurrences = TRY(Vector<u32>::create());
 
-    for (u32 i = 0; i < size; i++) {
-        if (data[i] == character)
+    for (u32 i = 0; i < size(); i++) {
+        if (m_data[i] == character)
             TRY(occurrences.append(i));
     }
 
@@ -21,10 +21,10 @@ ErrorOr<Vector<u32>> StringView::find_all(StringView sequence) const
 {
     auto occurrences = TRY(Vector<u32>::create());
 
-    for (u32 i = 0; i < size;) {
-        if (sub_view(i, sequence.size) == sequence) {
+    for (u32 i = 0; i < size();) {
+        if (sub_view(i, sequence.size()) == sequence) {
             TRY(occurrences.append(i));
-            i += sequence.size;
+            i += sequence.size();
             continue;
         }
         i++;
@@ -50,7 +50,7 @@ ErrorOr<Vector<StringView>> StringView::split_on(
         TRY(splits.append(part(last_index + 1, index)));
         last_index = index;
     }
-    TRY(splits.append(part(last_index + 1, size)));
+    TRY(splits.append(part(last_index + 1, size())));
 
     return splits;
 }
@@ -69,10 +69,10 @@ ErrorOr<Vector<StringView>> StringView::split_on(
 
     u32 last_index = 0xFFFFFFFF; // Intentional overflow
     for (auto index : indexes) {
-        TRY(splits.append(part(last_index + sequence.size, index)));
+        TRY(splits.append(part(last_index + sequence.size(), index)));
         last_index = index;
     }
-    TRY(splits.append(part(last_index + sequence.size, size)));
+    TRY(splits.append(part(last_index + sequence.size(), size())));
 
     return splits;
 }

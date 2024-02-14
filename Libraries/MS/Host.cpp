@@ -210,16 +210,16 @@ iptr Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
     case GetAuthorName: {
         auto name = host->author_name();
         auto store = (char*)ptr;
-        strncpy(store, name.data, name.size);
-        store[name.size] = '\0';
+        strncpy(store, name.data(), name.size());
+        store[name.size()] = '\0';
         return 1;
     }
 
     case GetHostName: {
         auto name = host->host_name();
         auto store = (char*)ptr;
-        strncpy(store, name.data, name.size);
-        store[name.size] = '\0';
+        strncpy(store, name.data(), name.size());
+        store[name.size()] = '\0';
         return 1;
     }
 

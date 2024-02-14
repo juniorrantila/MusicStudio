@@ -82,7 +82,7 @@ namespace {
 constexpr ErrorOr<Token> lex_string(StringView source, u32 start)
 {
     auto end = start;
-    while (end++ < source.size) {
+    while (end++ < source.size()) {
         if (source[end] == '"')
             break;
     }
@@ -106,7 +106,7 @@ constexpr bool is_number(char character)
 constexpr ErrorOr<Token> lex_number(StringView source, u32 start)
 {
     auto end = start;
-    while (end++ < source.size) {
+    while (end++ < source.size()) {
         if (is_number(source[end]))
             continue;
         if (source[end] == '.')
@@ -124,33 +124,33 @@ constexpr ErrorOr<Token> lex_number(StringView source, u32 start)
 
 constexpr ErrorOr<Token> lex_null(StringView source, u32 start)
 {
-    if (source.sub_view(start, "null"sv.size) != "null"sv)
+    if (source.sub_view(start, "null"sv.size()) != "null"sv)
         return Error::from_string_literal("invalid null");
     return Token {
         start,
-        "null"sv.size,
+        "null"sv.size(),
         Token::Null,
     };
 }
 
 constexpr ErrorOr<Token> lex_true(StringView source, u32 start)
 {
-    if (source.sub_view(start, "true"sv.size) != "true"sv)
+    if (source.sub_view(start, "true"sv.size()) != "true"sv)
         return Error::from_string_literal("invalid true");
     return Token {
         start,
-        "true"sv.size,
+        "true"sv.size(),
         Token::True,
     };
 }
 
 constexpr ErrorOr<Token> lex_false(StringView source, u32 start)
 {
-    if (source.sub_view(start, "false"sv.size) != "false"sv)
+    if (source.sub_view(start, "false"sv.size()) != "false"sv)
         return Error::from_string_literal("invalid false");
     return Token {
         start,
-        "false"sv.size,
+        "false"sv.size(),
         Token::False,
     };
 }
@@ -164,42 +164,42 @@ constexpr ErrorOr<Token> lex_single_token(StringView source,
     case ',': {
         return Token {
             start,
-            ","sv.size,
+            ","sv.size(),
             Token::Comma,
         };
     }
     case ':': {
         return Token {
             start,
-            ":"sv.size,
+            ":"sv.size(),
             Token::Colon,
         };
     }
     case '{': {
         return Token {
             start,
-            "{"sv.size,
+            "{"sv.size(),
             Token::OpenCurly,
         };
     }
     case '}': {
         return Token {
             start,
-            "}"sv.size,
+            "}"sv.size(),
             Token::CloseCurly,
         };
     }
     case '[': {
         return Token {
             start,
-            "["sv.size,
+            "["sv.size(),
             Token::OpenBracket,
         };
     }
     case ']': {
         return Token {
             start,
-            "]"sv.size,
+            "]"sv.size(),
             Token::CloseBracket,
         };
     }
@@ -215,7 +215,7 @@ constexpr ErrorOr<Vector<Token>> lex(StringView source)
     auto tokens = TRY(Vector<Token>::create());
 
     u32 i = 0;
-    while (i < source.size) {
+    while (i < source.size()) {
         if (source[i] == ' ') {
             i++;
             continue;
@@ -267,8 +267,8 @@ constexpr ErrorOr<SingleValue> parse_string(StringView source,
 {
     ASSERT(token.type == Token::String);
     return SingleValue {
-        JsonValue(source.sub_view(token.start + "\""sv.size,
-            token.size - "\"\""sv.size)),
+        JsonValue(source.sub_view(token.start + "\""sv.size(),
+            token.size - "\"\""sv.size())),
         1,
     };
 }

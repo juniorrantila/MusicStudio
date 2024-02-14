@@ -58,7 +58,7 @@ ErrorOr<usize> write(int fd, void const* data, usize size)
 
 ErrorOr<usize> write(int fd, StringView string)
 {
-    return TRY(write(fd, string.data, string.size));
+    return TRY(write(fd, string.data(), string.size()));
 }
 
 ErrorOr<usize> write(int fd, StringBuffer const& string)
@@ -367,7 +367,7 @@ ErrorOr<ssize_t> send(int fd, void const* buf, size_t buf_size,
 
 ErrorOr<ssize_t> send(int fd, StringView view, int flags)
 {
-    return TRY(send(fd, view.data, view.size, flags));
+    return TRY(send(fd, view.data(), view.size(), flags));
 }
 
 ErrorOr<struct addrinfo*> getaddrinfo(u16 service,

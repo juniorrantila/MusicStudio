@@ -39,10 +39,10 @@ ErrorOr<int> main(int argc, char const* argv[])
     printf("\n--------------------------------\n");
     printf("       VST Magic: %.4s (0x%.4X)\n", (char*)&magic_value, magic_value);
     printf("     VST Version: %d\n\n", plugin_vst_version);
-    printf("            Name: %*s\n", plugin_name.size, plugin_name.data);
+    printf("            Name: %*s\n", plugin_name.size(), plugin_name.data());
     printf("         Version: %d\n", plugin_version);
     printf(" Product version: %d\n", plugin_product_version);
-    printf("          Author: %*s\n", plugin_author.size, plugin_author.data);
+    printf("          Author: %*s\n", plugin_author.size(), plugin_author.data());
     printf(" #    Parameters: %d\n", plugin.number_of_parameters());
     printf(" #       Presets: %d\n", plugin.number_of_presets());
     printf(" #        Inputs: %d\n", plugin.number_of_inputs());

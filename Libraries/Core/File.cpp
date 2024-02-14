@@ -12,7 +12,7 @@ void File::close() const { System::close(m_fd).ignore(); }
 ErrorOr<File> File::open_for_writing(StringView path, mode_t mode)
 {
     auto path_buffer = TRY(StringBuffer::create_fill(path, "\0"sv));
-    return open_for_writing(path_buffer.view().data, mode);
+    return open_for_writing(path_buffer.view().data(), mode);
 }
 
 ErrorOr<File> File::open_for_writing(c_string path, mode_t mode)

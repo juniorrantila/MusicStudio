@@ -22,7 +22,7 @@ add_global_arguments([
   '-Wno-gnu-zero-variadic-macro-arguments',
   '-Wno-keyword-macro',
   '-Wno-user-defined-literals',
-], language: 'cpp')
+], language: ['cpp', 'c'])
 
 freetype2_dep = dependency('freetype2', required: false, static: true)
 if not freetype2_dep.found()

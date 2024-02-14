@@ -1,5 +1,5 @@
 #include "audio.h"
-#include <SoundIo/soundio.h>
+#include <SoundIo/SoundIo.h>
 
 #include <stdio.h>
 #include <stdlib.h>

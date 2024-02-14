@@ -1,7 +1,7 @@
 binary_to_compressed_c_exe = executable('binary-to-compressed-c', 'binary_to_compressed_c.cpp')
 
-executable('plugin-dump', [
-    'plugin-dump.cpp',
+executable('vst-dump', [
+    'vst-dump.cpp',
   ], dependencies: [
     ms_dep,
     cli_dep,

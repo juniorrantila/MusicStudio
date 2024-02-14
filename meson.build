@@ -21,7 +21,7 @@ add_global_arguments([
   '-Wno-user-defined-literals',
 ], language: 'cpp')
 
-freetype2_dep = dependency('freetype2', required: false)
+freetype2_dep = dependency('freetype2', required: false, static: true)
 if not freetype2_dep.found()
   freetype2_proj = subproject('freetype2', default_options: [
     'warning_level=0',
@@ -38,7 +38,7 @@ if not freetype2_dep.found()
   freetype2_dep = freetype2_proj.get_variable('freetype_dep')
 endif
 
-glew_dep = dependency('glew', required: false)
+glew_dep = dependency('glew', required: false, static: true)
 if not glew_dep.found() or target_machine.system() == 'darwin'
   glew_proj = subproject('glew', default_options: [
     'warning_level=0',
@@ -50,7 +50,7 @@ if not glew_dep.found() or target_machine.system() == 'darwin'
   glew_dep = glew_proj.get_variable('glew_dep')
 endif
 
-sdl2_dep = dependency('sdl2')
+sdl2_dep = dependency('sdl2', required: target_machine.system() == 'darwin', static: true)
 if not sdl2_dep.found()
   sdl2_proj = subproject('sdl2', default_options: [
     'warning_level=0',

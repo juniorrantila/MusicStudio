@@ -6,22 +6,22 @@ soundio_c_args = [
 soundio_platform_sources = []
 
 if target_machine.system() == 'windows'
-  wasapi_dep = dependency('wasapi', required: true)
+  wasapi_dep = dependency('wasapi', required: true, static: true)
   soundio_backend_deps += wasapi_dep
   soundio_c_args += '-DSOUNDIO_HAVE_WASAPI=1'
   soundio_platform_sources += './wasapi.c'
 elif target_machine.system() == 'darwin'
-  soundio_backend_deps += dependency('corefoundation', required: true)
-  soundio_backend_deps += dependency('audiounit', required: true)
+  soundio_backend_deps += dependency('corefoundation', required: true, static: true)
+  soundio_backend_deps += dependency('audiounit', required: true, static: true)
 
-  coreaudio_dep = dependency('coreaudio', required: true)
+  coreaudio_dep = dependency('coreaudio', required: true, static: true)
   soundio_backend_deps += coreaudio_dep
   soundio_c_args += '-DSOUNDIO_HAVE_COREAUDIO=1'
   soundio_platform_sources += './coreaudio.c'
 else
-  jack_dep = dependency('jack', required: false)
-  pulseaudio_dep = dependency('pulseaudio', required: false)
-  alsa_dep = dependency('alsa', required: false)
+  jack_dep = dependency('jack', required: false, static: true)
+  pulseaudio_dep = dependency('pulseaudio', required: false, static: true)
+  alsa_dep = dependency('alsa', required: false, static: true)
   if jack_dep.found()
     soundio_backend_deps += jack_dep
     soundio_c_args += '-DSOUNDIO_HAVE_JACK=1'

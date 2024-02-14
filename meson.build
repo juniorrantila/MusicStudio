@@ -6,7 +6,7 @@ project('MusicStudio', ['cpp', 'c'],
     'default_library=static',
     'prefer_static=true',
     'warning_level=3',
-    'optimization=2',
+    'buildtype=release',
     'strip=true',
   ])
 

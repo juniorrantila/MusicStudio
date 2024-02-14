@@ -165,7 +165,7 @@ struct [[nodiscard]] Optional<T*> {
     {
     }
 
-    constexpr ~Optional() { m_value = nullptr; }
+    ~Optional() { m_value = nullptr; }
 
     constexpr Optional& operator=(Optional other)
     {

@@ -1,4 +1,7 @@
-Playground
-imgui.ini
-zig-out
-zig-cache
+.DS_Store
+a.*
+build
+perf.data
+perf.data.old
+subprojects/*
+!subprojects/*.wrap

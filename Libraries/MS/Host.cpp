@@ -1,3 +1,5 @@
+#include "Host.h"
+
 #include <Ty/ScopeGuard.h>
 #include <Ty/Base.h>
 #include <Vst/AEffect.h>
@@ -9,13 +11,14 @@
 
 #include <sys/resource.h> // getpriority
 
-#include <Host.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define LOG_IF(cond, ...) ((void)cond)
 #define LOG(...)
+
+namespace MS {
 
 ErrorOr<Host*> Host::create(Vst::Effect* effect)
 {
@@ -420,5 +423,7 @@ bool Host::open_file_selector(Vst::FileSelect*)
 
 void Host::close_file_selector(Vst::FileSelect*)
 {
+
+}
 
 }

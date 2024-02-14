@@ -21,10 +21,11 @@ add_global_arguments([
   '-Wno-user-defined-literals',
 ], language: 'cpp')
 
+subdir('Libraries')
+
 subdir('Tools')
 subdir('Fonts')
 
-subdir('Libraries')
 subdir('Plugins')
 
 subdir('src')

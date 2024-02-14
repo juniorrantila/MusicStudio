@@ -5,3 +5,4 @@ subdir('Main')
 
 subdir('Midi')
 subdir('Vst')
+subdir('MS')

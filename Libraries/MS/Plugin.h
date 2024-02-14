@@ -1,9 +1,12 @@
 #pragma once
+#include "Host.h"
+
 #include <Ty/ErrorOr.h>
 #include <Vst/Rectangle.h>
 #include <Vst/Vst.h>
-#include <Host.h>
 #include <Core/Library.h>
+
+namespace MS {
 
 struct Plugin {
     Core::Library plugin_library;
@@ -148,3 +151,4 @@ private:
     }
 };
 
+}

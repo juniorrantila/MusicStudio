@@ -1,4 +1,4 @@
-#include "Midi/Packet.h"
+#include <Midi/Packet.h>
 #include <Ty/Defer.h>
 #include <Ty/ErrorOr.h>
 #include <Ty/StringView.h>
@@ -6,6 +6,8 @@
 #include <Vst/AEffect.h>
 #include <Vst/Opcodes.h>
 #include <Vst/Vst.h>
+
+namespace MS {
 
 union Version {
     constexpr Version(u8 major, u8 minor, u8 micro, u8 patch)
@@ -103,3 +105,5 @@ struct Host {
     static iptr dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
         i32 index, iptr value, void* ptr, f32 opt);
 };
+
+}

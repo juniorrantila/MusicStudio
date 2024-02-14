@@ -1,5 +1,8 @@
-#include <Plugin.h>
+#include "Plugin.h"
+
 #include <Ty/ScopeGuard.h>
+
+namespace MS {
 
 ErrorOr<Plugin> Plugin::create_from(const char *path)
 {
@@ -50,3 +53,4 @@ void Plugin::destroy() const
     }
 }
 
+}

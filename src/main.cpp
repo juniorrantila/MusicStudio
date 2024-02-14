@@ -1,7 +1,7 @@
 #include <CLI/ArgumentParser.h>
 #include <Midi/Note.h>
 #include <Midi/Packet.h>
-#include <Plugin.h>
+#include <MS/Plugin.h>
 #include <Ty/Defer.h>
 #include <Ty/Defer.h>
 #include <Ty/ErrorOr.h>
@@ -25,7 +25,7 @@ ErrorOr<int> main(int argc, char const* argv[])
         return 1;
     }
 
-    auto plugin = TRY(Plugin::create_from(plugin_path));
+    auto plugin = TRY(MS::Plugin::create_from(plugin_path));
     Defer destroy_plugin = [&] {
         plugin.destroy();
     };

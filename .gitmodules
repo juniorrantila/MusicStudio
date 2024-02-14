@@ -1,9 +1,0 @@
-[submodule "Libraries/LibJR"]
-	path = Libraries/LibJR
-	url = https://github.com/juniorrantila/LibJR
-[submodule "Dependencies/imgui"]
-	path = Dependencies/imgui
-	url = https://github.com/juniorrantila/imgui
-[submodule "Dependencies/imgui-knobs"]
-	path = Dependencies/imgui-knobs
-	url = https://github.com/juniorrantila/imgui-knobs

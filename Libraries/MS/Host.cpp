@@ -15,8 +15,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LOG_IF(cond, ...) ((void)cond)
-#define LOG(...)
+#define LOG_IF(cond, fmt, ...) do { if (cond) { fprintf(stderr, "VST Host: " fmt "\n", ## __VA_ARGS__); } } while(0)
+#define LOG(fmt, ...) fprintf(stderr, "VST Host: " fmt "\n", ## __VA_ARGS__)
 
 namespace MS {
 

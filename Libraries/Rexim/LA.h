@@ -13,6 +13,22 @@ Vec2f vec2f_mul(Vec2f a, Vec2f b);
 Vec2f vec2f_mul3(Vec2f a, Vec2f b, Vec2f c);
 Vec2f vec2f_div(Vec2f a, Vec2f b);
 
+static inline Vec2f operator+(Vec2f a, Vec2f b) { return vec2f_add(a, b); }
+static inline Vec2f operator-(Vec2f a, Vec2f b) { return vec2f_sub(a, b); }
+static inline Vec2f operator*(Vec2f a, Vec2f b) { return vec2f_mul(a, b); }
+static inline Vec2f operator/(Vec2f a, Vec2f b) { return vec2f_div(a, b); }
+
+static inline Vec2f operator+(Vec2f a, f32 b) { return a + vec2fs(b); }
+static inline Vec2f operator-(Vec2f a, f32 b) { return a - vec2fs(b); }
+static inline Vec2f operator*(Vec2f a, f32 b) { return a * vec2fs(b); }
+static inline Vec2f operator/(Vec2f a, f32 b) { return a / vec2fs(b); }
+
+static inline Vec2f& operator+=(Vec2f& a, Vec2f b) { a = a + b; return a; }
+static inline Vec2f& operator-=(Vec2f& a, Vec2f b) { a = a - b; return a; }
+static inline Vec2f& operator*=(Vec2f& a, Vec2f b) { a = a * b; return a; }
+static inline Vec2f& operator/=(Vec2f& a, Vec2f b) { a = a / b; return a; }
+static inline Vec2f& operator/=(Vec2f& a, f32 b) { a = a / b; return a; }
+
 struct Vec2i {
     i32 x, y;
 };
@@ -35,6 +51,21 @@ Vec4f vec4f_add(Vec4f a, Vec4f b);
 Vec4f vec4f_sub(Vec4f a, Vec4f b);
 Vec4f vec4f_mul(Vec4f a, Vec4f b);
 Vec4f vec4f_div(Vec4f a, Vec4f b);
+static inline Vec4f operator+(Vec4f a, Vec4f b) { return vec4f_add(a, b); }
+static inline Vec4f operator-(Vec4f a, Vec4f b) { return vec4f_sub(a, b); }
+static inline Vec4f operator*(Vec4f a, Vec4f b) { return vec4f_mul(a, b); }
+static inline Vec4f operator/(Vec4f a, Vec4f b) { return vec4f_div(a, b); }
+
+static inline Vec4f operator+(Vec4f a, f32 b) { return a + vec4fs(b); }
+static inline Vec4f operator-(Vec4f a, f32 b) { return a - vec4fs(b); }
+static inline Vec4f operator*(Vec4f a, f32 b) { return a * vec4fs(b); }
+static inline Vec4f operator/(Vec4f a, f32 b) { return a / vec4fs(b); }
+
+static inline Vec4f& operator+=(Vec4f& a, Vec4f b) { a = a + b; return a; }
+static inline Vec4f& operator-=(Vec4f& a, Vec4f b) { a = a - b; return a; }
+static inline Vec4f& operator*=(Vec4f& a, Vec4f b) { a = a * b; return a; }
+static inline Vec4f& operator/=(Vec4f& a, Vec4f b) { a = a / b; return a; }
+static inline Vec4f& operator/=(Vec4f& a, f32 b) { a = a / b; return a; }
 
 f32 lerpf(f32 a, f32 b, f32 t);
 Vec2f vec2f_lerp(Vec2f a, Vec2f b, Vec2f t);

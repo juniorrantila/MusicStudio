@@ -68,7 +68,9 @@ ErrorOr<int> main(int argc, char const* argv[])
                                             styleMask: NSWindowStyleMaskTitled|NSWindowStyleMaskClosable
                                               backing: NSBackingStoreBuffered
                                                 defer: YES];
-    TRY(plugin.open_editor(win.contentView));
+    if (!plugin.open_editor(win.contentView)) {
+        return Error::from_string_literal("could not open editor");
+    }
 
     [win makeKeyAndOrderFront: win];
     [NSApp run];

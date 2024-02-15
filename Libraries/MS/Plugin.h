@@ -124,23 +124,19 @@ struct Plugin {
         return vst->editor_rectangle();
     }
 
-    ErrorOr<void> open_editor(void* raw_handle) const
+    [[nodiscard]] bool open_editor(void* raw_handle) const
     {
-        if (!vst->open_editor(raw_handle))
-            return Error::from_string_literal("could not open editor");
-        return {};
+        return vst->open_editor(raw_handle);
     }
 
-    void close_editor() const
+    [[nodiscard]] bool close_editor() const
     {
-        (void)vst->close_editor();
+        return vst->close_editor();
     }
 
-    ErrorOr<void> set_sample_rate(f32 sample_rate) const
+    [[nodiscard]] bool set_sample_rate(f32 sample_rate) const
     {
-        if (!vst->set_sample_rate(sample_rate))
-            return Error::from_string_literal("could not set sample rate");
-        return {};
+        return vst->set_sample_rate(sample_rate);
     }
 
     [[nodiscard]] bool pause() const

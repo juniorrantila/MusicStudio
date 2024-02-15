@@ -9,9 +9,12 @@ executable('vst-dump', [
   ])
 
 executable('sine', [
-    'sine.c',
+    'sine.cpp',
   ], dependencies: [
+    main_dep,
     soundio_dep,
+    ty_dep,
+    cli_dep,
   ])
 
 executable('list-devices', [

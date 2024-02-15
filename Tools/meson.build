@@ -15,7 +15,10 @@ executable('sine', [
   ])
 
 executable('list-devices', [
-    'list-devices.c',
+    'list-devices.cpp',
   ], dependencies: [
+    main_dep,
     soundio_dep,
+    ty_dep,
+    cli_dep,
   ])

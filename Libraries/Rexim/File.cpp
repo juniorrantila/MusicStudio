@@ -40,7 +40,11 @@ Errno read_entire_dir(c_string dir_path, Files* files)
             .name = temp_strdup(ent->d_name),
             .type = type,
         };
-        da_append(files, file);
+        // Skip hidden files and current path.
+        if (ent->d_name[0] == '.' && ent->d_name[1] != '.') {
+        } else {
+            da_append(files, file);
+        }
         ent = readdir(dir);
     }
 

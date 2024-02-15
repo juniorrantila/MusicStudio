@@ -71,12 +71,12 @@ bool Effect::resume()
     return dispatch(PluginOpcode::MainsChanged, 0, 1);
 }
 
-Rectangle Effect::editor_rectangle()
+Optional<Rectangle> Effect::editor_rectangle()
 {
     Rectangle* rectangle = nullptr;
     if (dispatch(PluginOpcode::GetEditorRectangle, 0, 0, &rectangle))
         return *rectangle;
-    return { 0, 0, 0, 0 };
+    return {};
 }
 
 bool Effect::open_editor(void* window)

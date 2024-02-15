@@ -119,7 +119,7 @@ struct Plugin {
         return vst->is_silent_when_stopped();
     }
 
-    Vst::Rectangle editor_rectangle() const
+    Optional<Vst::Rectangle> editor_rectangle() const
     {
         return vst->editor_rectangle();
     }

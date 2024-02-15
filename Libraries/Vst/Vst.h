@@ -1,10 +1,11 @@
 #pragma once
-#include "Vst/AEffect.h"
-#include "Vst/ChunkType.h"
-#include "Vst/KnobMode.h"
-#include "Vst/Precision.h"
 #include <Ty/Base.h>
+#include <Ty/Optional.h>
+#include <Vst/AEffect.h>
+#include <Vst/ChunkType.h>
+#include <Vst/KnobMode.h>
 #include <Vst/Opcodes.h>
+#include <Vst/Precision.h>
 
 #if _WIN32
 #    define VST_EXPORT __declspec(dllexport)
@@ -140,7 +141,7 @@ struct Effect
     [[nodiscard]] bool set_block_size(i32 value);
     [[nodiscard]] bool pause();
     [[nodiscard]] bool resume();
-    Rectangle editor_rectangle();
+    Optional<Rectangle> editor_rectangle();
     [[nodiscard]] bool open_editor(void* window);
     [[nodiscard]] bool close_editor();
     [[nodiscard]] bool editor_idle();

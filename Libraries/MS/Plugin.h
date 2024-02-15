@@ -17,6 +17,20 @@ struct Plugin {
     void destroy() const;
     bool is_valid() const { return plugin_library.is_valid() && vst && host; }
 
+    void process_f32(f32* const* outputs, f32 const* const* inputs, i32 samples) const
+    {
+        if (vst->process_f32) {
+            vst->process_f32(vst, inputs, outputs, samples);
+        } else {
+            vst->_process(vst, inputs, outputs, samples);
+        }
+    }
+
+    void process_f64(f64* const* outputs, f64 const* const* inputs, i32 samples) const
+    {
+        vst->process_f64(vst, inputs, outputs, samples);
+    }
+
     // FIXME: Cache this.
     Optional<StringView> name() const
     {

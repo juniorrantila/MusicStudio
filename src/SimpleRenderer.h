@@ -76,6 +76,21 @@ void simple_renderer_quad(SimpleRenderer*,
                           Vec2f p0, Vec2f p1, Vec2f p2, Vec2f p3,
                           Vec4f c0, Vec4f c1, Vec4f c2, Vec4f c3,
                           Vec2f uv0, Vec2f uv1, Vec2f uv2, Vec2f uv3);
+void simple_renderer_outline_rect(SimpleRenderer*, Vec2f p, Vec2f size, f32 outline_size, Vec4f fill_color, Vec4f outline_color);
+
+struct SimpleRendererOutlineRectEx {
+    Vec2f point;
+    Vec2f size;
+    f32 outline_size;
+    Vec4f fill_color = vec4fs(0);
+    Vec4f left_color = vec4fs(0);
+    Vec4f top_color = vec4fs(0);
+    Vec4f right_color = vec4fs(0);
+    Vec4f bottom_color = vec4fs(0);
+};
+void simple_renderer_outline_rect_ex_impl(SimpleRenderer*, SimpleRendererOutlineRectEx);
+#define simple_renderer_outline_rect_ex(sr, ...) simple_renderer_outline_rect_ex_impl(sr, { __VA_ARGS__ })
+
 void simple_renderer_solid_rect(SimpleRenderer*, Vec2f p, Vec2f s, Vec4f c);
 void simple_renderer_image_rect(SimpleRenderer*, Vec2f p, Vec2f s, Vec2f uvp, Vec2f uvs, Vec4f c);
 void simple_renderer_flush(SimpleRenderer*);

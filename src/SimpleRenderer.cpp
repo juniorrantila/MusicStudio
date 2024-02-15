@@ -302,6 +302,56 @@ void simple_renderer_solid_rect(SimpleRenderer *sr, Vec2f p, Vec2f s, Vec4f c)
         uv, uv, uv, uv);
 }
 
+void simple_renderer_outline_rect(SimpleRenderer* sr, Vec2f point, Vec2f size, f32 outline_width, Vec4f fill_color, Vec4f outline_color)
+{
+    Vec2f left = point;
+    Vec2f left_size = vec2f(outline_width, size.y);
+
+    Vec2f top = point + vec2f(0.0f, size.y) - vec2f(0.0f, outline_width);
+    Vec2f top_size = vec2f(size.x, outline_width);
+
+    Vec2f right = point + vec2f(size.x, 0.0f) - vec2f(outline_width, 0.0f);
+    Vec2f right_size = vec2f(outline_width, size.y);
+
+    Vec2f bottom = point;
+    Vec2f bottom_size = vec2f(size.x, outline_width);
+
+    Vec2f fill = point + vec2fs(outline_width);
+    Vec2f fill_size = size - vec2fs(2.0f * outline_width);
+
+    simple_renderer_solid_rect(sr, left,   left_size,   outline_color);
+    simple_renderer_solid_rect(sr, right,  right_size,  outline_color);
+    simple_renderer_solid_rect(sr, top,    top_size,    outline_color);
+    simple_renderer_solid_rect(sr, bottom, bottom_size, outline_color);
+    simple_renderer_solid_rect(sr, fill,   fill_size, fill_color);
+}
+
+void simple_renderer_outline_rect_ex_impl(SimpleRenderer* sr, SimpleRendererOutlineRectEx args)
+{
+    auto [point, size, outline_width, fill_color, left_color, top_color, right_color, bottom_color] = args;
+
+    Vec2f left = args.point;
+    Vec2f left_size = vec2f(outline_width, size.y);
+
+    Vec2f top = point + vec2f(0.0f, size.y) - vec2f(0.0f, outline_width);
+    Vec2f top_size = vec2f(size.x, outline_width);
+
+    Vec2f right = point + vec2f(size.x, 0.0f) - vec2f(outline_width, 0.0f);
+    Vec2f right_size = vec2f(outline_width, size.y);
+
+    Vec2f bottom = point;
+    Vec2f bottom_size = vec2f(size.x, outline_width);
+
+    Vec2f fill = point + vec2fs(outline_width);
+    Vec2f fill_size = size - vec2fs(2.0f * outline_width);
+
+    simple_renderer_solid_rect(sr, left,   left_size,   left_color);
+    simple_renderer_solid_rect(sr, top,    top_size,    top_color);
+    simple_renderer_solid_rect(sr, right,  right_size,  right_color);
+    simple_renderer_solid_rect(sr, bottom, bottom_size, bottom_color);
+    simple_renderer_solid_rect(sr, fill,   fill_size, fill_color);
+}
+
 void simple_renderer_sync(SimpleRenderer *sr)
 {
     glBufferSubData(GL_ARRAY_BUFFER,

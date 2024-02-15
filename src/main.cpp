@@ -189,14 +189,16 @@ ErrorOr<int> main(int argc, c_string argv[])
         .is_fullscreen = false,
         .window = window,
     };
+
+    Vec4f background_color = hex_to_vec4f(0x636A72FF);
+
     while (!context.quit) {
         const Uint32 start = SDL_GetTicks();
         sr.time = (f32) start / 1000.0f;
 
         handle_events(&context, &sr);
 
-        Vec4f bg = hex_to_vec4f(0x181818FF);
-        glClearColor(bg.x, bg.y, bg.z, bg.w);
+        glClearColor(background_color.x, background_color.y, background_color.z, background_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
         fb_render(&fb, window, &atlas, &sr);

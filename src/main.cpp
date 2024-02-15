@@ -281,7 +281,6 @@ ErrorOr<int> main(int argc, c_string argv[])
                    );
                 }
             }
-
             simple_renderer_flush(&sr);
 
             space.y = 0;
@@ -334,8 +333,8 @@ static void handle_events(Handle_Events *context, SimpleRenderer *sr)
             case SDL_WINDOWEVENT_MAXIMIZED:
             case SDL_WINDOWEVENT_SIZE_CHANGED:
             case SDL_WINDOWEVENT_RESIZED: {
-                int w = event.window.data1;
-                int h = event.window.data2;
+                int w, h;
+                SDL_GetWindowSize(context->window, &w, &h);
                 glViewport(0, 0, w, h);
 
                 sr->resolution = vec2f(w, h);

@@ -68,8 +68,9 @@ ErrorOr<int> main(int argc, c_string argv[])
     }
 
     // TODO: users should be able to customize the font
-    const char *const font_file_path = "./Fonts/VictorMono-Regular.ttf";
+    // const char *const font_file_path = "./Fonts/VictorMono-Regular.ttf";
     // const char *const font_file_path = "./Fonts/iosevka-regular.ttf";
+    const char *const font_file_path = "./Fonts/OxaniumLight/Oxanium-Light.ttf";
 
     FT_Face face;
     error = FT_New_Face(library, font_file_path, 0, &face);

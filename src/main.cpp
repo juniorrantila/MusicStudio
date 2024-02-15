@@ -173,6 +173,15 @@ ErrorOr<int> main(int argc, c_string argv[])
     }
 
     simple_renderer_init(&sr);
+    {
+        int w, h;
+        SDL_GetWindowSize(window, &w, &h);
+
+        sr.resolution = vec2f(w, h);
+        sr.camera_pos = sr.resolution / 2.0f;
+        sr.camera_scale = 1.0f;
+    }
+
     free_glyph_atlas_init(&atlas, face);
 
     Handle_Events context = (Handle_Events){
@@ -223,6 +232,9 @@ static void handle_events(Handle_Events *context, SimpleRenderer *sr)
                 int w = event.window.data1;
                 int h = event.window.data2;
                 glViewport(0, 0, w, h);
+
+                sr->resolution = vec2f(w, h);
+                sr->camera_pos = vec2f(w, h) / 2.0f;
             }
             break;
             }

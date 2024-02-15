@@ -107,6 +107,10 @@ iptr Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
     using enum Vst::HostOpcode;
     switch (opcode) {
     case Automate:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return host->automate_parameter(index, opt);
 
     case VstVersion:
@@ -116,6 +120,10 @@ iptr Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
         return host->current_shell_id();
 
     case Idle:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         host->idle();
         return 1;
 
@@ -123,13 +131,25 @@ iptr Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
         return 0;
 
     case _WantMidi:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return host->want_midi();
 
     case GetTime:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         host->update_time_info(index);
         return (iptr)&host->time_info;
 
     case ProcessEvents:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return host->process_events((Vst::Events*)ptr);
 
     case _SetTime:
@@ -145,24 +165,48 @@ iptr Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
         return 0;
 
     case IOChanged:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return host->io_changed();
 
     case _NeedIdle:
         return 0;
 
     case ResizeWindow:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return host->resize_window(index, value);
 
     case GetSampleRate:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return host->sample_rate;
 
     case GetBlockSize:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return host->block_size;
 
     case GetInputLatency:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return host->input_latency();
 
     case GetOutputLatency:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return host->output_latency();
 
     case _GetPreviousPlug:
@@ -175,28 +219,56 @@ iptr Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
         return 0;
 
     case GetCurrentProcessLevel:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return (iptr)host->current_process_level();
 
     case GetAutomationState:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return (iptr)host->automation_state();
 
     case OfflineStart:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return host->offline_start(index, value, (Vst::AudioFile*)ptr);
 
     case OfflineRead:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return host->offline_read(index, (Vst::OfflineOption*)value,
             (Vst::OfflineTask*)ptr);
 
     case OfflineWrite:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         // FIXME: Check if this is right.
         return host->offline_write();
 
     case OfflineGetCurrentPass:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         // FIXME: Check if this is right.
         host->current_offline_pass();
         return 0;
 
     case OfflineGetCurrentMetaPass:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         // FIXME: Check if this is right.
         host->current_offline_meta_pass();
         return 0;
@@ -208,6 +280,10 @@ iptr Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
         return 0;
 
     case GetAuthorName: {
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         auto name = host->author_name();
         auto store = (char*)ptr;
         strncpy(store, name.data(), name.size());
@@ -216,6 +292,10 @@ iptr Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
     }
 
     case GetHostName: {
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         auto name = host->host_name();
         auto store = (char*)ptr;
         strncpy(store, name.data(), name.size());
@@ -224,18 +304,34 @@ iptr Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
     }
 
     case GetVendorVersion:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return host->vendor_version().full;
 
     case VendorSpecific:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return host->vendor_specific(index, value, ptr, opt);
 
     case _SetIcon:
         return 0;
 
     case CanDo:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return host->can_do((char const*)ptr);
 
     case GetLanguage:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return (iptr)host->language();
 
     case _OpenWindow:
@@ -245,22 +341,46 @@ iptr Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
         return 0;
 
     case GetDirectory:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return (iptr)host->directory();
 
     case UpdateDisplay:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         host->update_display();
         return 1;
 
     case BeginEdit:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return host->begin_parameter_edit(index);
 
     case EndEdit:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return host->end_parameter_edit(index);
 
     case OpenFileSelector:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         return host->open_file_selector((Vst::FileSelect*)ptr);
 
     case CloseFileSelector:
+        if (host == nullptr) {
+            LOG("Plugin did not provide itself in dispatch, but it is needed");
+            return 0;
+        }
         host->close_file_selector((Vst::FileSelect*)ptr);
         return 1;
 

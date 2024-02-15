@@ -191,6 +191,8 @@ ErrorOr<int> main(int argc, c_string argv[])
     };
     while (!context.quit) {
         const Uint32 start = SDL_GetTicks();
+        sr.time = (f32) start / 1000.0f;
+
         handle_events(&context, &sr);
 
         Vec4f bg = hex_to_vec4f(0x181818FF);

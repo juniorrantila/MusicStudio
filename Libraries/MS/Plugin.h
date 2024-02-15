@@ -143,18 +143,14 @@ struct Plugin {
         return {};
     }
 
-    ErrorOr<void> pause() const
+    [[nodiscard]] bool pause() const
     {
-        if (!vst->pause())
-            return Error::from_string_literal("could not pause plugin");
-        return {};
+        return vst->pause();
     }
 
-    ErrorOr<void> resume() const
+    [[nodiscard]] bool resume() const
     {
-        if (!vst->resume())
-            return Error::from_string_literal("could not resume plugin");
-        return {};
+        return vst->resume();
     }
 
 private:

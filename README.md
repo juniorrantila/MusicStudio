@@ -2,6 +2,8 @@
 
 **MusicStudio** is a digital audio workstation.
 
+![MusicStudio](Res/MusicStudio.png)
+
 ## Build instructions
 
 ### Prerequisites:

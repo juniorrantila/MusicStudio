@@ -18,6 +18,7 @@ add_global_arguments([
   '-Wno-gnu-anonymous-struct',
   '-Wno-gnu-case-range',
   '-Wno-gnu-conditional-omitted-operand',
+  '-Wno-gnu-designator',
   '-Wno-gnu-statement-expression-from-macro-expansion',
   '-Wno-gnu-zero-variadic-macro-arguments',
   '-Wno-keyword-macro',

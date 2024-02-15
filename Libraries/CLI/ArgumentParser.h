@@ -74,6 +74,13 @@ private:
 using ArgumentParserResult = ErrorOr<void, ArgumentParserError>;
 
 struct ArgumentParser {
+    ArgumentParser()
+    {
+        MUST(add_flag("--help"sv, "-h"sv, "show this message"sv, [this] {
+            this->print_usage_and_exit(nullptr);
+        }));
+    }
+
     ErrorOr<void> add_flag(StringView long_name,
         StringView short_name, StringView explanation,
         SmallCapture<void()>&& callback)
@@ -122,6 +129,7 @@ struct ArgumentParser {
         int exit_code = 0) const;
 
 private:
+    mutable c_string* m_argv { nullptr };
     struct Flag {
         StringView long_name;
         StringView short_name;

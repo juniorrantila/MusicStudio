@@ -22,6 +22,7 @@ ErrorOr<void> ArgumentParserError::show() const
 ArgumentParserResult ArgumentParser::run(int argc,
     c_string argv[]) const
 {
+    m_argv = argv;
     auto err_out = StringBuffer();
 
     c_string program_name = argv[0];
@@ -112,7 +113,7 @@ void ArgumentParser::print_usage_and_exit(c_string program_name,
     auto& out = exit_code != 0 ? Core::File::stderr()
                                : Core::File::stdout();
     auto program_name_view
-        = StringView::from_c_string(program_name);
+        = StringView::from_c_string(program_name ?: m_argv[0]);
     out.write("USAGE: "sv, program_name_view, " [flags|options] "sv)
         .ignore();
     for (auto positional_argument : positional_placeholders)

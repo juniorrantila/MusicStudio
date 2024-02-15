@@ -192,6 +192,17 @@ ErrorOr<int> main(int argc, c_string argv[])
 
     Vec4f background_color = hex_to_vec4f(0x636A72FF);
 
+    Vec4f file_browser_color = hex_to_vec4f(0x161F24FF);
+    Vec4f file_browser_border_color = hex_to_vec4f(0x434C51FF);
+
+    Vec4f toolbar_color = hex_to_vec4f(0x596267FF);
+    Vec4f toolbar_border_color = hex_to_vec4f(0x495257FF);
+
+    Vec4f info_bar_color = hex_to_vec4f(0x596267FF);
+    Vec4f info_bar_border_color = hex_to_vec4f(0x495257FF);
+
+    f32 border_size = 2.0f;
+
     while (!context.quit) {
         const Uint32 start = SDL_GetTicks();
         sr.time = (f32) start / 1000.0f;
@@ -201,7 +212,97 @@ ErrorOr<int> main(int argc, c_string argv[])
         glClearColor(background_color.x, background_color.y, background_color.z, background_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        fb_render(&fb, window, &atlas, &sr);
+        Vec2f space = sr.resolution;
+
+        // Toolbar
+        simple_renderer_set_shader(&sr, SHADER_FOR_COLOR);
+        {
+            Vec2f toolbar_size = vec2f(space.x, 48.0f);
+            simple_renderer_outline_rect_ex(&sr,
+                point: vec2f(0.0f, (space.y - toolbar_size.y)),
+                size: toolbar_size,
+                outline_size: border_size,
+                fill_color: toolbar_color,
+                left_color: toolbar_color,
+                top_color: toolbar_color,
+                right_color: toolbar_color,
+                bottom_color: toolbar_border_color,
+            );
+            space.y -= toolbar_size.y;
+        }
+        simple_renderer_flush(&sr);
+
+        // File browser
+        simple_renderer_set_shader(&sr, SHADER_FOR_COLOR);
+        {
+            simple_renderer_outline_rect_ex(&sr,
+                point: vec2fs(0.0f),
+                size: vec2f(200.0f, space.y),
+                outline_size: border_size,
+                fill_color: file_browser_color,
+                left_color: file_browser_color,
+                top_color: file_browser_color,
+                right_color: file_browser_border_color,
+                bottom_color: file_browser_color,
+            );
+
+            // Indent
+            f32 indent_size = 8.0f;
+            simple_renderer_solid_rect(&sr, vec2fs(0.0f), vec2f(indent_size, space.y), hex_to_vec4f(0x2A3338FF));
+
+            simple_renderer_set_shader(&sr, SHADER_FOR_COLOR);
+            if (fb.cursor < fb.files.count) {
+                const Vec2f begin = vec2f(indent_size + 2.0f, space.y -((f32)fb.cursor + CURSOR_OFFSET + 1) * FREE_GLYPH_FONT_SIZE);
+                Vec2f end = begin;
+                c_string file_name = fb.files.items[fb.cursor].name;
+                free_glyph_atlas_measure_line_sized(&atlas, file_name, strlen(file_name), &end);
+                if (fb.files.items[fb.cursor].type == FT_DIRECTORY) {
+                    free_glyph_atlas_measure_line_sized(&atlas, "/", 1, &end);
+                }
+                simple_renderer_solid_rect(&sr,
+                    begin,
+                    vec2f(end.x - begin.x, FREE_GLYPH_FONT_SIZE),
+                    vec4f(1.0f, 1.0f, 1.0f, 0.25f)
+                );
+            }
+            simple_renderer_flush(&sr);
+
+            simple_renderer_set_shader(&sr, SHADER_FOR_TEXT);
+            for (usize row = 0; row < fb.files.count; ++row) {
+                const Vec2f begin = vec2f(indent_size + 2.0f, space.y - ((f32)row + 1) * FREE_GLYPH_FONT_SIZE);
+                Vec2f end = begin;
+                c_string file_name = fb.files.items[row].name;
+                free_glyph_atlas_render_line_sized(&atlas, &sr, file_name, strlen(file_name), &end,
+                   hex_to_vec4f(0x95A99FFF)
+                );
+                if (fb.files.items[row].type == FT_DIRECTORY) {
+                    free_glyph_atlas_render_line_sized(&atlas, &sr, "/", 1, &end,
+                       hex_to_vec4f(0x95A99FFF)
+                   );
+                }
+            }
+
+            simple_renderer_flush(&sr);
+
+            space.y = 0;
+        }
+        simple_renderer_flush(&sr);
+
+        // Info bar
+        simple_renderer_set_shader(&sr, SHADER_FOR_COLOR);
+        {
+            simple_renderer_outline_rect_ex(&sr,
+                point: vec2fs(0),
+                size: vec2f(space.x, 32.0f),
+                outline_size: border_size,
+                fill_color: info_bar_color,
+                left_color: info_bar_color,
+                top_color: info_bar_border_color,
+                right_color: info_bar_color,
+                bottom_color: info_bar_color,
+            );
+        }
+        simple_renderer_flush(&sr);
 
         SDL_GL_SwapWindow(window);
 

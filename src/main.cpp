@@ -48,7 +48,7 @@ static SimpleRenderer sr = {};
 static FileBrowser fb = {};
 
 // TODO: display errors reported via flash_error right in the editor window somehow
-#define flash_error(fmt, ...) do { fprintf(stderr, fmt "\n", __VA_ARGS__); fprintf(stderr, "\n"); } while(0)
+#define flash_error(fmt, ...) do { fprintf(stderr, "ERROR: " fmt "\n", ## __VA_ARGS__); } while(0)
 
 typedef struct {
     bool quit;

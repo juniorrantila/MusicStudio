@@ -34,3 +34,21 @@ executable('vst-run-gui', [
     main_dep,
     ui_dep,
   ])
+
+executable('make-project', [
+  'make-project.cpp',
+  ], dependencies: [
+    littlefs_dep,
+    ty_dep,
+    main_dep,
+    cli_dep,
+  ])
+
+executable('read-project', [
+  'read-project.cpp',
+  ], dependencies: [
+    littlefs_dep,
+    ty_dep,
+    main_dep,
+    cli_dep,
+  ])

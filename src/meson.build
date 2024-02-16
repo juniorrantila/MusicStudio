@@ -10,4 +10,7 @@ executable('music-studio', [
     ty_dep,
     main_dep,
     rexim_dep,
+    ui_dep,
+    vst_dep,
+    ms_dep,
   ])

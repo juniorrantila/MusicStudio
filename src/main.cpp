@@ -2,12 +2,16 @@
 #include "./FileBrowser.h"
 #include "./FreeGlyph.h"
 #include "./SimpleRenderer.h"
+#include <Vst/Rectangle.h>
 
 #include <Main/Main.h>
 
 #include <Rexim/StringView.h>
 #include <Rexim/LA.h>
 #include <Rexim/Util.h>
+
+#include <UI/Window.h>
+#include <MS/Plugin.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -89,6 +93,7 @@ ErrorOr<int> main(int argc, c_string argv[])
         return 1;
     }
 
+    auto plugin = Optional<MS::Plugin>{};
     if (argc > 1) {
         const char *file_path = argv[1];
         const char *dir_path = ".";
@@ -101,7 +106,13 @@ ErrorOr<int> main(int argc, c_string argv[])
         }
         switch (file_type) {
             case FT_REGULAR:
-                assert(false && "loading files is not implemented");
+                if (auto result = MS::Plugin::create_from(file_path); result.is_error()) {
+                    fprintf(stderr, "ERROR: Could not load plugin '%s'\n", file_path);
+                } else {
+                    plugin = result.release_value();
+                }
+                file_path = ".";
+                break;
 
             case FT_DIRECTORY:
                 dir_path = file_path;
@@ -184,11 +195,15 @@ ErrorOr<int> main(int argc, c_string argv[])
 
     free_glyph_atlas_init(&atlas, face);
 
-    Handle_Events context = (Handle_Events){
-        .quit = false,
-        .is_fullscreen = false,
-        .window = window,
-    };
+    auto plugin_window = Optional<UI::Window>();
+    if (plugin && plugin->has_editor()) {
+        auto rect = plugin->editor_rectangle().or_else(Vst::Rectangle{0, 0, 800, 600});
+        plugin_window = TRY(UI::Window::create(plugin->name().or_else(""sv), rect.x, rect.y, rect.width, rect.height));
+        if (!plugin->open_editor(plugin_window->native_handle())) {
+            auto name = plugin->name().or_else("<noname>"sv);
+            fprintf(stderr, "ERROR: Could not open editor for plugin: '%.*s'\n", name.size(), name.data());
+        }
+    }
 
     Vec4f background_color = hex_to_vec4f(0x636A72FF);
 
@@ -203,6 +218,11 @@ ErrorOr<int> main(int argc, c_string argv[])
 
     f32 border_size = 2.0f;
 
+    Handle_Events context = (Handle_Events){
+        .quit = false,
+        .is_fullscreen = false,
+        .window = window,
+    };
     while (!context.quit) {
         const Uint32 start = SDL_GetTicks();
         sr.time = (f32) start / 1000.0f;
@@ -400,7 +420,24 @@ static void handle_events_browse_mode(SDL_Event event)
                     break;
 
                     case FT_REGULAR: {
-                        assert(false && "loading files is not implemented");
+                        if (auto result = MS::Plugin::create_from(file_path); result.is_error()) {
+                            flash_error("Could not load plugin '%s'", file_path);
+                        } else {
+                            auto plugin = result.release_value();
+                            if (plugin.has_editor()) {
+                                auto rect = plugin.editor_rectangle().or_else(Vst::Rectangle{0, 0, 800, 600});
+                                if (auto result = UI::Window::create(plugin.name().or_else(""sv), rect.x, rect.y, rect.width, rect.height); result.is_error()) {
+                                    auto message = result.error().message();
+                                    flash_error("Could not open plugin editor: %.*s", message.size(), message.data());
+                                } else {
+                                    auto plugin_window = result.release_value();
+                                    if (!plugin.open_editor(plugin_window.native_handle())) {
+                                        auto name = plugin.name().or_else("<noname>"sv);
+                                        fprintf(stderr, "ERROR: Could not open editor for plugin: '%.*s'\n", name.size(), name.data());
+                                    }
+                                }
+                            }
+                        }
                     }
                     break;
 

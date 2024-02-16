@@ -26,15 +26,11 @@ executable('list-devices', [
     cli_dep,
   ])
 
-if target_machine.system() == 'darwin'
-  add_languages('objcpp')
-  cocoa_dep = dependency('cocoa')
-  executable('vst-run-gui', [
-      'vst-run-gui.mm',
-    ], dependencies: [
-      cocoa_dep,
-      ms_dep,
-      cli_dep,
-      main_dep,
-    ])
-endif
+executable('vst-run-gui', [
+    'vst-run-gui.cpp',
+  ], dependencies: [
+    ms_dep,
+    cli_dep,
+    main_dep,
+    ui_dep,
+  ])

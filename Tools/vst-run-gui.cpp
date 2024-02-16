@@ -1,4 +1,3 @@
-#include <AppKit/AppKit.h>
 #include <CLI/ArgumentParser.h>
 #include <MS/Plugin.h>
 #include <Ty/Defer.h>
@@ -6,10 +5,9 @@
 #include <Ty/ErrorOr.h>
 #include <Vst/Rectangle.h>
 #include <Vst/Vst.h>
+#include <UI/Window.h>
 
 #include <stdio.h>
-
-#import <Cocoa/Cocoa.h>
 
 namespace Main {
 
@@ -60,20 +58,14 @@ ErrorOr<int> main(int argc, char const* argv[])
     printf("  Silent stopped: %s\n", plugin.is_silent_when_stopped() ? "yes" : "no");
     printf("----------------------------------\n\n");
 
-    auto plugin_name_terminated = TRY(StringBuffer::create_fill(plugin_name, "\0"sv));
     auto rect = plugin.editor_rectangle().or_else(Vst::Rectangle{ 0, 0, 800, 600 });
-
-    [NSApplication sharedApplication];
-    auto* win = [[NSWindow alloc] initWithContentRect: NSMakeRect(rect.x, rect.y, rect.width, rect.height)
-                                            styleMask: NSWindowStyleMaskTitled|NSWindowStyleMaskClosable
-                                              backing: NSBackingStoreBuffered
-                                                defer: YES];
-    if (!plugin.open_editor(win.contentView)) {
+    auto window = TRY(UI::Window::create(plugin_name, rect.x, rect.y, rect.width, rect.height));
+    if (!plugin.open_editor(window.native_handle())) {
         return Error::from_string_literal("could not open editor");
     }
 
-    [win makeKeyAndOrderFront: win];
-    [NSApp run];
+    window.show();
+    window.run();
 
     return 0;
 }

@@ -6,8 +6,8 @@
 namespace Core {
 
 struct MappedFile {
-    char const* m_data;
-    u32 m_size;
+    u8* m_data;
+    u64 m_size;
     int m_fd;
 
     MappedFile(MappedFile&& other)
@@ -35,13 +35,16 @@ struct MappedFile {
     static ErrorOr<MappedFile> open(c_string path);
     ~MappedFile();
 
-    StringView view() const { return StringView(m_data, m_size); }
+    StringView view() const { return StringView((char*)m_data, m_size); }
+
+    u8* data() const { return m_data; }
+    u64 size() const { return m_size; }
 
     bool is_valid() const { return m_data != nullptr; }
     void invalidate() { m_data = nullptr; }
 
 private:
-    constexpr MappedFile(c_string data, u32 size, int fd)
+    constexpr MappedFile(u8* data, u32 size, int fd)
         : m_data(data)
         , m_size(size)
         , m_fd(fd)

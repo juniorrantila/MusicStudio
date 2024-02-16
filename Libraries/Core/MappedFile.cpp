@@ -26,7 +26,7 @@ ErrorOr<MappedFile> MappedFile::open(c_string path)
     auto* data = TRY(System::mmap(size, PROT_READ | PROT_WRITE,
         MAP_PRIVATE, fd));
     should_close_file = false;
-    return MappedFile((c_string)data, size, fd);
+    return MappedFile(data, size, fd);
 }
 
 MappedFile::~MappedFile()

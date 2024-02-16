@@ -4,15 +4,22 @@
 
 namespace Core {
 
-ErrorOr<MappedFile> MappedFile::open(StringView path)
+ErrorOr<MappedFile> MappedFile::open(StringView path, Mode mode)
 {
     auto path_buffer = TRY(StringBuffer::create_fill(path, "\0"sv));
-    return TRY(open(path_buffer.view().data()));
+    return TRY(open(path_buffer.view().data(), mode));
 }
 
-ErrorOr<MappedFile> MappedFile::open(c_string path)
+ErrorOr<MappedFile> MappedFile::open(c_string path, Mode mode)
 {
-    auto fd = TRY(System::open(path, O_RDONLY));
+    int m = 0;
+    switch(mode) {
+        case ModeRead: m = O_RDONLY; break;
+        case ModeWrite: m = O_WRONLY; break;
+        case ModeReadWrite: m = O_RDWR; break;
+    }
+
+    auto fd = TRY(System::open(path, m));
     auto should_close_file = true;
     Defer close_file = [&] {
         if (should_close_file)
@@ -23,8 +30,7 @@ ErrorOr<MappedFile> MappedFile::open(c_string path)
         return Error::from_string_literal(
             "file is not a regular file");
     u32 size = file_stat.size();
-    auto* data = TRY(System::mmap(size, PROT_READ | PROT_WRITE,
-        MAP_PRIVATE, fd));
+    auto* data = TRY(System::mmap(size, PROT_READ | PROT_WRITE, mode == ModeRead ? MAP_PRIVATE : MAP_SHARED, fd));
     should_close_file = false;
     return MappedFile(data, size, fd);
 }

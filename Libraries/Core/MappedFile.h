@@ -6,6 +6,12 @@
 namespace Core {
 
 struct MappedFile {
+    enum Mode {
+        ModeRead,
+        ModeWrite,
+        ModeReadWrite,
+    };
+
     u8* m_data;
     u64 m_size;
     int m_fd;
@@ -31,8 +37,8 @@ struct MappedFile {
         return *this;
     }
 
-    static ErrorOr<MappedFile> open(StringView path);
-    static ErrorOr<MappedFile> open(c_string path);
+    static ErrorOr<MappedFile> open(StringView path, Mode mode = ModeRead);
+    static ErrorOr<MappedFile> open(c_string path, Mode mode = ModeRead);
     ~MappedFile();
 
     StringView view() const { return StringView((char*)m_data, m_size); }

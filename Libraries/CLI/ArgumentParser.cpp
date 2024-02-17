@@ -114,8 +114,14 @@ void ArgumentParser::print_usage_and_exit(c_string program_name,
                                : Core::File::stdout();
     auto program_name_view
         = StringView::from_c_string(program_name ?: m_argv[0]);
-    out.write("USAGE: "sv, program_name_view, " [flags|options] "sv)
-        .ignore();
+    out.write("USAGE: "sv, program_name_view, " "sv).ignore();
+    if (options.is_empty()) {
+        out.write("[flags] "sv)
+            .ignore();
+    } else {
+        out.write("[flags|options] "sv)
+            .ignore();
+    }
     for (auto positional_argument : positional_placeholders)
         out.write(positional_argument, " "sv).ignore();
     out.write("\n\n"sv).ignore();
@@ -128,17 +134,20 @@ void ArgumentParser::print_usage_and_exit(c_string program_name,
             out.write(" "sv).ignore();
         out.writeln(flag.explanation).ignore();
     }
-    out.writeln("\nOPTIONS:"sv).ignore();
-    for (auto option : options) {
-        auto pad = option.short_name.size() == 2 ? " "sv : ""sv;
-        auto bytes = MUST(out.write("        "sv, option.short_name,
-            ", "sv, pad, option.long_name, "  <"sv,
-            option.placeholder, "> "sv));
-        for (; bytes < 40; bytes++)
-            out.write(" "sv).ignore();
-        out.writeln(option.explanation).ignore();
-    }
     out.writeln().ignore();
+    if (!options.is_empty()) {
+        out.writeln("OPTIONS:"sv).ignore();
+        for (auto option : options) {
+            auto pad = option.short_name.size() == 2 ? " "sv : ""sv;
+            auto bytes = MUST(out.write("        "sv, option.short_name,
+                ", "sv, pad, option.long_name, "  <"sv,
+                option.placeholder, "> "sv));
+            for (; bytes < 40; bytes++)
+                out.write(" "sv).ignore();
+            out.writeln(option.explanation).ignore();
+        }
+        out.writeln().ignore();
+    }
     out.flush().ignore();
 
     Core::System::exit(exit_code);

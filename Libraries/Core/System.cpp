@@ -139,7 +139,7 @@ ErrorOr<usize> write(int fd, StringView string)
 
 ErrorOr<usize> write(int fd, MappedFile const& file)
 {
-    return TRY(write(fd, file.m_data, file.m_size));
+    return TRY(write(fd, file.data(), file.size()));
 }
 
 ErrorOr<usize> write(int fd, StringBuffer const& string)

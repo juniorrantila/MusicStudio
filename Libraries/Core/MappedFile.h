@@ -12,10 +12,6 @@ struct MappedFile {
         ModeReadWrite,
     };
 
-    u8* m_data;
-    u64 m_size;
-    int m_fd;
-
     MappedFile(MappedFile&& other)
         : m_data(other.m_data)
         , m_size(other.m_size)
@@ -58,6 +54,10 @@ private:
     }
 
     constexpr MappedFile() = default;
+
+    u8* m_data;
+    u64 m_size;
+    int m_fd;
 };
 
 }

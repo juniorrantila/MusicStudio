@@ -108,6 +108,29 @@ Button UI::button(Vec4f box, StringView file, u32 line)
     };
 }
 
+Tab UI::tab(Vec4f box, StringView, u32)
+{
+    bool hovered = false;
+    bool action = false;
+    if (m_mouse_pos.x >= box.x && m_mouse_pos.x <= box.x + box.width) {
+        if (m_mouse_pos.y >= box.y && m_mouse_pos.y < box.y + box.height) {
+            if (m_active_id == -1 ) {
+                if (m_mouse_left_down) {
+                    action = true;
+                }
+            }
+            hovered = true;
+        }
+    }
+
+    return {
+        .ui = *this,
+        .box = box,
+        .hovered = hovered,
+        .action = action,
+    };
+}
+
 void UI::fill_rect(Vec4f box, Vec4f color)
 {
     m_renderer->set_shader(SHADER_FOR_COLOR);

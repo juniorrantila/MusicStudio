@@ -8,6 +8,7 @@
 namespace UI {
 
 struct Button;
+struct Tab;
 struct UI {
     UI(SimpleRenderer* sr, FreeGlyphAtlas* atlas);
 
@@ -51,6 +52,7 @@ struct UI {
     void clear(Vec4f color) const;
 
     Button button(Vec4f box, StringView file = __builtin_FILE(), u32 line = __builtin_LINE());
+    Tab tab(Vec4f box, StringView file = __builtin_FILE(), u32 line = __builtin_LINE());
 
     void fill_rect(Vec4f box, Vec4f color);
 
@@ -106,11 +108,22 @@ struct Button {
     Vec4f box;
 
     bool hovered : 1;
-    bool preaction : 1;
+    bool pressed : 1;
     bool action : 1;
 
     void fill_rect(Vec4f color) const;
 };
 inline void Button::fill_rect(Vec4f color) const { ui.fill_rect(box, color); }
+
+struct Tab {
+    UI& ui;
+    Vec4f box;
+
+    bool hovered : 1;
+    bool action : 1;
+
+    void fill_rect(Vec4f color) const;
+};
+inline void Tab::fill_rect(Vec4f color) const { ui.fill_rect(box, color); }
 
 }

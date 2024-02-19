@@ -32,6 +32,8 @@ struct View;
 
 struct Json;
 
+struct Hash;
+
 }
 
 using Ty::StringBuffer;
@@ -54,3 +56,5 @@ using Ty::SmallCapture;
 using Ty::View;
 
 using Ty::Json;
+
+using Ty::Hash;

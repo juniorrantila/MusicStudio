@@ -2,6 +2,8 @@
 #include "./FreeGlyph.h"
 #include "./SimpleRenderer.h"
 
+#include <Ty/Hash.h>
+
 #include <SDL2/SDL.h>
 
 namespace UI {
@@ -19,7 +21,7 @@ UI::~UI()
         destroy();
         invalidate();
     }
-} 
+}
 
 void UI::destroy()
 {
@@ -66,26 +68,43 @@ void UI::set_cursor(i32 kind)
     }
 }
 
-Button UI::button(Vec4f box, c_string, u32)
+Button UI::button(Vec4f box, StringView file, u32 line)
 {
-    // u32 uid = m_uid++;
+    i64 uid = Hash()
+        .djbd(m_uid++)
+        .djbd(file.data(), file.size())
+        .djbd(line)
+        .hash();
 
-    bool clicked = false;
+    bool pressed = m_active_id == (i64)uid;
     bool hovered = false;
+    bool action = false;
     if (m_mouse_pos.x >= box.x && m_mouse_pos.x <= box.x + box.width) {
         if (m_mouse_pos.y >= box.y && m_mouse_pos.y < box.y + box.height) {
-            if (m_mouse_left_down) {
-                clicked = true;
+            if (m_active_id == -1) {
+                if (m_mouse_left_down) {
+                    pressed = true;
+                    m_active_id = uid;
+                }
+            }
+            if (pressed && !m_mouse_left_down) {
+                action = true;
+                m_active_id = -1;
             }
             hovered = true;
+        } else if (m_active_id != -1 && !m_mouse_left_down) {
+            m_active_id = -1;
         }
+    } else if (m_active_id != -1 && !m_mouse_left_down) {
+        m_active_id = -1;
     }
 
     return {
         .ui = *this,
         .box = box,
         .hovered = hovered,
-        .clicked = clicked,
+        .pressed = pressed,
+        .action = action,
     };
 }
 

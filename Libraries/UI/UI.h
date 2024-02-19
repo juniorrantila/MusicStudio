@@ -50,7 +50,7 @@ struct UI {
 
     void clear(Vec4f color) const;
 
-    Button button(Vec4f box, c_string file = __builtin_FILE(), u32 line = __builtin_LINE());
+    Button button(Vec4f box, StringView file = __builtin_FILE(), u32 line = __builtin_LINE());
 
     void fill_rect(Vec4f box, Vec4f color);
 
@@ -81,12 +81,12 @@ private:
     void invalidate() { }
     void destroy();
 
-    u32 m_uid { 0 };
+    u64 m_uid { 0 };
 
     SimpleRenderer* m_renderer { nullptr };
     FreeGlyphAtlas* m_atlas { nullptr };
 
-    u64 m_active_id { 0 };
+    i64 m_active_id { 0 };
 
     Vec2f m_last_mouse_pos { 0.0f, 0.0f };
     Vec2f m_mouse_pos { 0.0f, 0.0f };
@@ -106,7 +106,8 @@ struct Button {
     Vec4f box;
 
     bool hovered : 1;
-    bool clicked : 1;
+    bool preaction : 1;
+    bool action : 1;
 
     void fill_rect(Vec4f color) const;
 };

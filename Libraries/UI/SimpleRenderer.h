@@ -6,6 +6,8 @@
 
 #include <Rexim/LA.h>
 
+namespace UI {
+
 enum UniformSlot {
     UNIFORM_SLOT_TIME = 0,
     UNIFORM_SLOT_RESOLUTION,
@@ -96,3 +98,5 @@ void simple_renderer_image_rect(SimpleRenderer*, Vec2f p, Vec2f s, Vec2f uvp, Ve
 void simple_renderer_flush(SimpleRenderer*);
 void simple_renderer_sync(SimpleRenderer*);
 void simple_renderer_draw(SimpleRenderer*);
+
+}

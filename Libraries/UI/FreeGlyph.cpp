@@ -3,6 +3,8 @@
 
 #include <assert.h>
 
+namespace UI {
+
 void free_glyph_atlas_init(FreeGlyphAtlas *atlas, FT_Face face)
 {
     // TODO: Introduction of SDF font slowed down the start up time
@@ -136,4 +138,6 @@ void free_glyph_atlas_render_line_sized(FreeGlyphAtlas *atlas, SimpleRenderer *s
             vec2f(metric.bw / (f32) atlas->atlas_width, metric.bh / (f32) atlas->atlas_height),
             color);
     }
+}
+
 }

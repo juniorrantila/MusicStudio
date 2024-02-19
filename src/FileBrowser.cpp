@@ -1,7 +1,8 @@
 #include "./FileBrowser.h"
-#include "./FreeGlyph.h"
-#include "./SimpleRenderer.h"
 #include "./Common.h"
+
+#include <UI/FreeGlyph.h>
+#include <UI/SimpleRenderer.h>
 
 #include <Rexim/Util.h>
 #include <Rexim/StringView.h>
@@ -136,7 +137,7 @@ Errno fb_change_dir(FileBrowser *fb)
     return 0;
 }
 
-void fb_render(const FileBrowser *fb, SDL_Window *window, FreeGlyphAtlas *atlas, SimpleRenderer *sr)
+void fb_render(const FileBrowser *fb, SDL_Window *window, UI::FreeGlyphAtlas *atlas, UI::SimpleRenderer *sr)
 {
     Vec2f cursor_pos = vec2f(0, -(f32)fb->cursor * FREE_GLYPH_FONT_SIZE);
 
@@ -148,7 +149,7 @@ void fb_render(const FileBrowser *fb, SDL_Window *window, FreeGlyphAtlas *atlas,
     sr->resolution = vec2f(w, h);
     sr->time = (f32) SDL_GetTicks() / 1000.0f;
 
-    simple_renderer_set_shader(sr, SHADER_FOR_COLOR);
+    UI::simple_renderer_set_shader(sr, UI::SHADER_FOR_COLOR);
     if (fb->cursor < fb->files.count) {
         const Vec2f begin = vec2f(0, -((f32)fb->cursor + CURSOR_OFFSET) * FREE_GLYPH_FONT_SIZE);
         Vec2f end = begin;
@@ -162,7 +163,7 @@ void fb_render(const FileBrowser *fb, SDL_Window *window, FreeGlyphAtlas *atlas,
     }
     simple_renderer_flush(sr);
 
-    simple_renderer_set_shader(sr, SHADER_FOR_EPICNESS);
+    UI::simple_renderer_set_shader(sr, UI::SHADER_FOR_EPICNESS);
     for (usize row = 0; row < fb->files.count; ++row) {
         const Vec2f begin = vec2f(0, -(f32)row * FREE_GLYPH_FONT_SIZE);
         Vec2f end = begin;

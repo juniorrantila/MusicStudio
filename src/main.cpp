@@ -1,7 +1,5 @@
 #include "./Common.h"
 #include "./FileBrowser.h"
-#include "./FreeGlyph.h"
-#include "./SimpleRenderer.h"
 #include <Vst/Rectangle.h>
 
 #include <Main/Main.h>
@@ -11,6 +9,9 @@
 #include <Rexim/Util.h>
 
 #include <UI/Window.h>
+#include <UI/FreeGlyph.h>
+#include <UI/SimpleRenderer.h>
+
 #include <MS/Plugin.h>
 
 #include <stdio.h>
@@ -43,8 +44,8 @@ void MessageCallback(GLenum source,
             type, severity, message);
 }
 
-static FreeGlyphAtlas atlas = {};
-static SimpleRenderer sr = {};
+static UI::FreeGlyphAtlas atlas = {};
+static UI::SimpleRenderer sr = {};
 static FileBrowser fb = {};
 
 // TODO: display errors reported via flash_error right in the editor window somehow
@@ -55,11 +56,9 @@ typedef struct {
     bool is_fullscreen;
     SDL_Window* window;
 } Handle_Events;
-static void handle_events(Handle_Events*, SimpleRenderer*);
+static void handle_events(Handle_Events*, UI::SimpleRenderer*);
 
-namespace Main {
-
-ErrorOr<int> main(int argc, c_string argv[])
+ErrorOr<int> Main::main(int argc, c_string argv[])
 {
     Errno err;
 
@@ -338,7 +337,7 @@ ErrorOr<int> main(int argc, c_string argv[])
 }
 
 static void handle_events_browse_mode(SDL_Event);
-static void handle_events(Handle_Events *context, SimpleRenderer *sr)
+static void handle_events(Handle_Events *context, UI::SimpleRenderer *sr)
 {
     SDL_Event event = {0};
     while (SDL_PollEvent(&event)) {

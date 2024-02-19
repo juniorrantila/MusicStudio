@@ -15,6 +15,8 @@
 
 // https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Text_Rendering_02
 
+namespace UI {
+
 struct GlyphMetric {
     f32 ax; // advance.x
     f32 ay; // advance.y
@@ -41,3 +43,5 @@ void free_glyph_atlas_init(FreeGlyphAtlas* atlas, FT_Face face);
 f32 free_glyph_atlas_cursor_pos(FreeGlyphAtlas const* atlas, c_string text, usize text_size, Vec2f pos, usize col);
 void free_glyph_atlas_measure_line_sized(FreeGlyphAtlas *atlas, c_string text, usize text_size, Vec2f *pos);
 void free_glyph_atlas_render_line_sized(FreeGlyphAtlas *atlas, SimpleRenderer *sr, c_string text, usize text_size, Vec2f *pos, Vec4f color);
+
+}

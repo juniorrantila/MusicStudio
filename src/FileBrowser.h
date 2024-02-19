@@ -1,5 +1,5 @@
 #pragma once
-#include "./Forward.h"
+#include <UI/Forward.h>
 
 #include <Rexim/File.h>
 
@@ -13,5 +13,5 @@ struct FileBrowser {
 
 Errno fb_open_dir(FileBrowser* fb, c_string dir_path);
 Errno fb_change_dir(FileBrowser* fb);
-void fb_render(FileBrowser const* fb, SDL_Window* window, FreeGlyphAtlas* atlas, SimpleRenderer* sr);
+void fb_render(FileBrowser const* fb, SDL_Window* window, UI::FreeGlyphAtlas* atlas, UI::SimpleRenderer* sr);
 c_string fb_file_path(FileBrowser* fb);

@@ -1,7 +1,5 @@
 executable('music-studio', [
     'FileBrowser.cpp',
-    'FreeGlyph.cpp',
-    'SimpleRenderer.cpp',
     'main.cpp',
   ], dependencies: [
     freetype2_dep,

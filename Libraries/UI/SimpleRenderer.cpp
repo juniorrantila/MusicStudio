@@ -1,5 +1,4 @@
 #include "./SimpleRenderer.h"
-#include "./Common.h"
 
 #include <Rexim/Util.h>
 #include <Rexim/StringBuilder.h>
@@ -9,6 +8,8 @@
 #include <string.h>
 
 #define vert_shader_file_path "./Shaders/simple.vert"
+
+namespace UI {
 
 static_assert(COUNT_SIMPLE_SHADERS == 4, "The amount of fragment shaders has changed");
 const char *frag_shader_file_paths[COUNT_SIMPLE_SHADERS] = {
@@ -190,6 +191,8 @@ void simple_renderer_init(SimpleRenderer *sr)
         glDeleteShader(shaders[1]);
     }
     glDeleteShader(shaders[0]);
+
+    sr->current_shader = (SimpleShader)-1;
 }
 
 void simple_renderer_reload_shaders(SimpleRenderer *sr)
@@ -330,6 +333,19 @@ void simple_renderer_outline_rect_ex_impl(SimpleRenderer* sr, SimpleRendererOutl
 {
     auto [point, size, outline_width, fill_color, left_color, top_color, right_color, bottom_color] = args;
 
+    if (left_color.a == 0.0f) {
+        left_color = fill_color;
+    }
+    if (top_color.a == 0.0f) {
+        top_color = fill_color;
+    }
+    if (right_color.a == 0.0f) {
+        right_color = fill_color;
+    }
+    if (bottom_color.a == 0.0f) {
+        bottom_color = fill_color;
+    }
+
     Vec2f left = args.point;
     Vec2f left_size = vec2f(outline_width, size.y);
 
@@ -345,10 +361,10 @@ void simple_renderer_outline_rect_ex_impl(SimpleRenderer* sr, SimpleRendererOutl
     Vec2f fill = point + vec2fs(outline_width);
     Vec2f fill_size = size - vec2fs(2.0f * outline_width);
 
-    simple_renderer_solid_rect(sr, left,   left_size,   left_color);
     simple_renderer_solid_rect(sr, top,    top_size,    top_color);
-    simple_renderer_solid_rect(sr, right,  right_size,  right_color);
     simple_renderer_solid_rect(sr, bottom, bottom_size, bottom_color);
+    simple_renderer_solid_rect(sr, left,   left_size,   left_color);
+    simple_renderer_solid_rect(sr, right,  right_size,  right_color);
     simple_renderer_solid_rect(sr, fill,   fill_size, fill_color);
 }
 
@@ -367,6 +383,9 @@ void simple_renderer_draw(SimpleRenderer *sr)
 
 void simple_renderer_set_shader(SimpleRenderer *sr, SimpleShader shader)
 {
+    if (sr->current_shader == shader)
+        return;
+    simple_renderer_flush(sr);
     sr->current_shader = shader;
     glUseProgram(sr->programs[sr->current_shader]);
     get_uniform_location(sr->programs[sr->current_shader], sr->uniforms);
@@ -378,7 +397,11 @@ void simple_renderer_set_shader(SimpleRenderer *sr, SimpleShader shader)
 
 void simple_renderer_flush(SimpleRenderer *sr)
 {
-    simple_renderer_sync(sr);
-    simple_renderer_draw(sr);
-    sr->verticies_count = 0;
+    if (sr->verticies_count != 0) {
+        simple_renderer_sync(sr);
+        simple_renderer_draw(sr);
+        sr->verticies_count = 0;
+    }
+}
+
 }

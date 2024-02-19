@@ -146,10 +146,10 @@ void fb_render(const FileBrowser *fb, SDL_Window *window, UI::FreeGlyphAtlas *at
 
     f32 max_line_len = 0.0f;
 
-    sr->resolution = vec2f(w, h);
-    sr->time = (f32) SDL_GetTicks() / 1000.0f;
+    sr->set_resolution(vec2f(w, h));
+    sr->set_time((f32) SDL_GetTicks() / 1000.0f);
 
-    UI::simple_renderer_set_shader(sr, UI::SHADER_FOR_COLOR);
+    sr->set_shader(UI::SHADER_FOR_COLOR);
     if (fb->cursor < fb->files.count) {
         const Vec2f begin = vec2f(0, -((f32)fb->cursor + CURSOR_OFFSET) * FREE_GLYPH_FONT_SIZE);
         Vec2f end = begin;
@@ -159,11 +159,11 @@ void fb_render(const FileBrowser *fb, SDL_Window *window, UI::FreeGlyphAtlas *at
         if (fb->files.items[fb->cursor].type == FT_DIRECTORY) {
             free_glyph_atlas_render_line_sized(atlas, sr, "/", 1, &end, vec4fs(0));
         }
-        simple_renderer_solid_rect(sr, begin, vec2f(end.x - begin.x, FREE_GLYPH_FONT_SIZE), vec4f(.25, .25, .25, 1));
+        sr->solid_rect(begin, vec2f(end.x - begin.x, FREE_GLYPH_FONT_SIZE), vec4f(.25, .25, .25, 1));
     }
-    simple_renderer_flush(sr);
+    sr->flush();
 
-    UI::simple_renderer_set_shader(sr, UI::SHADER_FOR_EPICNESS);
+    sr->set_shader(UI::SHADER_FOR_EPICNESS);
     for (usize row = 0; row < fb->files.count; ++row) {
         const Vec2f begin = vec2f(0, -(f32)row * FREE_GLYPH_FONT_SIZE);
         Vec2f end = begin;
@@ -181,7 +181,7 @@ void fb_render(const FileBrowser *fb, SDL_Window *window, UI::FreeGlyphAtlas *at
         }
     }
 
-    simple_renderer_flush(sr);
+    sr->flush();
 
     // Update camera
     {
@@ -197,18 +197,16 @@ void fb_render(const FileBrowser *fb, SDL_Window *window, UI::FreeGlyphAtlas *at
         if (target_scale > 3.0f) {
             target_scale = 3.0f;
         } else {
-            offset = cursor_pos.x - w/3/sr->camera_scale;
+            offset = cursor_pos.x - w/3/sr->camera_scale();
             if (offset < 0.0f) offset = 0.0f;
-            target = vec2f(w/3/sr->camera_scale + offset, cursor_pos.y);
+            target = vec2f(w/3/sr->camera_scale() + offset, cursor_pos.y);
         }
 
-        sr->camera_vel = vec2f_mul(
-                             vec2f_sub(target, sr->camera_pos),
-                             vec2fs(2.0f));
-        sr->camera_scale_vel = (target_scale - sr->camera_scale) * 2.0f;
+        sr->set_camera_vel((target - sr->camera_pos()) * 2.0f);
+        sr->set_camera_scale_vel((target_scale - sr->camera_scale()) * 2.0f);
 
-        sr->camera_pos = vec2f_add(sr->camera_pos, vec2f_mul(sr->camera_vel, vec2fs(DELTA_TIME)));
-        sr->camera_scale = sr->camera_scale + sr->camera_scale_vel * DELTA_TIME;
+        sr->set_camera_pos(sr->camera_pos() + sr->camera_vel() * vec2fs(DELTA_TIME));
+        sr->set_camera_scale(sr->camera_scale() + sr->camera_scale_vel() * DELTA_TIME);
     }
 }
 

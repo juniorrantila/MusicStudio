@@ -130,8 +130,7 @@ void free_glyph_atlas_render_line_sized(FreeGlyphAtlas *atlas, SimpleRenderer *s
         pos->x += metric.ax;
         pos->y += metric.ay;
 
-        simple_renderer_image_rect(
-            sr,
+        sr->image_rect(
             vec2f(x2, -y2),
             vec2f(w, -h),
             vec2f(metric.tx, 0.0f),

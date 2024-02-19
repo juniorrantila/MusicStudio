@@ -1,5 +1,8 @@
 #include "./SimpleRenderer.h"
 
+#include <Ty/ScopeGuard.h>
+#include <Ty/Defer.h>
+
 #include <Rexim/Util.h>
 #include <Rexim/StringBuilder.h>
 #include <Rexim/File.h>
@@ -31,46 +34,41 @@ static const char *shader_type_as_cstr(GLuint shader)
     }
 }
 
-static bool compile_shader_source(const GLchar *source, GLenum shader_type, GLuint *shader)
+static ErrorOr<GLuint> compile_shader_source(const GLchar *source, GLenum shader_type)
 {
-    *shader = glCreateShader(shader_type);
-    glShaderSource(*shader, 1, &source, NULL);
-    glCompileShader(*shader);
+    auto shader = glCreateShader(shader_type);
+    glShaderSource(shader, 1, &source, NULL);
+    glCompileShader(shader);
 
     GLint compiled = 0;
-    glGetShaderiv(*shader, GL_COMPILE_STATUS, &compiled);
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
 
     if (!compiled) {
         GLchar message[1024];
         GLsizei message_size = 0;
-        glGetShaderInfoLog(*shader, sizeof(message), &message_size, message);
+        glGetShaderInfoLog(shader, sizeof(message), &message_size, message);
         fprintf(stderr, "ERROR: could not compile %s\n", shader_type_as_cstr(shader_type));
         fprintf(stderr, "%.*s\n", message_size, message);
-        return false;
+        return Error::from_leaky_string("could not compile shader");
     }
 
-    return true;
+    return shader;
 }
 
-static bool compile_shader_file(const char *file_path, GLenum shader_type, GLuint *shader)
+static ErrorOr<GLuint> compile_shader_file(const char *file_path, GLenum shader_type)
 {
-    bool result = true;
-
     String_Builder source = {};
     Errno err = read_entire_file(file_path, &source);
     if (err != 0) {
         fprintf(stderr, "ERROR: failed to load `%s` shader file: %s\n", file_path, strerror(errno));
-        return_defer(false);
+        return Error::from_string_literal("could not read file");
     }
+    Defer free_file = [&] {
+        free(source.items);
+    };
     sb_append_null(&source);
 
-    if (!compile_shader_source(source.items, shader_type, shader)) {
-        fprintf(stderr, "ERROR: failed to compile `%s` shader file\n", file_path);
-        return_defer(false);
-    }
-defer:
-    free(source.items);
-    return result;
+    return TRY(compile_shader_source(source.items, shader_type));
 }
 
 static void attach_shaders_to_program(GLuint *shaders, usize shaders_count, GLuint program)
@@ -80,7 +78,7 @@ static void attach_shaders_to_program(GLuint *shaders, usize shaders_count, GLui
     }
 }
 
-static bool link_program(GLuint program, const char *file_path, usize line)
+static ErrorOr<void> link_program(GLuint program, const char *file_path = __builtin_FILE(), usize line = __builtin_LINE())
 {
     glLinkProgram(program);
 
@@ -92,18 +90,19 @@ static bool link_program(GLuint program, const char *file_path, usize line)
 
         glGetProgramInfoLog(program, sizeof(message), &message_size, message);
         fprintf(stderr, "%s:%zu: Program Linking: %.*s\n", file_path, line, message_size, message);
+        return Error::from_string_literal("could not link program");
     }
 
-    return linked;
+    return {};
 }
 
-typedef struct {
+struct UniformDef {
     UniformSlot slot;
     const char *name;
-} Uniform_Def;
+};
 
 static_assert(COUNT_UNIFORM_SLOTS == 4, "The amount of the shader uniforms have change. Please update the definition table accordingly");
-static const Uniform_Def uniform_defs[COUNT_UNIFORM_SLOTS] = {
+static const UniformDef uniform_defs[COUNT_UNIFORM_SLOTS] = {
     [UNIFORM_SLOT_TIME] = {
         .slot = UNIFORM_SLOT_TIME,
         .name = "time",
@@ -130,17 +129,21 @@ static void get_uniform_location(GLuint program, GLint locations[COUNT_UNIFORM_S
     }
 }
 
-void simple_renderer_init(SimpleRenderer *sr)
+ErrorOr<SimpleRenderer> SimpleRenderer::create()
 {
-    sr->camera_scale = 3.0f;
+    auto sr = SimpleRenderer();
+    sr.m_verticies = (SimpleVertex*)calloc(sr.m_verticies_capacity, sizeof(SimpleVertex));
+    if (!sr.m_verticies) {
+        return Error::from_errno();
+    }
 
     {
-        glGenVertexArrays(1, &sr->vao);
-        glBindVertexArray(sr->vao);
+        glGenVertexArrays(1, &sr.m_vao);
+        glBindVertexArray(sr.m_vao);
 
-        glGenBuffers(1, &sr->vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, sr->vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(sr->verticies), sr->verticies, GL_DYNAMIC_DRAW);
+        glGenBuffers(1, &sr.m_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, sr.m_vbo);
+        glBufferData(GL_ARRAY_BUFFER, sr.m_verticies_capacity * sizeof(SimpleVertex), sr.m_verticies, GL_DYNAMIC_DRAW);
 
         // position
         glEnableVertexAttribArray(SIMPLE_VERTEX_ATTR_POSITION);
@@ -174,62 +177,54 @@ void simple_renderer_init(SimpleRenderer *sr)
     }
 
     GLuint shaders[2] = {0};
-
-    if (!compile_shader_file(vert_shader_file_path, GL_VERTEX_SHADER, &shaders[0])) {
-        exit(1);
-    }
+    shaders[0] = TRY(compile_shader_file(vert_shader_file_path, GL_VERTEX_SHADER));
+    Defer delete_first_shader = [&] {
+        glDeleteShader(shaders[0]);
+    };
 
     for (int i = 0; i < COUNT_SIMPLE_SHADERS; ++i) {
-        if (!compile_shader_file(frag_shader_file_paths[i], GL_FRAGMENT_SHADER, &shaders[1])) {
-            exit(1);
-        }
-        sr->programs[i] = glCreateProgram();
-        attach_shaders_to_program(shaders, sizeof(shaders) / sizeof(shaders[0]), sr->programs[i]);
-        if (!link_program(sr->programs[i], __FILE__, __LINE__)) {
-            exit(1);
-        }
-        glDeleteShader(shaders[1]);
+        shaders[1] = TRY(compile_shader_file(frag_shader_file_paths[i], GL_FRAGMENT_SHADER));
+        Defer delete_shader = [&] {
+            glDeleteShader(shaders[1]);
+        };
+        sr.m_programs[i] = glCreateProgram();
+        attach_shaders_to_program(shaders, sizeof(shaders) / sizeof(shaders[0]), sr.m_programs[i]);
+        TRY(link_program(sr.m_programs[i]));
     }
-    glDeleteShader(shaders[0]);
-
-    sr->current_shader = (SimpleShader)-1;
+    return sr;
 }
 
-void simple_renderer_reload_shaders(SimpleRenderer *sr)
+ErrorOr<void> SimpleRenderer::reload_shaders()
 {
     GLuint programs[COUNT_SIMPLE_SHADERS];
     GLuint shaders[2] = {0};
 
-    bool ok = true;
+    shaders[0] = TRY(compile_shader_file(vert_shader_file_path, GL_VERTEX_SHADER));
+    Defer delete_shader = [&] {
+        glDeleteShader(shaders[0]);
+    };
 
-    if (!compile_shader_file(vert_shader_file_path, GL_VERTEX_SHADER, &shaders[0])) {
-        ok = false;
+    for (int i = 0; i < COUNT_SIMPLE_SHADERS; ++i) {
+        shaders[1] = TRY(compile_shader_file(frag_shader_file_paths[i], GL_FRAGMENT_SHADER));
+        Defer delete_shader = [&] {
+            glDeleteShader(shaders[1]);
+        };
+        programs[i] = glCreateProgram();
+        ScopeGuard delete_program = [&] {
+            glDeleteProgram(programs[i]);
+        };
+        attach_shaders_to_program(shaders, sizeof(shaders) / sizeof(shaders[0]), programs[i]);
+        TRY(link_program(programs[i]));
+        delete_program.disarm();
     }
 
     for (int i = 0; i < COUNT_SIMPLE_SHADERS; ++i) {
-        if (!compile_shader_file(frag_shader_file_paths[i], GL_FRAGMENT_SHADER, &shaders[1])) {
-            ok = false;
-        }
-        programs[i] = glCreateProgram();
-        attach_shaders_to_program(shaders, sizeof(shaders) / sizeof(shaders[0]), programs[i]);
-        if (!link_program(programs[i], __FILE__, __LINE__)) {
-            ok = false;
-        }
-        glDeleteShader(shaders[1]);
+        glDeleteProgram(m_programs[i]);
+        m_programs[i] = programs[i];
     }
-    glDeleteShader(shaders[0]);
+    printf("Reloaded shaders successfully!\n");
 
-    if (ok) {
-        for (int i = 0; i < COUNT_SIMPLE_SHADERS; ++i) {
-            glDeleteProgram(sr->programs[i]);
-            sr->programs[i] = programs[i];
-        }
-        printf("Reloaded shaders successfully!\n");
-    } else {
-        for (int i = 0; i < COUNT_SIMPLE_SHADERS; ++i) {
-            glDeleteProgram(programs[i]);
-        }
-    }
+    return {};
 }
 
 // TODO: Don't render triples of verticies that form a triangle that is completely outside of the screen
@@ -246,8 +241,8 @@ void simple_renderer_reload_shaders(SimpleRenderer *sr)
 // It would be probably better if such culling occurred on a higher level of abstractions. For example
 // in the Editor. For instance, if the Editor noticed that the line it is currently rendering is
 // below the screen, it should stop rendering the rest of the text, thus never calling
-// simple_renderer_vertex() for a potentially large amount of verticies in the first place.
-void simple_renderer_vertex(SimpleRenderer *sr, Vec2f p, Vec4f c, Vec2f uv)
+// vertex() for a potentially large amount of verticies in the first place.
+void SimpleRenderer::vertex(Vec2f p, Vec4f c, Vec2f uv)
 {
 #if 0
     // TODO: flush the renderer on vertex buffer overflow instead firing the assert
@@ -255,57 +250,53 @@ void simple_renderer_vertex(SimpleRenderer *sr, Vec2f p, Vec4f c, Vec2f uv)
 #else
     // NOTE: it is better to just crash the app in this case until the culling described
     // above is sorted out.
-    assert(sr->verticies_count < SIMPLE_VERTICIES_CAP);
+    assert(m_verticies_count < SIMPLE_VERTICIES_CAP);
 #endif
-    SimpleVertex *last = &sr->verticies[sr->verticies_count];
+    SimpleVertex *last = &m_verticies[m_verticies_count];
     last->position = p;
     last->color    = c;
     last->uv       = uv;
-    sr->verticies_count += 1;
+    m_verticies_count += 1;
 }
 
-void simple_renderer_triangle(SimpleRenderer *sr,
-                              Vec2f p0, Vec2f p1, Vec2f p2,
+void SimpleRenderer::triangle(Vec2f p0, Vec2f p1, Vec2f p2,
                               Vec4f c0, Vec4f c1, Vec4f c2,
                               Vec2f uv0, Vec2f uv1, Vec2f uv2)
 {
-    simple_renderer_vertex(sr, p0, c0, uv0);
-    simple_renderer_vertex(sr, p1, c1, uv1);
-    simple_renderer_vertex(sr, p2, c2, uv2);
+    vertex(p0, c0, uv0);
+    vertex(p1, c1, uv1);
+    vertex(p2, c2, uv2);
 }
 
 // 2-3
 // |\|
 // 0-1
-void simple_renderer_quad(SimpleRenderer *sr,
-                          Vec2f p0, Vec2f p1, Vec2f p2, Vec2f p3,
+void SimpleRenderer::quad(Vec2f p0, Vec2f p1, Vec2f p2, Vec2f p3,
                           Vec4f c0, Vec4f c1, Vec4f c2, Vec4f c3,
                           Vec2f uv0, Vec2f uv1, Vec2f uv2, Vec2f uv3)
 {
-    simple_renderer_triangle(sr, p0, p1, p2, c0, c1, c2, uv0, uv1, uv2);
-    simple_renderer_triangle(sr, p1, p2, p3, c1, c2, c3, uv1, uv2, uv3);
+    triangle(p0, p1, p2, c0, c1, c2, uv0, uv1, uv2);
+    triangle(p1, p2, p3, c1, c2, c3, uv1, uv2, uv3);
 }
 
-void simple_renderer_image_rect(SimpleRenderer *sr, Vec2f p, Vec2f s, Vec2f uvp, Vec2f uvs, Vec4f c)
+void SimpleRenderer::image_rect(Vec2f p, Vec2f s, Vec2f uvp, Vec2f uvs, Vec4f c)
 {
-    simple_renderer_quad(
-        sr,
+    quad(
         p, vec2f_add(p, vec2f(s.x, 0)), vec2f_add(p, vec2f(0, s.y)), vec2f_add(p, s),
         c, c, c, c,
         uvp, vec2f_add(uvp, vec2f(uvs.x, 0)), vec2f_add(uvp, vec2f(0, uvs.y)), vec2f_add(uvp, uvs));
 }
 
-void simple_renderer_solid_rect(SimpleRenderer *sr, Vec2f p, Vec2f s, Vec4f c)
+void SimpleRenderer::solid_rect(Vec2f p, Vec2f s, Vec4f c)
 {
     Vec2f uv = vec2fs(0);
-    simple_renderer_quad(
-        sr,
+    quad(
         p, vec2f_add(p, vec2f(s.x, 0)), vec2f_add(p, vec2f(0, s.y)), vec2f_add(p, s),
         c, c, c, c,
         uv, uv, uv, uv);
 }
 
-void simple_renderer_outline_rect(SimpleRenderer* sr, Vec2f point, Vec2f size, f32 outline_width, Vec4f fill_color, Vec4f outline_color)
+void SimpleRenderer::outline_rect(Vec2f point, Vec2f size, f32 outline_width, Vec4f fill_color, Vec4f outline_color)
 {
     Vec2f left = point;
     Vec2f left_size = vec2f(outline_width, size.y);
@@ -322,14 +313,14 @@ void simple_renderer_outline_rect(SimpleRenderer* sr, Vec2f point, Vec2f size, f
     Vec2f fill = point + vec2fs(outline_width);
     Vec2f fill_size = size - vec2fs(2.0f * outline_width);
 
-    simple_renderer_solid_rect(sr, left,   left_size,   outline_color);
-    simple_renderer_solid_rect(sr, right,  right_size,  outline_color);
-    simple_renderer_solid_rect(sr, top,    top_size,    outline_color);
-    simple_renderer_solid_rect(sr, bottom, bottom_size, outline_color);
-    simple_renderer_solid_rect(sr, fill,   fill_size, fill_color);
+    solid_rect(left,   left_size,   outline_color);
+    solid_rect(right,  right_size,  outline_color);
+    solid_rect(top,    top_size,    outline_color);
+    solid_rect(bottom, bottom_size, outline_color);
+    solid_rect(fill,   fill_size, fill_color);
 }
 
-void simple_renderer_outline_rect_ex_impl(SimpleRenderer* sr, SimpleRendererOutlineRectEx args)
+void SimpleRenderer::outline_rect(OutlineRect const& args)
 {
     auto [point, size, outline_width, fill_color, left_color, top_color, right_color, bottom_color] = args;
 
@@ -361,46 +352,46 @@ void simple_renderer_outline_rect_ex_impl(SimpleRenderer* sr, SimpleRendererOutl
     Vec2f fill = point + vec2fs(outline_width);
     Vec2f fill_size = size - vec2fs(2.0f * outline_width);
 
-    simple_renderer_solid_rect(sr, top,    top_size,    top_color);
-    simple_renderer_solid_rect(sr, bottom, bottom_size, bottom_color);
-    simple_renderer_solid_rect(sr, left,   left_size,   left_color);
-    simple_renderer_solid_rect(sr, right,  right_size,  right_color);
-    simple_renderer_solid_rect(sr, fill,   fill_size, fill_color);
+    solid_rect(top,    top_size,    top_color);
+    solid_rect(bottom, bottom_size, bottom_color);
+    solid_rect(left,   left_size,   left_color);
+    solid_rect(right,  right_size,  right_color);
+    solid_rect(fill,   fill_size, fill_color);
 }
 
-void simple_renderer_sync(SimpleRenderer *sr)
+void SimpleRenderer::sync()
 {
     glBufferSubData(GL_ARRAY_BUFFER,
                     0,
-                    sr->verticies_count * sizeof(SimpleVertex),
-                    sr->verticies);
+                    m_verticies_count * sizeof(SimpleVertex),
+                    m_verticies);
 }
 
-void simple_renderer_draw(SimpleRenderer *sr)
+void SimpleRenderer::draw()
 {
-    glDrawArrays(GL_TRIANGLES, 0, sr->verticies_count);
+    glDrawArrays(GL_TRIANGLES, 0, m_verticies_count);
 }
 
-void simple_renderer_set_shader(SimpleRenderer *sr, SimpleShader shader)
+void SimpleRenderer::set_shader(SimpleShader shader)
 {
-    if (sr->current_shader == shader)
+    if (m_current_shader == shader)
         return;
-    simple_renderer_flush(sr);
-    sr->current_shader = shader;
-    glUseProgram(sr->programs[sr->current_shader]);
-    get_uniform_location(sr->programs[sr->current_shader], sr->uniforms);
-    glUniform2f(sr->uniforms[UNIFORM_SLOT_RESOLUTION], sr->resolution.x, sr->resolution.y);
-    glUniform1f(sr->uniforms[UNIFORM_SLOT_TIME], sr->time);
-    glUniform2f(sr->uniforms[UNIFORM_SLOT_CAMERA_POS], sr->camera_pos.x, sr->camera_pos.y);
-    glUniform1f(sr->uniforms[UNIFORM_SLOT_CAMERA_SCALE], sr->camera_scale);
+    flush();
+    m_current_shader = shader;
+    glUseProgram(m_programs[m_current_shader]);
+    get_uniform_location(m_programs[m_current_shader], m_uniforms);
+    glUniform2f(m_uniforms[UNIFORM_SLOT_RESOLUTION], m_resolution.x, m_resolution.y);
+    glUniform1f(m_uniforms[UNIFORM_SLOT_TIME], m_time);
+    glUniform2f(m_uniforms[UNIFORM_SLOT_CAMERA_POS], m_camera_pos.x, m_camera_pos.y);
+    glUniform1f(m_uniforms[UNIFORM_SLOT_CAMERA_SCALE], m_camera_scale);
 }
 
-void simple_renderer_flush(SimpleRenderer *sr)
+void SimpleRenderer::flush()
 {
-    if (sr->verticies_count != 0) {
-        simple_renderer_sync(sr);
-        simple_renderer_draw(sr);
-        sr->verticies_count = 0;
+    if (m_verticies_count != 0) {
+        sync();
+        draw();
+        m_verticies_count = 0;
     }
 }
 

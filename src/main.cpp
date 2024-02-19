@@ -46,7 +46,6 @@ void MessageCallback(GLenum source,
 }
 
 static UI::FreeGlyphAtlas atlas = {};
-static UI::SimpleRenderer sr = {};
 static FileBrowser fb = {};
 
 // TODO: display errors reported via flash_error right in the editor window somehow
@@ -183,14 +182,13 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
         fprintf(stderr, "WARNING: GLEW_ARB_debug_output is not available\n");
     }
 
-    simple_renderer_init(&sr);
+    auto sr = TRY(UI::SimpleRenderer::create());
     {
         int w, h;
         SDL_GetWindowSize(window, &w, &h);
 
-        sr.resolution = vec2f(w, h);
-        sr.camera_pos = vec2f(w, h) / 2.0f;
-        sr.camera_scale = 1.0f;
+        sr.set_resolution(vec2f(w, h));
+        sr.set_camera_pos(vec2f(w, h) / 2.0f);
     }
     free_glyph_atlas_init(&atlas, face);
 
@@ -233,7 +231,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
 
         ui.clear(background_color);
 
-        Vec2f space = sr.resolution;
+        Vec2f space = sr.resolution();
 
         // Toolbar
         {
@@ -352,7 +350,10 @@ static void handle_events(Handle_Events *context, UI::SimpleRenderer *sr)
                 continue;
 
                 case SDLK_F5: {
-                    simple_renderer_reload_shaders(sr);
+                    sr->reload_shaders().or_else([](Error error) {
+                        auto message = error.message();
+                        flash_error("Could not reload shaders: %.*s", message.size(), message.data());
+                    });
                 }
                 continue;
             }

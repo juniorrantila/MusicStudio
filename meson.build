@@ -18,12 +18,12 @@ add_global_arguments([
   '-Wno-gnu-anonymous-struct',
   '-Wno-gnu-case-range',
   '-Wno-gnu-conditional-omitted-operand',
-  '-Wno-gnu-designator',
   '-Wno-gnu-statement-expression-from-macro-expansion',
   '-Wno-gnu-zero-variadic-macro-arguments',
   '-Wno-keyword-macro',
   '-Wno-user-defined-literals',
   '-Wno-nested-anon-types',
+  '-Werror=return-type',
 ], language: ['objcpp', 'cpp', 'c'])
 
 freetype2_proj = subproject('freetype2', default_options: [

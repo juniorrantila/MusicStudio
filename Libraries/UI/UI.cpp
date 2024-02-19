@@ -56,7 +56,7 @@ void UI::end_frame()
     if (duration < delta_time_ms) {
         SDL_Delay(delta_time_ms - duration);
     }
-    simple_renderer_flush(m_renderer);
+    m_renderer->flush();
 }
 
 void UI::set_cursor(i32 kind)
@@ -91,8 +91,8 @@ Button UI::button(Vec4f box, c_string, u32)
 
 void UI::fill_rect(Vec4f box, Vec4f color)
 {
-    simple_renderer_set_shader(m_renderer, SHADER_FOR_COLOR);
-    simple_renderer_solid_rect(m_renderer,
+    m_renderer->set_shader(SHADER_FOR_COLOR);
+    m_renderer->solid_rect(
         vec2f(box.x, box.y),
         vec2f(box.width, box.height),
         color
@@ -101,24 +101,25 @@ void UI::fill_rect(Vec4f box, Vec4f color)
 
 void UI::outline_rect(Vec4f box, f32 outline_size, Vec4f fill_color, Vec4f outline_color)
 {
-    simple_renderer_set_shader(m_renderer, SHADER_FOR_COLOR);
-    simple_renderer_outline_rect(m_renderer,
+    m_renderer->set_shader(SHADER_FOR_COLOR);
+    m_renderer->outline_rect(
         vec2f(box.x, box.y), vec2f(box.width, box.height),
         outline_size, fill_color, outline_color);
 }
 
 void UI::outline_rect(UI::OutlineRect const& args)
 {
-    simple_renderer_set_shader(m_renderer, SHADER_FOR_COLOR);
-    simple_renderer_outline_rect_ex(m_renderer,
-        point: vec2f(args.box.x, args.box.y), size: vec2f(args.box.width, args.box.height),
-        outline_size: args.outline_size,
-        fill_color: args.fill_color,
-        left_color: args.left_color,
-        top_color: args.top_color,
-        right_color: args.right_color,
-        bottom_color: args.bottom_color,
-    );
+    m_renderer->set_shader(SHADER_FOR_COLOR);
+    m_renderer->outline_rect({
+        .point = vec2f(args.box.x, args.box.y),
+        .size = vec2f(args.box.width, args.box.height),
+        .outline_size = args.outline_size,
+        .fill_color = args.fill_color,
+        .left_color = args.left_color,
+        .top_color = args.top_color,
+        .right_color = args.right_color,
+        .bottom_color = args.bottom_color,
+    });
 }
 
 Vec2f UI::measure_text(StringView text) const
@@ -130,7 +131,7 @@ Vec2f UI::measure_text(StringView text) const
 
 void UI::text(Vec2f pos, StringView text, Vec4f color)
 {
-    simple_renderer_set_shader(m_renderer, SHADER_FOR_TEXT);
+    m_renderer->set_shader(SHADER_FOR_TEXT);
     free_glyph_atlas_render_line_sized(m_atlas, m_renderer, text.data(), 
         text.size(), &pos, color);
 }

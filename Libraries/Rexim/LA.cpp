@@ -80,6 +80,16 @@ Vec2i vec2i_div(Vec2i a, Vec2i b)
 
 //////////////////////////////
 
+Vec4f vec4fv(Vec2f xy, Vec2f zw)
+{
+    return {
+        .x = xy.x,
+        .y = xy.y,
+        .z = zw.x,
+        .w = zw.y,
+    };
+}
+
 Vec4f vec4f(f32 x, f32 y, f32 z, f32 w)
 {
     return {

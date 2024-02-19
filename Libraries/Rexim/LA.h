@@ -46,6 +46,7 @@ struct Vec4f {
 };
 
 Vec4f vec4f(f32 x, f32 y, f32 z, f32 w);
+Vec4f vec4fv(Vec2f xy, Vec2f zw);
 Vec4f vec4fs(f32 x);
 Vec4f vec4f_add(Vec4f a, Vec4f b);
 Vec4f vec4f_sub(Vec4f a, Vec4f b);

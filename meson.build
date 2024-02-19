@@ -23,6 +23,7 @@ add_global_arguments([
   '-Wno-gnu-zero-variadic-macro-arguments',
   '-Wno-keyword-macro',
   '-Wno-user-defined-literals',
+  '-Wno-nested-anon-types',
 ], language: ['objcpp', 'cpp', 'c'])
 
 freetype2_proj = subproject('freetype2', default_options: [

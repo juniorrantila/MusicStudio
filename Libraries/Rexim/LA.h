@@ -42,7 +42,25 @@ Vec2i vec2i_mul3(Vec2i a, Vec2i b, Vec2i c);
 Vec2i vec2i_div(Vec2i a, Vec2i b);
 
 struct Vec4f {
-    f32 x, y, z, w;
+    union {
+        struct {
+            f32 x;
+            f32 y;
+            union {
+                struct {
+                    f32 z;
+                    f32 w;
+                };
+                struct {
+                    f32 width;
+                    f32 height;
+                };
+            };
+        };
+        struct {
+            f32 r, g, b, a;
+        };
+    };
 };
 
 Vec4f vec4f(f32 x, f32 y, f32 z, f32 w);

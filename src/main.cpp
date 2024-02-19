@@ -9,6 +9,7 @@
 #include <Rexim/Util.h>
 
 #include <UI/Window.h>
+#include <UI/UI.h>
 #include <UI/FreeGlyph.h>
 #include <UI/SimpleRenderer.h>
 
@@ -188,10 +189,9 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
         SDL_GetWindowSize(window, &w, &h);
 
         sr.resolution = vec2f(w, h);
-        sr.camera_pos = sr.resolution / 2.0f;
+        sr.camera_pos = vec2f(w, h) / 2.0f;
         sr.camera_scale = 1.0f;
     }
-
     free_glyph_atlas_init(&atlas, face);
 
     auto plugin_window = Optional<UI::Window>();
@@ -208,6 +208,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
 
     Vec4f file_browser_color = hex_to_vec4f(0x161F24FF);
     Vec4f file_browser_border_color = hex_to_vec4f(0x434C51FF);
+    Vec4f file_browser_indent_color = hex_to_vec4f(0x2A3338FF);
 
     Vec4f toolbar_color = hex_to_vec4f(0x596267FF);
     Vec4f toolbar_border_color = hex_to_vec4f(0x495257FF);
@@ -215,125 +216,106 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
     Vec4f info_bar_color = hex_to_vec4f(0x596267FF);
     Vec4f info_bar_border_color = hex_to_vec4f(0x495257FF);
 
+    Vec4f text_color = hex_to_vec4f(0x95A99FFF);
+    Vec4f text_alternate_color = hex_to_vec4f(0x95A99FFF);
+
     f32 border_size = 2.0f;
 
+    auto ui = UI::UI(&sr, &atlas);
     Handle_Events context = (Handle_Events){
         .quit = false,
         .is_fullscreen = false,
         .window = window,
     };
     while (!context.quit) {
-        const Uint32 start = SDL_GetTicks();
-        sr.time = (f32) start / 1000.0f;
-
         handle_events(&context, &sr);
+        ui.begin_frame();
 
-        glClearColor(background_color.x, background_color.y, background_color.z, background_color.w);
-        glClear(GL_COLOR_BUFFER_BIT);
+        ui.clear(background_color);
 
         Vec2f space = sr.resolution;
 
         // Toolbar
-        simple_renderer_set_shader(&sr, SHADER_FOR_COLOR);
         {
             Vec2f toolbar_size = vec2f(space.x, 48.0f);
-            simple_renderer_outline_rect_ex(&sr,
-                point: vec2f(0.0f, (space.y - toolbar_size.y)),
-                size: toolbar_size,
-                outline_size: border_size,
-                fill_color: toolbar_color,
-                left_color: toolbar_color,
-                top_color: toolbar_color,
-                right_color: toolbar_color,
-                bottom_color: toolbar_border_color,
-            );
+            ui.outline_rect({
+                .box = vec4fv(
+                    vec2f(0.0f, space.y - toolbar_size.y),
+                    toolbar_size
+                ),
+                .outline_size = border_size,
+                .fill_color   = toolbar_color,
+                .bottom_color = toolbar_border_color,
+            });
             space.y -= toolbar_size.y;
         }
-        simple_renderer_flush(&sr);
 
         // File browser
-        simple_renderer_set_shader(&sr, SHADER_FOR_COLOR);
         {
-            simple_renderer_outline_rect_ex(&sr,
-                point: vec2fs(0.0f),
-                size: vec2f(200.0f, space.y),
-                outline_size: border_size,
-                fill_color: file_browser_color,
-                left_color: file_browser_color,
-                top_color: file_browser_color,
-                right_color: file_browser_border_color,
-                bottom_color: file_browser_color,
-            );
+            ui.outline_rect({
+                .box = vec4fv(
+                    vec2fs(0.0f),
+                    vec2f(200.0f, space.y)
+                ),
+                .outline_size = border_size,
+                .fill_color = file_browser_color,
+                .right_color = file_browser_border_color,
+            });
 
             // Indent
             f32 indent_size = 8.0f;
-            simple_renderer_solid_rect(&sr, vec2fs(0.0f), vec2f(indent_size, space.y), hex_to_vec4f(0x2A3338FF));
+            ui.fill_rect(vec4fv(
+                    vec2f(0.0f, 0.0f),
+                    vec2f(indent_size, space.y)
+                ),
+                file_browser_indent_color
+            );
 
-            simple_renderer_set_shader(&sr, SHADER_FOR_COLOR);
             if (fb.cursor < fb.files.count) {
                 const Vec2f begin = vec2f(indent_size + 2.0f, space.y -((f32)fb.cursor + CURSOR_OFFSET + 1) * FREE_GLYPH_FONT_SIZE);
                 Vec2f end = begin;
-                c_string file_name = fb.files.items[fb.cursor].name;
-                free_glyph_atlas_measure_line_sized(&atlas, file_name, strlen(file_name), &end);
+                StringView file_name = StringView::from_c_string(fb.files.items[fb.cursor].name);
+                end += ui.measure_text(file_name);
                 if (fb.files.items[fb.cursor].type == FT_DIRECTORY) {
-                    free_glyph_atlas_measure_line_sized(&atlas, "/", 1, &end);
+                    end += ui.measure_text("/"sv);
                 }
-                simple_renderer_solid_rect(&sr,
-                    begin,
-                    vec2f(end.x - begin.x, FREE_GLYPH_FONT_SIZE),
-                    vec4f(1.0f, 1.0f, 1.0f, 0.25f)
-                );
+                auto box = vec4fv(begin, vec2f(end.x - begin.x, FREE_GLYPH_FONT_SIZE));
+                ui.fill_rect(box, vec4f(1.0f, 1.0f, 1.0f, 0.25));
             }
-            simple_renderer_flush(&sr);
 
-            simple_renderer_set_shader(&sr, SHADER_FOR_TEXT);
             for (usize row = 0; row < fb.files.count; ++row) {
-                const Vec2f begin = vec2f(indent_size + 2.0f, space.y - ((f32)row + 1) * FREE_GLYPH_FONT_SIZE);
-                Vec2f end = begin;
-                c_string file_name = fb.files.items[row].name;
-                free_glyph_atlas_render_line_sized(&atlas, &sr, file_name, strlen(file_name), &end,
-                   hex_to_vec4f(0x95A99FFF)
-                );
+                const Vec2f pos = vec2f(indent_size + 2.0f, space.y - ((f32)row + 1) * FREE_GLYPH_FONT_SIZE);
+                StringView file_name = StringView::from_c_string(fb.files.items[row].name);
+
+                auto box_size = ui.measure_text(file_name);
+
+                ui.text(pos, file_name, text_color);
                 if (fb.files.items[row].type == FT_DIRECTORY) {
-                    free_glyph_atlas_render_line_sized(&atlas, &sr, "/", 1, &end,
-                       hex_to_vec4f(0x95A99FFF)
-                   );
+                    auto slash_pos = pos + ui.measure_text(file_name);
+                    box_size.x += ui.measure_text("/"sv).x;
+                    ui.text(slash_pos, "/"sv, text_alternate_color);
                 }
             }
-            simple_renderer_flush(&sr);
-
-            space.y = 0;
         }
-        simple_renderer_flush(&sr);
 
         // Info bar
-        simple_renderer_set_shader(&sr, SHADER_FOR_COLOR);
         {
-            simple_renderer_outline_rect_ex(&sr,
-                point: vec2fs(0),
-                size: vec2f(space.x, 32.0f),
-                outline_size: border_size,
-                fill_color: info_bar_color,
-                left_color: info_bar_color,
-                top_color: info_bar_border_color,
-                right_color: info_bar_color,
-                bottom_color: info_bar_color,
-            );
+            ui.outline_rect({
+                .box = vec4fv(
+                    vec2fs(0.0f),
+                    vec2f(space.x, 32.0f)
+                ),
+                .outline_size = border_size,
+                .fill_color = info_bar_color,
+                .top_color = info_bar_border_color,
+            });
         }
-        simple_renderer_flush(&sr);
 
+        ui.end_frame();
         SDL_GL_SwapWindow(window);
-
-        const Uint32 duration = SDL_GetTicks() - start;
-        const Uint32 delta_time_ms = 1000 / FPS;
-        if (duration < delta_time_ms) {
-            SDL_Delay(delta_time_ms - duration);
-        }
     }
 
     return 0;
-}
-
 }
 
 static void handle_events_browse_mode(SDL_Event);
@@ -355,9 +337,6 @@ static void handle_events(Handle_Events *context, UI::SimpleRenderer *sr)
                 int w, h;
                 SDL_GetWindowSize(context->window, &w, &h);
                 glViewport(0, 0, w, h);
-
-                sr->resolution = vec2f(w, h);
-                sr->camera_pos = vec2f(w, h) / 2.0f;
             }
             break;
             }

@@ -1,0 +1,138 @@
+#include "./UI.h"
+#include "./FreeGlyph.h"
+#include "./SimpleRenderer.h"
+
+#include <SDL2/SDL.h>
+
+namespace UI {
+
+UI::UI(SimpleRenderer* simple_renderer, FreeGlyphAtlas* atlas)
+    : m_renderer(simple_renderer)
+    , m_atlas(atlas)
+{
+    set_cursor(SDL_SYSTEM_CURSOR_ARROW);
+}
+
+UI::~UI()
+{
+    if (is_valid()) {
+        destroy();
+        invalidate();
+    }
+} 
+
+void UI::destroy()
+{
+}
+
+void UI::clear(Vec4f color) const
+{
+    glClearColor(color.x, color.y, color.z, color.w);
+    glClear(GL_COLOR_BUFFER_BIT);
+}
+
+void UI::begin_frame()
+{
+    m_uid = 0;
+    m_time = ((f32)SDL_GetTicks()) / 1000.0f;
+    m_last_mouse_pos = m_mouse_pos;
+
+    i32 x = 0;
+    i32 y = 0;
+    m_mouse_left_down = SDL_GetMouseState(&x, &y) & 1;
+
+    SDL_Window* window = SDL_GL_GetCurrentWindow();
+    i32 height = 0;
+    SDL_GetWindowSize(window, nullptr, &height);
+    m_mouse_pos = vec2f(x, height - y);
+}
+
+void UI::end_frame()
+{
+    m_scroll_x = 0;
+    m_scroll_y = 0;
+    u32 duration = SDL_GetTicks() - (m_time * 1000.0f);
+    u32 delta_time_ms = 1000 / 60;
+    if (duration < delta_time_ms) {
+        SDL_Delay(delta_time_ms - duration);
+    }
+    simple_renderer_flush(m_renderer);
+}
+
+void UI::set_cursor(i32 kind)
+{
+    if (m_cursor_kind != kind) {
+        SDL_SetCursor(SDL_CreateSystemCursor((SDL_SystemCursor)kind));
+    }
+}
+
+Button UI::button(Vec4f box, c_string, u32)
+{
+    // u32 uid = m_uid++;
+
+    bool clicked = false;
+    bool hovered = false;
+    if (m_mouse_pos.x >= box.x && m_mouse_pos.x <= box.x + box.width) {
+        if (m_mouse_pos.y >= box.y && m_mouse_pos.y < box.y + box.height) {
+            if (m_mouse_left_down) {
+                clicked = true;
+            }
+            hovered = true;
+        }
+    }
+
+    return {
+        .ui = *this,
+        .box = box,
+        .hovered = hovered,
+        .clicked = clicked,
+    };
+}
+
+void UI::fill_rect(Vec4f box, Vec4f color)
+{
+    simple_renderer_set_shader(m_renderer, SHADER_FOR_COLOR);
+    simple_renderer_solid_rect(m_renderer,
+        vec2f(box.x, box.y),
+        vec2f(box.width, box.height),
+        color
+    );
+}
+
+void UI::outline_rect(Vec4f box, f32 outline_size, Vec4f fill_color, Vec4f outline_color)
+{
+    simple_renderer_set_shader(m_renderer, SHADER_FOR_COLOR);
+    simple_renderer_outline_rect(m_renderer,
+        vec2f(box.x, box.y), vec2f(box.width, box.height),
+        outline_size, fill_color, outline_color);
+}
+
+void UI::outline_rect(UI::OutlineRect const& args)
+{
+    simple_renderer_set_shader(m_renderer, SHADER_FOR_COLOR);
+    simple_renderer_outline_rect_ex(m_renderer,
+        point: vec2f(args.box.x, args.box.y), size: vec2f(args.box.width, args.box.height),
+        outline_size: args.outline_size,
+        fill_color: args.fill_color,
+        left_color: args.left_color,
+        top_color: args.top_color,
+        right_color: args.right_color,
+        bottom_color: args.bottom_color,
+    );
+}
+
+Vec2f UI::measure_text(StringView text) const
+{
+    Vec2f end = {};
+    free_glyph_atlas_measure_line_sized(m_atlas, text.data(), text.size(), &end);
+    return end;
+}
+
+void UI::text(Vec2f pos, StringView text, Vec4f color)
+{
+    simple_renderer_set_shader(m_renderer, SHADER_FOR_TEXT);
+    free_glyph_atlas_render_line_sized(m_atlas, m_renderer, text.data(), 
+        text.size(), &pos, color);
+}
+
+}

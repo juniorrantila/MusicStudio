@@ -12,6 +12,7 @@ endif
 
 ui_lib = library('UI', [
     ui_target_sources,
+    'UI.cpp',
     'FreeGlyph.cpp',
     'SimpleRenderer.cpp',
   ], dependencies: [

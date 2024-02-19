@@ -153,11 +153,10 @@ void fb_render(const FileBrowser *fb, SDL_Window *window, UI::FreeGlyphAtlas *at
     if (fb->cursor < fb->files.count) {
         const Vec2f begin = vec2f(0, -((f32)fb->cursor + CURSOR_OFFSET) * FREE_GLYPH_FONT_SIZE);
         Vec2f end = begin;
-        free_glyph_atlas_measure_line_sized(
-            atlas, fb->files.items[fb->cursor].name, strlen(fb->files.items[fb->cursor].name),
-            &end);
+        auto file_name = StringView::from_c_string(fb->files.items[fb->cursor].name);
+        end += atlas->measure_line_sized(file_name);
         if (fb->files.items[fb->cursor].type == FT_DIRECTORY) {
-            free_glyph_atlas_render_line_sized(atlas, sr, "/", 1, &end, vec4fs(0));
+            atlas->render_line_sized(sr, "/"sv, &end, vec4fs(0.0f));
         }
         sr->solid_rect(begin, vec2f(end.x - begin.x, FREE_GLYPH_FONT_SIZE), vec4f(.25, .25, .25, 1));
     }
@@ -167,12 +166,10 @@ void fb_render(const FileBrowser *fb, SDL_Window *window, UI::FreeGlyphAtlas *at
     for (usize row = 0; row < fb->files.count; ++row) {
         const Vec2f begin = vec2f(0, -(f32)row * FREE_GLYPH_FONT_SIZE);
         Vec2f end = begin;
-        free_glyph_atlas_render_line_sized(
-            atlas, sr, fb->files.items[row].name, strlen(fb->files.items[row].name),
-            &end,
-            vec4fs(0));
+        auto file_name = StringView::from_c_string(fb->files.items[row].name);
+        atlas->render_line_sized(sr, file_name, &end, vec4fs(0.0f));
         if (fb->files.items[row].type == FT_DIRECTORY) {
-            free_glyph_atlas_render_line_sized(atlas, sr, "/", 1, &end, vec4fs(0));
+            atlas->render_line_sized(sr, "/"sv, &end, vec4fs(0.0f));
         }
         // TODO: the max_line_len should be calculated based on what's visible on the screen right now
         f32 line_len = fabsf(end.x - begin.x);

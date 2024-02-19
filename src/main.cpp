@@ -45,7 +45,6 @@ void MessageCallback(GLenum source,
             type, severity, message);
 }
 
-static UI::FreeGlyphAtlas atlas = {};
 static FileBrowser fb = {};
 
 // TODO: display errors reported via flash_error right in the editor window somehow
@@ -190,7 +189,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
         sr.set_resolution(vec2f(w, h));
         sr.set_camera_pos(vec2f(w, h) / 2.0f);
     }
-    free_glyph_atlas_init(&atlas, face);
+    auto atlas = TRY(UI::FreeGlyphAtlas::create(face));
 
     auto plugin_window = Optional<UI::Window>();
     if (plugin && plugin->has_editor()) {

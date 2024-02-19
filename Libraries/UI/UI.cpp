@@ -124,16 +124,13 @@ void UI::outline_rect(UI::OutlineRect const& args)
 
 Vec2f UI::measure_text(StringView text) const
 {
-    Vec2f end = {};
-    free_glyph_atlas_measure_line_sized(m_atlas, text.data(), text.size(), &end);
-    return end;
+    return m_atlas->measure_line_sized(text);
 }
 
 void UI::text(Vec2f pos, StringView text, Vec4f color)
 {
     m_renderer->set_shader(SHADER_FOR_TEXT);
-    free_glyph_atlas_render_line_sized(m_atlas, m_renderer, text.data(), 
-        text.size(), &pos, color);
+    m_atlas->render_line_sized(m_renderer, text, &pos, color);
 }
 
 }

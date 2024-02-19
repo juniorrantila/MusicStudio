@@ -2,6 +2,8 @@
 #include "./Forward.h"
 
 #include <Ty/Base.h>
+#include <Ty/ErrorOr.h>
+
 #include <Rexim/LA.h>
 #include <GL/glew.h>
 
@@ -33,15 +35,17 @@ struct GlyphMetric {
 #define GLYPH_METRICS_CAPACITY 128
 
 struct FreeGlyphAtlas {
-    FT_UInt atlas_width;
-    FT_UInt atlas_height;
-    GLuint glyphs_texture;
-    GlyphMetric metrics[GLYPH_METRICS_CAPACITY];
-};
+    static ErrorOr<FreeGlyphAtlas> create(FT_Face face);
 
-void free_glyph_atlas_init(FreeGlyphAtlas* atlas, FT_Face face);
-f32 free_glyph_atlas_cursor_pos(FreeGlyphAtlas const* atlas, c_string text, usize text_size, Vec2f pos, usize col);
-void free_glyph_atlas_measure_line_sized(FreeGlyphAtlas *atlas, c_string text, usize text_size, Vec2f *pos);
-void free_glyph_atlas_render_line_sized(FreeGlyphAtlas *atlas, SimpleRenderer *sr, c_string text, usize text_size, Vec2f *pos, Vec4f color);
+    f32 cursor_pos(StringView text, Vec2f pos, usize col) const;
+    Vec2f measure_line_sized(StringView text) const;
+    void render_line_sized(SimpleRenderer *sr, StringView text, Vec2f *pos, Vec4f color);
+
+    FT_UInt m_atlas_width { 0 };
+    FT_UInt m_atlas_height { 0 };
+    GLuint m_glyphs_texture { 0 };
+    GlyphMetric* m_metrics { nullptr };
+    usize m_metrics_capacity { GLYPH_METRICS_CAPACITY };
+};
 
 }

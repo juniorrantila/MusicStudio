@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <stddef.h>
+
 #define vert_shader_file_path "./Shaders/simple.vert"
 
 namespace UI {

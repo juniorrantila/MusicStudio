@@ -22,7 +22,7 @@ struct Formatter;
 template <typename Signature>
 class Function;
 
-template <typename Out, typename... In>
+template <typename>
 struct SmallCapture;
 
 struct Bytes;

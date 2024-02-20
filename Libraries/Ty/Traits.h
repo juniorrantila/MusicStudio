@@ -16,6 +16,9 @@ inline constexpr bool is_trivially_destructible
 template <typename T, typename U>
 inline constexpr bool is_same = __is_same(T, U);
 
+template <typename T, typename U>
+inline constexpr bool IsSame = __is_same(T, U);
+
 template <typename T>
 inline constexpr bool is_const = __is_const(T);
 
@@ -52,12 +55,31 @@ struct remove_const {
 };
 
 template <typename T>
+using RemoveConst = typename remove_const<T>::Type;
+
+template <typename T>
 struct remove_const<T const> {
     using Type = T;
 };
 
 template <typename T>
-using RemoveConst = typename remove_const<T>::Type;
+struct remove_volatile{
+    using Type = T;
+};
+
+template <typename T>
+struct remove_volatile<T volatile> {
+    using Type = T;
+};
+
+template <typename T>
+using RemoveVolatile = typename remove_volatile<T>::Type;
+
+template <typename T>
+using RemoveVolatile = typename remove_volatile<T>::Type;
+
+template <typename T>
+using RemoveCVReference = RemoveConst<RemoveVolatile<RemoveReference<T>>>;
 
 template <typename T>
 inline constexpr bool IsLvalueReference = false;
@@ -85,14 +107,10 @@ template <typename T>
 using RemovePointer = typename remove_pointer<T>::Type;
 
 template <typename T>
-inline constexpr bool IsRvalueReference = false;
+inline constexpr bool IsRValueReference = __is_rvalue_reference(T);
 
 template <typename T>
-inline constexpr bool IsRvalueReference<T&&> = true;
-
-template <typename T>
-inline constexpr bool IsFunctionPointer
-    = IsPointer<T>&& IsFunction<RemovePointer<T>>;
+inline constexpr bool IsFunctionPointer = IsPointer<T> && IsFunction<RemovePointer<T>>;
 
 template <typename T>
 concept HasInvalid = requires

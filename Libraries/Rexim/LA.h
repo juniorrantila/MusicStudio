@@ -89,4 +89,16 @@ static inline Vec4f& operator/=(Vec4f& a, f32 b) { a = a / b; return a; }
 f32 lerpf(f32 a, f32 b, f32 t);
 Vec2f vec2f_lerp(Vec2f a, Vec2f b, Vec2f t);
 
-Vec4f hex_to_vec4f(u32 color);
+consteval Vec4f hex_to_vec4f(u32 color)
+{
+    Vec4f result;
+    u32 r = (color>>(3*8))&0xFF;
+    u32 g = (color>>(2*8))&0xFF;
+    u32 b = (color>>(1*8))&0xFF;
+    u32 a = (color>>(0*8))&0xFF;
+    result.x = r/255.0f;
+    result.y = g/255.0f;
+    result.z = b/255.0f;
+    result.w = a/255.0f;
+    return result;
+}

@@ -26,6 +26,10 @@ add_global_arguments([
   '-Werror=return-type',
 ], language: ['objcpp', 'cpp', 'c'])
 
+add_global_arguments([
+  '-fobjc-arc',
+], language: ['objcpp', 'objc'])
+
 freetype2_proj = subproject('freetype2', default_options: [
   'warning_level=0',
   'default_library=static',

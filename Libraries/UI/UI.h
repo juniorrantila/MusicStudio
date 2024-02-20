@@ -75,10 +75,14 @@ struct UI {
     Vec2f measure_text(StringView text) const;
     void text(Vec2f pos, StringView text, Vec4f color);
 
+    void set_mouse_pos(f32 x, f32 y)
+    {
+        m_last_mouse_pos = m_mouse_pos;
+        m_mouse_pos.x = x;
+        m_mouse_pos.y = y;
+    };
+
 private:
-
-    void set_cursor(i32 cursor_kind);
-
     bool is_valid() const { return true; }
     void invalidate() { }
     void destroy();
@@ -95,8 +99,6 @@ private:
 
     i32 m_scroll_x { 0 };
     i32 m_scroll_y { 0 };
-
-    i32 m_cursor_kind { -1 };
 
     f32 m_time { 0.0f };
 

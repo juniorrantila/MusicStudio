@@ -4,15 +4,12 @@
 
 #include <Ty/Hash.h>
 
-#include <SDL2/SDL.h>
-
 namespace UI {
 
 UI::UI(SimpleRenderer* simple_renderer, FreeGlyphAtlas* atlas)
     : m_renderer(simple_renderer)
     , m_atlas(atlas)
 {
-    set_cursor(SDL_SYSTEM_CURSOR_ARROW);
 }
 
 UI::~UI()
@@ -59,13 +56,6 @@ void UI::end_frame()
         SDL_Delay(delta_time_ms - duration);
     }
     m_renderer->flush();
-}
-
-void UI::set_cursor(i32 kind)
-{
-    if (m_cursor_kind != kind) {
-        SDL_SetCursor(SDL_CreateSystemCursor((SDL_SystemCursor)kind));
-    }
 }
 
 Button UI::button(Vec4f box, StringView file, u32 line)

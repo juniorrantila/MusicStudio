@@ -64,7 +64,6 @@ endif
 subdir('Libraries')
 
 subdir('Tools')
-subdir('Fonts')
 
 subdir('Plugins')
 

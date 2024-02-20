@@ -4,10 +4,13 @@ ui_target_deps = []
 
 if target_machine.system() == 'darwin'
   add_languages('objcpp')
-  ui_target_deps += dependency('cocoa')
+  ui_target_deps += dependency('appkit')
   ui_target_sources += 'macos/Window.mm'
+  ui_target_sources += 'macos/Application.mm'
+  ui_target_sources += 'macos/UIApp.mm'
 else
   ui_target_sources += 'dummy/Window.cpp'
+  ui_target_sources += 'dummy/Application.cpp'
 endif
 
 ui_lib = library('UI', [

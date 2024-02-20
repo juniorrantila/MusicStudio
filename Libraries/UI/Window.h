@@ -1,7 +1,17 @@
 #pragma once
 #include <Ty/ErrorOr.h>
+#ifdef __APPLE__
+#include <objc/runtime.h>
+#endif
 
 namespace UI {
+
+#ifdef __APPLE__
+using NativeHandle = id;
+#else
+using NativeHandle = void*;
+#endif
+
 
 struct Window {
     static ErrorOr<Window> create(StringView name, i32 x, i32 y, i32 width, i32 height);
@@ -23,12 +33,12 @@ struct Window {
         return *this;
     }
 
-    void* native_handle() const;
+    NativeHandle native_handle() const;
     void show() const;
     void run() const;
 
 private:
-    constexpr Window(void* window)
+    constexpr Window(NativeHandle window)
         : m_handle(window)
     {
     }
@@ -36,7 +46,7 @@ private:
     void invalidate() { m_handle = nullptr; }
     bool is_valid() const { return m_handle != nullptr; }
 
-    void* m_handle { nullptr };
+    NativeHandle m_handle { nullptr };
 };
 
 }

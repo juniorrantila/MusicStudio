@@ -1,10 +1,6 @@
 #pragma once
 #include <Ty/ErrorOr.h>
-
-#include <GL/glew.h>
-
-#define GL_GLEXT_PROTOTYPES
-#include <SDL2/SDL_opengl.h>
+#include <Graphics/GL.h>
 
 #include <Rexim/LA.h>
 

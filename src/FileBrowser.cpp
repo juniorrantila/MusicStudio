@@ -7,8 +7,6 @@
 #include <Rexim/Util.h>
 #include <Rexim/StringView.h>
 
-#include <SDL2/SDL.h>
-
 static int file_cmp(const void *ap, const void *bp)
 {
     c_string a = *(c_string*)ap;
@@ -135,76 +133,6 @@ Errno fb_change_dir(FileBrowser *fb)
     qsort(fb->files.items, fb->files.count, sizeof(*fb->files.items), file_cmp);
 
     return 0;
-}
-
-void fb_render(const FileBrowser *fb, SDL_Window *window, UI::FreeGlyphAtlas *atlas, UI::SimpleRenderer *sr)
-{
-    Vec2f cursor_pos = vec2f(0, -(f32)fb->cursor * FREE_GLYPH_FONT_SIZE);
-
-    int w, h;
-    SDL_GetWindowSize(window, &w, &h);
-
-    f32 max_line_len = 0.0f;
-
-    sr->set_resolution(vec2f(w, h));
-    sr->set_time((f32) SDL_GetTicks() / 1000.0f);
-
-    sr->set_shader(UI::SHADER_FOR_COLOR);
-    if (fb->cursor < fb->files.count) {
-        const Vec2f begin = vec2f(0, -((f32)fb->cursor + CURSOR_OFFSET) * FREE_GLYPH_FONT_SIZE);
-        Vec2f end = begin;
-        auto file_name = StringView::from_c_string(fb->files.items[fb->cursor].name);
-        end += atlas->measure_line_sized(file_name);
-        if (fb->files.items[fb->cursor].type == FT_DIRECTORY) {
-            atlas->render_line_sized(sr, "/"sv, &end, vec4fs(0.0f));
-        }
-        sr->solid_rect(begin, vec2f(end.x - begin.x, FREE_GLYPH_FONT_SIZE), vec4f(.25, .25, .25, 1));
-    }
-    sr->flush();
-
-    sr->set_shader(UI::SHADER_FOR_EPICNESS);
-    for (usize row = 0; row < fb->files.count; ++row) {
-        const Vec2f begin = vec2f(0, -(f32)row * FREE_GLYPH_FONT_SIZE);
-        Vec2f end = begin;
-        auto file_name = StringView::from_c_string(fb->files.items[row].name);
-        atlas->render_line_sized(sr, file_name, &end, vec4fs(0.0f));
-        if (fb->files.items[row].type == FT_DIRECTORY) {
-            atlas->render_line_sized(sr, "/"sv, &end, vec4fs(0.0f));
-        }
-        // TODO: the max_line_len should be calculated based on what's visible on the screen right now
-        f32 line_len = fabsf(end.x - begin.x);
-        if (line_len > max_line_len) {
-            max_line_len = line_len;
-        }
-    }
-
-    sr->flush();
-
-    // Update camera
-    {
-        if (max_line_len > 1000.0f) {
-            max_line_len = 1000.0f;
-        }
-
-        f32 target_scale = w/3/(max_line_len*0.75); // TODO: division by 0
-
-        Vec2f target = cursor_pos;
-        f32 offset = 0.0f;
-
-        if (target_scale > 3.0f) {
-            target_scale = 3.0f;
-        } else {
-            offset = cursor_pos.x - w/3/sr->camera_scale();
-            if (offset < 0.0f) offset = 0.0f;
-            target = vec2f(w/3/sr->camera_scale() + offset, cursor_pos.y);
-        }
-
-        sr->set_camera_vel((target - sr->camera_pos()) * 2.0f);
-        sr->set_camera_scale_vel((target_scale - sr->camera_scale()) * 2.0f);
-
-        sr->set_camera_pos(sr->camera_pos() + sr->camera_vel() * vec2fs(DELTA_TIME));
-        sr->set_camera_scale(sr->camera_scale() + sr->camera_scale_vel() * DELTA_TIME);
-    }
 }
 
 c_string fb_file_path(FileBrowser *fb)

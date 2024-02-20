@@ -3,8 +3,6 @@ executable('music-studio', [
     'main.cpp',
   ], dependencies: [
     freetype2_dep,
-    glew_dep,
-    sdl2_dep,
     ty_dep,
     main_dep,
     rexim_dep,

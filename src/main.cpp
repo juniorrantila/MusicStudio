@@ -1,12 +1,11 @@
 #include "./Common.h"
 #include "./FileBrowser.h"
+#include "Rexim/LA.h"
+#include "UI/Application.h"
+#include "UI/KeyCode.h"
 #include <Vst/Rectangle.h>
 
 #include <Main/Main.h>
-
-#include <Rexim/StringView.h>
-#include <Rexim/LA.h>
-#include <Rexim/Util.h>
 
 #include <UI/Window.h>
 #include <UI/UI.h>
@@ -15,47 +14,13 @@
 
 #include <MS/Plugin.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
-
-#include <SDL2/SDL.h>
-#include <GL/glew.h>
-#define GL_GLEXT_PROTOTYPES
-#include <SDL2/SDL_opengl.h>
-
 #include <ft2build.h>
 #include FT_FREETYPE_H
-
-void MessageCallback(GLenum source,
-                     GLenum type,
-                     GLuint id,
-                     GLenum severity,
-                     GLsizei length,
-                     const GLchar* message,
-                     const void* userParam)
-{
-    (void) source;
-    (void) id;
-    (void) length;
-    (void) userParam;
-    fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-            (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
-            type, severity, message);
-}
 
 static FileBrowser fb = {};
 
 // TODO: display errors reported via flash_error right in the editor window somehow
 #define flash_error(fmt, ...) do { fprintf(stderr, "ERROR: " fmt "\n", ## __VA_ARGS__); } while(0)
-
-typedef struct {
-    bool quit;
-    bool is_fullscreen;
-    SDL_Window* window;
-} Handle_Events;
-static void handle_events(Handle_Events*, UI::SimpleRenderer*);
 
 ErrorOr<int> Main::main(int argc, c_string argv[])
 {
@@ -133,99 +98,119 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
         }
     }
 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        fprintf(stderr, "ERROR: Could not initialize SDL: %s\n", SDL_GetError());
-        return 1;
-    }
-
-    SDL_Window *window =
-        SDL_CreateWindow("MusicStudio",
-                         0, 0,
-                         SCREEN_WIDTH, SCREEN_HEIGHT,
-                         SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
-    if (window == NULL) {
-        fprintf(stderr, "ERROR: Could not create SDL window: %s\n", SDL_GetError());
-        return 1;
-    }
-
-    {
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-
-        int major;
-        int minor;
-        SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &major);
-        SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &minor);
-        printf("GL version %d.%d\n", major, minor);
-    }
-
-    if (SDL_GL_CreateContext(window) == NULL) {
-        fprintf(stderr, "ERROR: Could not create OpenGL context: %s\n", SDL_GetError());
-        return 1;
-    }
-
-    GLenum gl_error = 0;
-    if (GLEW_OK != (gl_error = glewInit()) && gl_error != GLEW_ERROR_NO_GLX_DISPLAY) {
-        fprintf(stderr, "ERROR: Could not initialize GLEW! %d\n", gl_error);
-        return 1;
-    }
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    if (GLEW_ARB_debug_output) {
-        glEnable(GL_DEBUG_OUTPUT);
-        glDebugMessageCallback(MessageCallback, 0);
-    } else {
-        fprintf(stderr, "WARNING: GLEW_ARB_debug_output is not available\n");
-    }
+    auto application = TRY(UI::Application::create("MusicStudio"sv, 0, 0, 800, 600));
 
     auto sr = TRY(UI::SimpleRenderer::create());
-    {
-        int w, h;
-        SDL_GetWindowSize(window, &w, &h);
+    sr.set_resolution(vec2f(application.width(), application.height()));
+    sr.set_camera_pos(vec2f(application.width(), application.height()) / 2.0f);
 
-        sr.set_resolution(vec2f(w, h));
-        sr.set_camera_pos(vec2f(w, h) / 2.0f);
-    }
     auto atlas = TRY(UI::FreeGlyphAtlas::create(face));
-
-    auto plugin_window = Optional<UI::Window>();
-    if (plugin && plugin->has_editor()) {
-        auto rect = plugin->editor_rectangle().or_else(Vst::Rectangle{0, 0, 800, 600});
-        plugin_window = TRY(UI::Window::create(plugin->name().or_else(""sv), rect.x, rect.y, rect.width, rect.height));
-        if (!plugin->open_editor(plugin_window->native_handle())) {
-            auto name = plugin->name().or_else("<noname>"sv);
-            fprintf(stderr, "ERROR: Could not open editor for plugin: '%.*s'\n", name.size(), name.data());
-        }
-    }
-
-    Vec4f background_color = hex_to_vec4f(0x636A72FF);
-
-    Vec4f file_browser_color = hex_to_vec4f(0x161F24FF);
-    Vec4f file_browser_border_color = hex_to_vec4f(0x434C51FF);
-    Vec4f file_browser_indent_color = hex_to_vec4f(0x2A3338FF);
-
-    Vec4f toolbar_color = hex_to_vec4f(0x596267FF);
-    Vec4f toolbar_border_color = hex_to_vec4f(0x495257FF);
-
-    Vec4f info_bar_color = hex_to_vec4f(0x596267FF);
-    Vec4f info_bar_border_color = hex_to_vec4f(0x495257FF);
-
-    Vec4f text_color = hex_to_vec4f(0x95A99FFF);
-    Vec4f text_alternate_color = hex_to_vec4f(0x95A99FFF);
-
-    f32 border_size = 2.0f;
-
     auto ui = UI::UI(&sr, &atlas);
-    Handle_Events context = (Handle_Events){
-        .quit = false,
-        .is_fullscreen = false,
-        .window = window,
+
+    application.on_window_resize = [&](f32 width, f32 height) {
+        sr.set_resolution(vec2f(width, height));
+        sr.set_camera_pos(vec2f(width, height) / 2.0f);
     };
-    while (!context.quit) {
-        handle_events(&context, &sr);
+
+    application.on_mouse_move = [&](f32 x, f32 y) {
+        ui.set_mouse_pos(x, y);
+    };
+
+    application.on_mouse_down = [&] {
+        ui.set_mouse_down(true);
+    };
+
+    application.on_mouse_up = [&] {
+        ui.set_mouse_down(false);
+    };
+
+    application.on_scroll = [&](f32 x, f32 y) {
+        ui.set_scroll_x(x);
+        ui.set_scroll_x(y);
+    };
+
+    application.on_key_down = [&](UI::KeyCode code, u32) {
+        switch (code) {
+        case UI::KEYCODE_K:
+        case UI::KEYCODE_UP: {
+            if (fb.cursor > 0) fb.cursor -= 1;
+        }
+        break;
+
+        case UI::KEYCODE_J:
+        case UI::KEYCODE_DOWN: {
+            if (fb.cursor + 1 < fb.files.count) fb.cursor += 1;
+        }
+        break;
+
+        case UI::KEYCODE_RETURN: {
+            const char *file_path = fb_file_path(&fb);
+            if (file_path) {
+                File_Type ft;
+                Errno err = type_of_file(file_path, &ft);
+                if (err != 0) {
+                    flash_error("Could not determine type of file %s: %s", file_path, strerror(err));
+                } else {
+                    switch (ft) {
+                    case FT_DIRECTORY: {
+                        err = fb_change_dir(&fb);
+                        if (err != 0) {
+                            flash_error("Could not change directory to %s: %s", file_path, strerror(err));
+                        }
+                    }
+                    break;
+
+                    case FT_REGULAR: {
+                        if (auto result = MS::Plugin::create_from(file_path); result.is_error()) {
+                            flash_error("Could not load plugin '%s'", file_path);
+                        } else {
+                            auto plugin = result.release_value();
+                            if (plugin.has_editor()) {
+                                auto rect = plugin.editor_rectangle().or_else(Vst::Rectangle{0, 0, 800, 600});
+                                if (auto result = UI::Window::create(plugin.name().or_else(""sv), rect.x, rect.y, rect.width, rect.height); result.is_error()) {
+                                    auto message = result.error().message();
+                                    flash_error("Could not open plugin editor: %.*s", message.size(), message.data());
+                                } else {
+                                    auto plugin_window = result.release_value();
+                                    if (!plugin.open_editor(plugin_window.native_handle())) {
+                                        auto name = plugin.name().or_else("<noname>"sv);
+                                        fprintf(stderr, "ERROR: Could not open editor for plugin: '%.*s'\n", name.size(), name.data());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    break;
+
+                    case FT_OTHER: {
+                        flash_error("%s is neither a regular file nor a directory. We can't open it.", file_path);
+                    }
+                    break;
+
+                    default:
+                        UNREACHABLE("unknown File_Type");
+                    }
+                }
+            }
+        }
+        break;
+        default: break;
+        }
+    };
+
+    application.on_update = [&] {
+        f32 border_size = 2.0f;
+        Vec4f background_color = hex_to_vec4f(0x636A72FF);
+        Vec4f file_browser_color = hex_to_vec4f(0x161F24FF);
+        Vec4f file_browser_border_color = hex_to_vec4f(0x434C51FF);
+        Vec4f file_browser_indent_color = hex_to_vec4f(0x2A3338FF);
+        Vec4f toolbar_color = hex_to_vec4f(0x596267FF);
+        Vec4f toolbar_border_color = hex_to_vec4f(0x495257FF);
+        Vec4f info_bar_color = hex_to_vec4f(0x596267FF);
+        Vec4f info_bar_border_color = hex_to_vec4f(0x495257FF);
+        Vec4f text_color = hex_to_vec4f(0x95A99FFF);
+        Vec4f text_alternate_color = hex_to_vec4f(0x95A99FFF);
+
         ui.begin_frame();
 
         ui.clear(background_color);
@@ -309,129 +294,18 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
         }
 
         ui.end_frame();
-        SDL_GL_SwapWindow(window);
+    };
+
+    auto plugin_window = Optional<UI::Window>();
+    if (plugin && plugin->has_editor()) {
+        auto rect = plugin->editor_rectangle().or_else(Vst::Rectangle{0, 0, 800, 600});
+        plugin_window = TRY(UI::Window::create(plugin->name().or_else(""sv), rect.x, rect.y, rect.width, rect.height));
+        if (!plugin->open_editor(plugin_window->native_handle())) {
+            auto name = plugin->name().or_else("<noname>"sv);
+            fprintf(stderr, "ERROR: Could not open editor for plugin: '%.*s'\n", name.size(), name.data());
+        }
     }
 
+    application.run();
     return 0;
-}
-
-static void handle_events_browse_mode(SDL_Event);
-static void handle_events(Handle_Events *context, UI::SimpleRenderer *sr)
-{
-    SDL_Event event = {0};
-    while (SDL_PollEvent(&event)) {
-        if (event.type == SDL_QUIT)
-            context->quit = true;
-
-        switch (event.type) {
-
-        case SDL_WINDOWEVENT: {
-            switch (event.window.event) {
-            case SDL_WINDOWEVENT_RESTORED:
-            case SDL_WINDOWEVENT_MAXIMIZED:
-            case SDL_WINDOWEVENT_SIZE_CHANGED:
-            case SDL_WINDOWEVENT_RESIZED: {
-                int w, h;
-                SDL_GetWindowSize(context->window, &w, &h);
-                glViewport(0, 0, w, h);
-            }
-            break;
-            }
-        }
-        break;
-
-        case SDL_KEYDOWN: {
-            switch (event.key.keysym.sym) {
-                case SDLK_F11: {
-                    context->is_fullscreen = !context->is_fullscreen;
-                    SDL_SetWindowFullscreen(context->window, context->is_fullscreen * SDL_WINDOW_FULLSCREEN_DESKTOP);
-                }
-                continue;
-
-                case SDLK_F5: {
-                    sr->reload_shaders().or_else([](Error error) {
-                        auto message = error.message();
-                        flash_error("Could not reload shaders: %.*s", message.size(), message.data());
-                    });
-                }
-                continue;
-            }
-        } break;
-
-        }
-
-        handle_events_browse_mode(event);
-    }
-}
-static void handle_events_browse_mode(SDL_Event event)
-{
-    switch (event.type) {
-    case SDL_KEYDOWN: {
-        switch (event.key.keysym.sym) {
-        case SDLK_k:
-        case SDLK_UP: {
-            if (fb.cursor > 0) fb.cursor -= 1;
-        }
-        break;
-
-        case SDLK_j:
-        case SDLK_DOWN: {
-            if (fb.cursor + 1 < fb.files.count) fb.cursor += 1;
-        }
-        break;
-
-        case SDLK_RETURN: {
-            const char *file_path = fb_file_path(&fb);
-            if (file_path) {
-                File_Type ft;
-                Errno err = type_of_file(file_path, &ft);
-                if (err != 0) {
-                    flash_error("Could not determine type of file %s: %s", file_path, strerror(err));
-                } else {
-                    switch (ft) {
-                    case FT_DIRECTORY: {
-                        err = fb_change_dir(&fb);
-                        if (err != 0) {
-                            flash_error("Could not change directory to %s: %s", file_path, strerror(err));
-                        }
-                    }
-                    break;
-
-                    case FT_REGULAR: {
-                        if (auto result = MS::Plugin::create_from(file_path); result.is_error()) {
-                            flash_error("Could not load plugin '%s'", file_path);
-                        } else {
-                            auto plugin = result.release_value();
-                            if (plugin.has_editor()) {
-                                auto rect = plugin.editor_rectangle().or_else(Vst::Rectangle{0, 0, 800, 600});
-                                if (auto result = UI::Window::create(plugin.name().or_else(""sv), rect.x, rect.y, rect.width, rect.height); result.is_error()) {
-                                    auto message = result.error().message();
-                                    flash_error("Could not open plugin editor: %.*s", message.size(), message.data());
-                                } else {
-                                    auto plugin_window = result.release_value();
-                                    if (!plugin.open_editor(plugin_window.native_handle())) {
-                                        auto name = plugin.name().or_else("<noname>"sv);
-                                        fprintf(stderr, "ERROR: Could not open editor for plugin: '%.*s'\n", name.size(), name.data());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    break;
-
-                    case FT_OTHER: {
-                        flash_error("%s is neither a regular file nor a directory. We can't open it.", file_path);
-                    }
-                    break;
-
-                    default:
-                        UNREACHABLE("unknown File_Type");
-                    }
-                }
-            }
-        }
-        break;
-        }
-    } break;
-    }
 }

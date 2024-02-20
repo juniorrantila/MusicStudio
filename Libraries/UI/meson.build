@@ -21,8 +21,7 @@ ui_lib = library('UI', [
   ], dependencies: [
     ui_target_deps,
     freetype2_dep,
-    glew_dep,
-    sdl2_dep,
+    opengl_dep,
     ty_dep,
   ])
 

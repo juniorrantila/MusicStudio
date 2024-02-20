@@ -33,28 +33,12 @@ void UI::clear(Vec4f color) const
 void UI::begin_frame()
 {
     m_uid = 0;
-    m_time = ((f32)SDL_GetTicks()) / 1000.0f;
-    m_last_mouse_pos = m_mouse_pos;
-
-    i32 x = 0;
-    i32 y = 0;
-    m_mouse_left_down = SDL_GetMouseState(&x, &y) & 1;
-
-    SDL_Window* window = SDL_GL_GetCurrentWindow();
-    i32 height = 0;
-    SDL_GetWindowSize(window, nullptr, &height);
-    m_mouse_pos = vec2f(x, height - y);
 }
 
 void UI::end_frame()
 {
     m_scroll_x = 0;
     m_scroll_y = 0;
-    u32 duration = SDL_GetTicks() - (m_time * 1000.0f);
-    u32 delta_time_ms = 1000 / 60;
-    if (duration < delta_time_ms) {
-        SDL_Delay(delta_time_ms - duration);
-    }
     m_renderer->flush();
 }
 

@@ -307,8 +307,11 @@ iptr AudioPlugin::dispatch(PluginOpcode opcode, i32 index, iptr value,
         return config().plugin_version;
 
     case PluginOpcode::VendorSpecific:
-        return vendor_specific(index, value,
-            ptr, opt);
+        if (index == (i32)ExtensionVendor::Prosonus) {
+            return dispatch_prosonus_extension((ProsonusPluginOpcode)value, ptr, opt);
+        }
+        return vendor_specific(index, value, ptr, opt);
+
     case PluginOpcode::CanDo:
         return (iptr)can_do((char*)ptr);
 
@@ -447,6 +450,18 @@ iptr AudioPlugin::dispatch(PluginOpcode opcode, i32 index, iptr value,
         return 1;
     }
 
+    return 0;
+}
+
+iptr AudioPlugin::dispatch_prosonus_extension(ProsonusPluginOpcode opcode, void* ptr, f32 opt)
+{
+    (void)ptr;
+    switch (opcode) {
+    case ProsonusPluginOpcode::EditSetContentScaleFactor:
+        return set_editor_dpi(opt);
+    case ProsonusPluginOpcode::EditSetRect:
+        return set_editor_rectangle((Rectangle const*)ptr);
+    }
     return 0;
 }
 

@@ -11,7 +11,9 @@ project('MusicStudio', ['cpp', 'c'],
     'strip=true',
   ])
 
-add_global_arguments([
+cpp = meson.get_compiler('cpp')
+
+add_project_arguments(cpp.get_supported_arguments([
   '-Wno-c99-designator',
   '-Wno-c99-extensions',
   '-Wno-format-pedantic',
@@ -24,11 +26,11 @@ add_global_arguments([
   '-Wno-user-defined-literals',
   '-Wno-nested-anon-types',
   '-Werror=return-type',
-], language: ['objcpp', 'cpp', 'c'])
+]), language: ['objcpp', 'cpp', 'c'])
 
-add_global_arguments([
+add_project_arguments(cpp.get_supported_arguments([
   '-fobjc-arc',
-], language: ['objcpp', 'objc'])
+]), language: ['objcpp', 'objc'])
 
 freetype2_proj = subproject('freetype2', default_options: [
   'warning_level=0',

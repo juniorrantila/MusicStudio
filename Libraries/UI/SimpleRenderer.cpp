@@ -308,16 +308,16 @@ void SimpleRenderer::quad(Vec2f p0, Vec2f p1, Vec2f p2, Vec2f p3,
 void SimpleRenderer::image_rect(Vec2f p, Vec2f s, Vec2f uvp, Vec2f uvs, Vec4f c)
 {
     quad(
-        p, vec2f_add(p, vec2f(s.x, 0)), vec2f_add(p, vec2f(0, s.y)), vec2f_add(p, s),
+        p, p + vec2f(s.x, 0), p + vec2f(0, s.y), p + s,
         c, c, c, c,
-        uvp, vec2f_add(uvp, vec2f(uvs.x, 0)), vec2f_add(uvp, vec2f(0, uvs.y)), vec2f_add(uvp, uvs));
+        uvp, uvp + vec2f(uvs.x, 0), uvp + vec2f(0, uvs.y), uvp + uvs);
 }
 
 void SimpleRenderer::solid_rect(Vec2f p, Vec2f s, Vec4f c)
 {
     Vec2f uv = vec2fs(0);
     quad(
-        p, vec2f_add(p, vec2f(s.x, 0)), vec2f_add(p, vec2f(0, s.y)), vec2f_add(p, s),
+        p, p + vec2f(s.x, 0), p + vec2f(0, s.y), p + s,
         c, c, c, c,
         uv, uv, uv, uv);
 }

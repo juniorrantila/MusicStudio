@@ -6,7 +6,6 @@ endif
 rexim_lib = static_library('Rexim', [
     'Arena.cpp',
     'File.cpp',
-    'LA.cpp',
     'StringView.cpp',
     'Util.cpp',
     rexim_platform_sources,

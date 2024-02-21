@@ -3,6 +3,7 @@
 #include <Vst/PluginData.h>
 #include <Vst/Rectangle.h>
 #include <Vst/Vst.h>
+#include <Vst/CanDo.h>
 
 namespace Vst {
 
@@ -77,6 +78,11 @@ Optional<Rectangle> Effect::editor_rectangle()
     if (dispatch(PluginOpcode::GetEditorRectangle, 0, 0, &rectangle))
         return *rectangle;
     return {};
+}
+
+bool Effect::set_editor_rectangle(Rectangle const* rect)
+{
+    return dispatch(PluginOpcode::VendorSpecific, (i32)ExtensionVendor::Prosonus, (iptr)ProsonusPluginOpcode::EditSetRect, (Rectangle*)rect);
 }
 
 bool Effect::open_editor(void* window)
@@ -246,7 +252,7 @@ iptr Effect::vendor_specific(i32 index, iptr value,
             opt);
 }
 
-CanDo Effect::can_do(char const* thing)
+CanDo Effect::can_do(c_string thing)
 {
     return (CanDo)dispatch(PluginOpcode::CanDo, 0, 0, (void*)thing, 0);
 }

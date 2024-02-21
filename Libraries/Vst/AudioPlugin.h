@@ -131,7 +131,10 @@ public:
     }
 #endif
 
-    virtual Rectangle const* editor_rectangle() const = 0;
+    virtual bool set_editor_rectangle(Rectangle const*)
+    {
+        return false;
+    }
 
     [[nodiscard]] virtual bool set_knob_mode(KnobMode mode) = 0;
 

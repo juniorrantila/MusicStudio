@@ -142,6 +142,7 @@ struct Effect
     [[nodiscard]] bool pause();
     [[nodiscard]] bool resume();
     Optional<Rectangle> editor_rectangle();
+    [[nodiscard]] bool set_editor_rectangle(Rectangle const*);
     [[nodiscard]] bool open_editor(void* window);
     [[nodiscard]] bool close_editor();
     [[nodiscard]] bool editor_idle();

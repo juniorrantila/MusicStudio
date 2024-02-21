@@ -26,6 +26,8 @@ add_project_arguments(cpp.get_supported_arguments([
   '-Wno-user-defined-literals',
   '-Wno-nested-anon-types',
   '-Werror=return-type',
+  '-ffreestanding',
+  '-nostdincc++',
 ]), language: ['objcpp', 'cpp', 'c'])
 
 add_project_arguments(cpp.get_supported_arguments([
@@ -46,6 +48,8 @@ freetype2_proj = subproject('freetype2', default_options: [
   'zlib=disabled',
 ])
 freetype2_dep = freetype2_proj.get_variable('freetype_dep')
+
+c_dep = cpp.find_library('c', static: true)
 
 if target_machine.system() == 'darwin'
   opengl_dep = dependency('opengl', static: true)

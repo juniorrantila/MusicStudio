@@ -61,7 +61,7 @@ enum class PluginFlags : PluginFlagsUnderlying {
 struct AudioPlugin;
 struct Events;
 struct Rectangle;
-enum class CanDo : i32;
+struct CanDo;
 struct ProcessVarIo;
 struct Effect 
 {

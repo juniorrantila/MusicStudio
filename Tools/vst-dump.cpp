@@ -3,6 +3,7 @@
 #include <Ty/Defer.h>
 #include <Ty/Defer.h>
 #include <Ty/ErrorOr.h>
+#include <Vst/CanDo.h>
 #include <Vst/Vst.h>
 
 #include <stdio.h>
@@ -36,7 +37,7 @@ ErrorOr<int> main(int argc, char const* argv[])
     auto plugin_vst_version = plugin.vst_version();
 
     auto magic_value = plugin.vst_magic();
-    printf("\n--------------------------------\n");
+    printf("\n------------------------------------\n\n");
     printf("       VST Magic: %.4s (0x%.4X)\n", (char*)&magic_value, magic_value);
     printf("     VST Version: %d\n\n", plugin_vst_version);
     printf("            Name: %*s\n", plugin_name.size(), plugin_name.data());
@@ -54,7 +55,22 @@ ErrorOr<int> main(int argc, char const* argv[])
     printf("  Program chunks: %s\n", plugin.uses_program_chunks() ? "yes" : "no");
     printf("        Is synth: %s\n", plugin.is_synth() ? "yes" : "no");
     printf("  Silent stopped: %s\n", plugin.is_silent_when_stopped() ? "yes" : "no");
-    printf("----------------------------------\n\n");
+    printf("\n");
+    printf("-------------Extensions-------------\n\n");
+    u32 longest = 0;
+    for (auto feature : Vst::Feature::all()) {
+        if (longest < feature.name().size()) {
+            longest = feature.name().size();
+        }
+    }
+    for (auto feature : Vst::Feature::all()) {
+        auto result = plugin.vst->can_do(feature);
+        for (u32 i = feature.name().size(); i < longest; i++) {
+            printf(" ");
+        };
+        printf(" %.*s: %.*s\n", feature.name().size(), feature.name().data(), result.name().size(), result.name().data());
+    }
+    printf("\n------------------------------------\n\n");
 
     return 0;
 }

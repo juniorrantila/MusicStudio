@@ -67,10 +67,14 @@ else
   opengl_dep += glew_proj.get_variable('glew_dep')
 endif
 
+embed_gen = generator(
+  find_program('xxd'),
+  output: '@PLAINNAME@.h',
+  arguments: ['-i', '-n', '@PLAINNAME@', '@INPUT@', '@OUTPUT@']
+)
+
+
 subdir('Libraries')
-
 subdir('Tools')
-
 subdir('Plugins')
-
 subdir('src')

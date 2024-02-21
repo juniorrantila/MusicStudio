@@ -53,16 +53,21 @@ BOOL shouldStop = NO;
     return self;
 }
 
-- (NSSize)windowWillResize:(NSWindow *)sender toSize:(NSSize)frameSize {
-    glViewport(0, 0, frameSize.width, frameSize.height);
+-(void)setFrame:(NSRect)frameRect display:(BOOL)flag {
+    [super setFrame:frameRect display:flag];
+    auto size = frameRect.size;
     if (self.instance) {
         if (self.instance->on_window_resize) {
-            self.instance->on_window_resize(frameSize.width, frameSize.height);
+            self.instance->on_window_resize(size.width, size.height);
         }
-        self.instance->set_width(frameSize.width);
-        self.instance->set_height(frameSize.height);
+        self.instance->set_width(size.width);
+        self.instance->set_height(size.height);
     }
-    return frameSize;
+    if (self.instance) {
+        self.instance->update();
+    }
+    [glView update];
+    [[glView openGLContext] flushBuffer];
 }
 
 - (void)keyDown:(NSEvent *)event {

@@ -2,6 +2,7 @@
 
 #include <Ty/ScopeGuard.h>
 #include <Ty/Defer.h>
+#include <Ty/StringBuffer.h>
 
 #include <Rexim/Util.h>
 #include <Rexim/StringBuilder.h>
@@ -12,9 +13,30 @@
 
 #include <stddef.h>
 
+#include "./Shaders/simple.vert.h"
+#include "./Shaders/simple_color.frag.h"
+#include "./Shaders/simple_image.frag.h"
+#include "./Shaders/simple_text.frag.h"
+#include "./Shaders/simple_epic.frag.h"
+
 #define vert_shader_file_path "./Shaders/simple.vert"
 
 namespace UI {
+
+static const StringView fallback_shaders[] = {
+    StringView::from_parts((char*)simple_vert, simple_vert_len),
+    StringView::from_parts((char*)simple_color_frag, simple_color_frag_len),
+    StringView::from_parts((char*)simple_image_frag, simple_image_frag_len),
+    StringView::from_parts((char*)simple_text_frag, simple_text_frag_len),
+    StringView::from_parts((char*)simple_epic_frag, simple_epic_frag_len),
+};
+static const StringView shader_paths[] = {
+    "./Shaders/simple.vert",
+    "./Shaders/simple_color.frag",
+    "./Shaders/simple_image.frag",
+    "./Shaders/simple_text.frag",
+    "./Shaders/simple_epic.frag",
+};
 
 static_assert(COUNT_SIMPLE_SHADERS == 4, "The amount of fragment shaders has changed");
 const char *frag_shader_file_paths[COUNT_SIMPLE_SHADERS] = {
@@ -51,7 +73,7 @@ static ErrorOr<GLuint> compile_shader_source(const GLchar *source, GLenum shader
         glGetShaderInfoLog(shader, sizeof(message), &message_size, message);
         fprintf(stderr, "ERROR: could not compile %s\n", shader_type_as_cstr(shader_type));
         fprintf(stderr, "%.*s\n", message_size, message);
-        return Error::from_leaky_string("could not compile shader");
+        return Error::from_string_literal("could not compile shader");
     }
 
     return shader;
@@ -59,18 +81,20 @@ static ErrorOr<GLuint> compile_shader_source(const GLchar *source, GLenum shader
 
 static ErrorOr<GLuint> compile_shader_file(const char *file_path, GLenum shader_type)
 {
-    String_Builder source = {};
-    Errno err = read_entire_file(file_path, &source);
-    if (err != 0) {
-        fprintf(stderr, "ERROR: failed to load `%s` shader file: %s\n", file_path, strerror(errno));
-        return Error::from_string_literal("could not read file");
+    i32 shader_id = -1;
+    auto file_name = StringView::from_c_string(file_path);
+    for (i32 i = 0; auto name : shader_paths) {
+        if (file_name == name) {
+            shader_id = i;
+            break;
+        }
+        i++;
     }
-    Defer free_file = [&] {
-        free(source.items);
-    };
-    sb_append_null(&source);
-
-    return TRY(compile_shader_source(source.items, shader_type));
+    if (shader_id == -1) {
+        return Error::from_string_literal("unknown shader");
+    }
+    auto buf = TRY(StringBuffer::create_fill(fallback_shaders[shader_id], "\0"sv));
+    return TRY(compile_shader_source(buf.data(), shader_type));
 }
 
 static void attach_shaders_to_program(GLuint *shaders, usize shaders_count, GLuint program)

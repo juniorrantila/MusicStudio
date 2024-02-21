@@ -73,6 +73,7 @@ embed_gen = generator(
   arguments: ['-i', '-n', '@PLAINNAME@', '@INPUT@', '@OUTPUT@']
 )
 
+subdir('Fonts')
 
 subdir('Libraries')
 subdir('Tools')

@@ -135,6 +135,7 @@ public:
 
     [[nodiscard]] virtual bool set_knob_mode(KnobMode mode) = 0;
 
+    iptr dispatch_prosonus_extension(ProsonusPluginOpcode opcode, void* ptr, f32 opt);
     iptr dispatch(PluginOpcode opcode, i32 index, iptr value, void* ptr, f32 opt);
 
 #if 0

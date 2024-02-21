@@ -251,7 +251,14 @@ enum class PluginOpcode : i32 {
                                 // value: time per beat in samples?
                                 // opt: tempo
 
-    __Size,
+};
+
+enum class ExtensionVendor : i32 {
+    Prosonus = 'PreS',
+};
+enum class ProsonusPluginOpcode : iptr {
+    EditSetRect = 'AeEm',
+    EditSetContentScaleFactor = 'AeCs',
 };
 
 constexpr char const* host_opcode_string(HostOpcode op)
@@ -525,8 +532,17 @@ constexpr char const* plugin_opcode_string(PluginOpcode op)
         return "GetNumMidiOutputChannels";
     case SetTempo:
         return "SetTempo";
-    case __Size:
-        return nullptr;
+    }
+    return nullptr;
+}
+
+constexpr char const* plugin_prosonus_opcode_string(ProsonusPluginOpcode op)
+{
+    switch(op) {
+    case ProsonusPluginOpcode::EditSetRect:
+        return "EditSetRect";
+    case ProsonusPluginOpcode::EditSetContentScaleFactor:
+        return "EditSetContentScaleFactor";
     }
     return nullptr;
 }

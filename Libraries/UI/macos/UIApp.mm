@@ -38,6 +38,7 @@ BOOL shouldStop = NO;
         glView = [[NSOpenGLView alloc] initWithFrame:contentRect pixelFormat:format];
         // Set context and attach it to the window
         [[glView openGLContext] makeCurrentContext];
+        [glView setWantsBestResolutionOpenGLSurface:YES];
 
         [self setContentView:glView];
         [glView prepareOpenGL];

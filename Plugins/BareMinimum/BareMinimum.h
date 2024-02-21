@@ -25,7 +25,7 @@ struct BareMinimum final : Vst::AudioPlugin {
         };
     }
 
-    bool open_editor(void* window_handle) override
+    bool open_editor(Vst::NativeHandle window_handle) override
     {
         (void)window_handle;
         return false;

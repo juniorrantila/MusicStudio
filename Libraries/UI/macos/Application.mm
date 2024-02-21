@@ -2,6 +2,7 @@
 #import "./UIApp.h"
 
 #include "../Application.h"
+#include "../Window.h"
 
 namespace UI {
 
@@ -53,6 +54,13 @@ void Application::run() const {
     UIApp* app = m_native_handle;
     [app makeKeyAndOrderFront:app];
     [NSApp run];
+}
+
+void Application::add_child_window(Window const& window) const
+{
+    UIApp* app = m_native_handle;
+    NSView* view = window.native_handle();
+    [app addChildWindow:view.window ordered:NSWindowAbove];
 }
 
 }

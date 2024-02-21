@@ -15,6 +15,7 @@ using NativeHandle = id;
 using NativeHandle = void*;
 #endif
 
+struct Window;
 struct Application {
     static ErrorOr<Application> create(StringView title, i32 x, i32 y, i32 width, i32 height);
     Application(Application const&) = delete;
@@ -40,6 +41,8 @@ struct Application {
     ~Application();
 
     void run() const;
+
+    void add_child_window(Window const&) const;
 
     SmallCapture<void()> on_update;
 

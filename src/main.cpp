@@ -172,6 +172,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
                                     flash_error("Could not open plugin editor: %.*s", message.size(), message.data());
                                 } else {
                                     auto plugin_window = result.release_value();
+                                    application.add_child_window(plugin_window);
                                     if (!plugin.open_editor(plugin_window.native_handle())) {
                                         auto name = plugin.name().or_else("<noname>"sv);
                                         fprintf(stderr, "ERROR: Could not open editor for plugin: '%.*s'\n", name.size(), name.data());

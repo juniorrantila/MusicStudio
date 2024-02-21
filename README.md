@@ -6,10 +6,6 @@
 
 ## Build instructions
 
-### Prerequisites:
-
-When building with macOS, `glew` and `sdl2` needs to be installed.
-
 ### Setup:
 
 ```sh

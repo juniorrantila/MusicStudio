@@ -38,10 +38,7 @@ struct Window {
     void run() const;
 
 private:
-    constexpr Window(NativeHandle window)
-        : m_handle(window)
-    {
-    }
+    Window(NativeHandle window);
 
     void invalidate() { m_handle = nullptr; }
     bool is_valid() const { return m_handle != nullptr; }

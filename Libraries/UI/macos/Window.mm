@@ -3,6 +3,11 @@
 
 namespace UI {
 
+Window::Window(NativeHandle handle)
+    : m_handle(handle)
+{
+}
+
 ErrorOr<Window> Window::create(StringView title, i32 x, i32 y, i32 width, i32 height)
 {
     auto* window = [[NSWindow alloc] initWithContentRect: NSMakeRect(x, y, width, height)

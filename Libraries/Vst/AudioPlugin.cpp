@@ -75,9 +75,6 @@ iptr AudioPlugin::dispatch(PluginOpcode opcode, i32 index, iptr value,
     void* ptr, f32 opt)
 {
     switch (opcode) {
-    default: // FIXME
-        return 0;
-
     case PluginOpcode::Create: // Created elsewhere.
         __builtin_unreachable();
         return 0;
@@ -151,7 +148,7 @@ iptr AudioPlugin::dispatch(PluginOpcode opcode, i32 index, iptr value,
     }
 
     case PluginOpcode::CreateEditor:
-        return open_editor(ptr);
+        return open_editor((NativeHandle)ptr);
 
     case PluginOpcode::DestroyEditor:
         close_editor();
@@ -160,15 +157,12 @@ iptr AudioPlugin::dispatch(PluginOpcode opcode, i32 index, iptr value,
     case PluginOpcode::EditorIdle:
         return 0;
 
-#if 0 // Deprecated.
-#    if (TARGET_API_MAC_CARBON && !VST_FORCE_DEPRECATED)
-        case effEditDraw:            if (editor) editor->draw ((ERect*)ptr);                break;
-        case effEditMouse:            if (editor) v = editor->mouse (index, value);        break;
-        case effEditKey:            if (editor) v = editor->key (value);                break;
-        case effEditTop:            if (editor) editor->top ();                            break;
-        case effEditSleep:            if (editor) editor->sleep ();                        break;
-#    endif
-#endif
+    case PluginOpcode::_EditDraw:
+    case PluginOpcode::_EditMouse:
+    case PluginOpcode::_EditKey:
+    case PluginOpcode::_EditTop:
+    case PluginOpcode::_EditSleep:
+        return 0;
 
     case PluginOpcode::_Identify:
         return config().author_id;
@@ -208,23 +202,17 @@ iptr AudioPlugin::dispatch(PluginOpcode opcode, i32 index, iptr value,
         return 1;
     }
 
-#if 0
     case PluginOpcode::_GetNumProgramCategories:
         return 0;
 
-        case PluginOpcode::CopyProgram:
-            return copy_program(index)
+    case PluginOpcode::_CopyProgram:
+        return 0;
 
-        case PluginOpcode::ConnectInput:
-            input_connected(index, value ? true : false);
-            v = 1;
-            break;
+    case PluginOpcode::_ConnectInput:
+        return 0;
 
-        case effConnectOutput:
-            outputConnected (index, value ? true : false);
-            v = 1;
-            break;
-#endif
+    case PluginOpcode::_ConnectOutput:
+        return 0;
 
     case PluginOpcode::GetInputProperties: {
         // FIXME: Make this fallible
@@ -241,20 +229,67 @@ iptr AudioPlugin::dispatch(PluginOpcode opcode, i32 index, iptr value,
     }
 
     case PluginOpcode::GetPlugCategory:
-        return (iptr)config().category;
+        return 0;
 
-#if 0
-#    if !VST_FORCE_DEPRECATED
-    //---Realtime----------------------
-    case effGetCurrentPosition:
-        v = reportCurrentPosition();
-        break;
+    case PluginOpcode::_GetCurrentPosition:
+        return 0;
 
-    case effGetDestinationBuffer:
-        v = ToVstPtr<float>(reportDestinationBuffer());
-        break;
-#    endif // !VST_FORCE_DEPRECATED
-#endif
+    case PluginOpcode::_GetDestinationBuffer:
+        return 0;
+
+    case PluginOpcode::_SetBlockSizeAndSampleRate:
+        return 0;
+
+    case PluginOpcode::_GetErrorText:
+        return 0;
+
+    case PluginOpcode::_Idle:
+        return 0;
+
+    case PluginOpcode::_GetIcon:
+        return 0;
+
+    case PluginOpcode::_SetViewPosition:
+        return 0;
+
+    case PluginOpcode::_KeysRequired:
+        return 0;
+
+    case PluginOpcode::NotifyKeyDown:
+        return 0;
+
+    case PluginOpcode::NotifyKeyUp:
+        return 0;
+
+    case PluginOpcode::GetMidiProgramName:
+        return 0;
+
+    case PluginOpcode::GetCurrentMidiProgram:
+        return 0;
+
+    case PluginOpcode::GetMidiProgramCategory:
+        return 0;
+
+    case PluginOpcode::HasMidiProgramsChanged:
+        return 0;
+
+    case PluginOpcode::BeginSetProgram:
+        return 0;
+
+    case PluginOpcode::EndSetProgram:
+        return 0;
+
+    case PluginOpcode::GetSpeakerArrangement:
+        return 0;
+
+    case PluginOpcode::ShellGetNextPlugin:
+        return 0;
+
+    case PluginOpcode::BeginLoadBank:
+        return 0;
+
+    case PluginOpcode::BeginLoadProgram:
+        return 0;
 
     case PluginOpcode::OfflineNotify:
         return notify_offline((AudioFile*)ptr,

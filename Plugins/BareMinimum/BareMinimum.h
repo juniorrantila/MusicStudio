@@ -35,8 +35,6 @@ struct BareMinimum final : Vst::AudioPlugin {
 
     void close_editor() override { }
 
-    void set_editor_dpi(f32) override {}
-
     bool suspend() override
     {
         return false;

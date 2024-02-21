@@ -9,80 +9,189 @@
 #include <Vst/CanDo.h>
 #include <Vst/Host.h>
 #include <Vst/Config.h>
+#ifdef __APPLE__
+#include <objc/runtime.h>
+#endif
 
 namespace Vst {
 
+#ifdef __APPLE__
+using NativeHandle = id;
+#else
+using NativeHandle = void*;
+#endif
+
 struct AudioPlugin {
-    AudioPlugin() = default;;
-    virtual ~AudioPlugin() = default;
+    AudioPlugin() = default;
+    virtual ~AudioPlugin() {}
 
     virtual Config config() const = 0;
 
-    // static AudioPlugin* create(Host host);
-    // void destroy();
+    virtual bool open_editor(NativeHandle window_handle)
+    {
+        (void)window_handle;
+        return false;
+    }
 
-    virtual bool open_editor(void* window_handle) = 0;
-    virtual void editor_loop() = 0;
-    virtual void close_editor() = 0;
-    virtual void set_editor_dpi(f32 value) = 0;
+    virtual void editor_loop() {}
+    virtual void close_editor() {}
+    virtual bool set_editor_dpi(f32)
+    {
+        return false;
+    }
 
-    [[nodiscard]] virtual bool resume() = 0;
-    [[nodiscard]] virtual bool suspend() = 0;
+    [[nodiscard]] virtual bool resume() { return true; }
+    [[nodiscard]] virtual bool suspend() { return true; }
 
-    [[nodiscard]] virtual bool start_process() = 0;
-    [[nodiscard]] virtual bool stop_process() = 0;
+    [[nodiscard]] virtual bool start_process()
+    {
+        return true;
+    }
+    [[nodiscard]] virtual bool stop_process()
+    {
+        return true;
+    }
 
     virtual void process_f32(f32 const* const* inputs,
                              f32* const* outputs,
-                             i32 samples) = 0;
+                             i32 samples)
+    {
+        (void)inputs;
+        (void)outputs;
+        (void)samples;
+    }
 
     virtual void process_f64(f64 const* const* inputs,
                              f64* const* outputs,
-                             i32 samples) = 0;
+                             i32 samples)
+    {
+        (void)inputs;
+        (void)outputs;
+        (void)samples;
+    }
 
-    [[nodiscard]] virtual bool set_current_preset(i32 id) = 0;
-    virtual i32 current_preset() const = 0;
-    [[nodiscard]] virtual bool set_preset_name(char const* new_name) = 0;
-    virtual char const* preset_name() const = 0;
+    [[nodiscard]] virtual bool set_current_preset(i32 id)
+    {
+        (void)id;
+        return false;
+    }
 
-    virtual char const* parameter_label(i32 parameter_id) const = 0;
-    virtual char const* parameter_display(i32 parameter_id) const = 0;
-    virtual char const* parameter_name(i32 parameter_id) const = 0;
+    virtual i32 current_preset() const
+    {
+        return -1;
+    }
+
+    [[nodiscard]] virtual bool set_preset_name(char const* new_name)
+    {
+        (void)new_name;
+        return false;
+    }
+
+    virtual char const* preset_name() const
+    {
+        return "noname";
+    }
+
+    virtual char const* parameter_label(i32 parameter_id) const
+    {
+        (void)parameter_id;
+        return "noname";
+    }
+
+    virtual char const* parameter_display(i32 parameter_id) const
+    {
+        (void)parameter_id;
+        return "noname";
+    }
+
+    virtual char const* parameter_name(i32 parameter_id) const
+    {
+        (void)parameter_id;
+        return "noname";
+    }
 
     [[nodiscard]] virtual bool set_sample_rate(f32 value) = 0;
     [[nodiscard]] virtual bool set_block_size(i32 value) = 0;
 
     // bool get_chunk(ChunkType type);
-    [[nodiscard]] virtual bool set_chunk(ChunkType type, i32 id, void* value) = 0;
+    [[nodiscard]] virtual bool set_chunk(ChunkType type, i32 id, void* value)
+    {
+        (void)type;
+        (void)id;
+        (void)value;
+        return false;
+    }
 
 private:
     bool process_events(Events* events);
 public:
-    virtual void process_midi_event(MidiEvent*) = 0;
+    virtual void process_midi_event(MidiEvent*) {}
 
-    virtual bool parameter_can_be_automated(i32 parameter_id) const = 0;
+    virtual bool parameter_can_be_automated(i32 parameter_id) const
+    {
+        (void)parameter_id;
+        return true;
+    }
 
-    // static bool string_to_parameter(i32 id, char const* name);
+    virtual char const* preset_name_from_id(i32 preset_id) const
+    {
+        (void)preset_id;
+        return "noname";
+    }
 
-    virtual char const* preset_name_from_id(i32 preset_id) const = 0;
-
-    virtual PinProperties input_properties(i32 input_id) const = 0;
-    virtual PinProperties output_properties(i32 output_id) const = 0;
+    virtual PinProperties input_properties(i32 input_id) const
+    {
+        (void)input_id;
+        return {};
+    }
+    virtual PinProperties output_properties(i32 output_id) const
+    {
+        (void)output_id;
+        return {};
+    }
 
     [[nodiscard]] virtual bool notify_offline(AudioFile* files,
                                 i32 files_size,
-                                bool start) = 0;
+                                bool start)
+    {
+        (void)files;
+        (void)files_size;
+        (void)start;
+        return false;
+    }
 
     [[nodiscard]] virtual bool prepare_offline(OfflineTask* tasks,
-                                 i32 tasks_size) = 0;
+                                 i32 tasks_size)
+    {
+        (void)tasks;
+        (void)tasks_size;
+        return false;
+    }
 
-    [[nodiscard]] virtual bool run_offline(OfflineTask* tasks, i32 tasks_size) = 0;
+    [[nodiscard]] virtual bool run_offline(OfflineTask* tasks, i32 tasks_size)
+    {
+        (void)tasks;
+        (void)tasks_size;
+        return false;
+    }
 
-    [[nodiscard]] virtual bool set_speaker_arrangement(SpeakerArrangement* value) = 0;
+    [[nodiscard]] virtual bool set_speaker_arrangement(SpeakerArrangement* value)
+    {
+        (void)value;
+        return false;
+    }
 
-    [[nodiscard]] virtual bool process_variable_io(VariableIO* io) = 0;
+    [[nodiscard]] virtual bool process_variable_io(VariableIO* io)
+    {
+        (void)io;
+        return false;
+    }
 
-    [[nodiscard]] virtual bool set_bypass(bool value) = 0;
+    [[nodiscard]] virtual bool set_bypass(bool value)
+    {
+        (void)value;
+        return false;
+    }
 
 private:
     iptr internal_vendor_specific(i32 index, iptr value,
@@ -103,57 +212,87 @@ public:
         return 0;
     }
 
-    virtual CanDo can_do(char const* thing) const = 0;
-
-    virtual i32 tail_size() const = 0;
-
-    virtual MidiPresetName const* midi_preset_name(i32 preset_id) const = 0;
-
-    [[nodiscard]] virtual bool set_total_samples_to_process(i32 value) = 0;
-
-    [[nodiscard]] virtual bool set_pan_law(PanLaw type, f32 gain) = 0;
-
-    [[nodiscard]] virtual bool set_process_precision(Precision value) = 0;
-
-    virtual i32 midi_input_channels_size() const = 0;
-    virtual i32 midi_output_channels_size() const = 0;
-
-    virtual void set_parameter(i32 parameter_id, f32 value) = 0;
-
-    virtual f32 parameter(i32 parameter_id) const = 0;
-
-    virtual ParameterProperties parameter_properties(i32 parameter_id) const = 0;
-
-#if 0
-    virtual void set_imgui_context(ImGuiContext* context)
+    virtual CanDo can_do(char const*) const
     {
-        m_imgui_context = context;
+        return CanDo::No;
     }
-#endif
+
+    virtual i32 tail_size() const
+    {
+        return 0;
+    }
+
+    virtual MidiPresetName const* midi_preset_name(i32 preset_id) const
+    {
+        (void)preset_id;
+        return nullptr;
+    }
+
+    [[nodiscard]] virtual bool set_total_samples_to_process(i32 value)
+    {
+        (void)value;
+        return false;
+    }
+
+    [[nodiscard]] virtual bool set_pan_law(PanLaw type, f32 gain)
+    {
+        (void)type;
+        (void)gain;
+        return false;
+    }
+
+    [[nodiscard]] virtual bool set_process_precision(Precision value)
+    {
+        (void)value;
+        return false;
+    }
+
+    virtual i32 midi_input_channels_size() const
+    {
+        return 0;
+    }
+
+    virtual i32 midi_output_channels_size() const
+    {
+        return 0;
+    }
+
+    virtual void set_parameter(i32 parameter_id, f32 value)
+    {
+        (void)parameter_id;
+        (void)value;
+    }
+
+    virtual f32 parameter(i32 parameter_id) const
+    {
+        (void)parameter_id;
+        return __builtin_nanf("");
+    }
+
+    virtual ParameterProperties parameter_properties(i32 parameter_id) const
+    {
+        (void)parameter_id;
+        return {};
+    }
+
+    virtual Rectangle const* editor_rectangle() const
+    {
+        return nullptr;
+    }
 
     virtual bool set_editor_rectangle(Rectangle const*)
     {
         return false;
     }
 
-    [[nodiscard]] virtual bool set_knob_mode(KnobMode mode) = 0;
+    [[nodiscard]] virtual bool set_knob_mode(KnobMode mode)
+    {
+        (void)mode;
+        return false;
+    }
 
     iptr dispatch_prosonus_extension(ProsonusPluginOpcode opcode, void* ptr, f32 opt);
     iptr dispatch(PluginOpcode opcode, i32 index, iptr value, void* ptr, f32 opt);
-
-#if 0
-    ImGuiContext* m_imgui_context { nullptr };
-    SDL_Window* m_window { nullptr };
-    SDL_Renderer* m_renderer { nullptr };
-    SDL_Thread* m_gui_thread { nullptr };
-    bool m_gui_thread_should_quit { false };
-    VSTRectangle m_editor_rectangle {
-        .y = 0,
-        .x = 0,
-        .height = 500,
-        .width = 800
-    };
-#endif
 };
 
 }

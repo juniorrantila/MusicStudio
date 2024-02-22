@@ -118,6 +118,33 @@ concept HasInvalid = requires
     T::Invalid;
 };
 
+// Not a function pointer, and not an lvalue reference.
+template<typename F>
+inline constexpr bool IsFunctionObject = (!IsFunctionPointer<F> && IsRValueReference<F&&>);
+
+template<typename T>
+auto declval() -> T;
+
+template<typename From, typename To>
+inline constexpr bool IsConvertible = requires { declval<void (*)(To)>()(declval<From>()); };
+
+template<class From, class To>
+concept ConvertibleTo = IsConvertible<From, To>;
+
+template<typename T, typename U>
+concept SameAs = IsSame<T, U>;
+
+template<typename T, typename Out, typename... Args>
+inline constexpr bool IsCallableWithArguments = requires(T t) {
+    {
+        t(declval<Args>()...)
+    } -> ConvertibleTo<Out>;
+} || requires(T t) {
+    {
+        t(declval<Args>()...)
+    } -> SameAs<Out>;
+};
+
 }
 
 using namespace Ty;

@@ -5,12 +5,15 @@
  * See http://opensource.org/licenses/MIT
  */
 
-#include <Main/Main.h>
 #include <CLI/ArgumentParser.h>
+#include <Main/Main.h>
 #include <SoundIo/SoundIo.h>
+#include <Ty/Parse.h>
 
 #include <stdio.h>
 #include <math.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 static void write_sample_s16ne(char *ptr, f64 sample);
 static void write_sample_s32ne(char *ptr, f64 sample);
@@ -45,12 +48,20 @@ ErrorOr<int> main(int argc, c_string argv[]) {
 
     f64 latency = 0.0;
     TRY(argument_parser.add_option("--latency"sv, "-l"sv, "seconds"sv, "add latency"sv, [&](c_string arg) {
-        latency = atof(arg);
+        latency = Parse<f32>::from(StringView::from_c_string(arg)).or_else([&] {
+            fprintf(stderr, "Invalid value '%s' provided for '--latency'\n\n", arg);
+            argument_parser.print_usage_and_exit(argv[0], 1);
+            return 0.0f;
+        });
     }));
 
-    i32 sample_rate = 0;
+    u32 sample_rate = 0;
     TRY(argument_parser.add_option("--sample-rate"sv, "-s"sv, "hz"sv, "sample rate"sv, [&](c_string arg) {
-        sample_rate = atoi(arg);
+        sample_rate = Parse<u32>::from(StringView::from_c_string(arg)).or_else([&] {
+            fprintf(stderr, "Invalid value '%s' provided for '--sample-rate'\n\n", arg);
+            argument_parser.print_usage_and_exit(argv[0], 1);
+            return 0.0f;
+        });
     }));
 
     bool raw = false;

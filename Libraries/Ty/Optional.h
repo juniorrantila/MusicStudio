@@ -78,11 +78,8 @@ struct [[nodiscard]] Optional {
     }
 
     template <typename F>
-    constexpr decltype(auto) or_else(F callback) requires
-        requires(F cb)
-    {
-        cb();
-    }
+    constexpr decltype(auto) or_else(F callback)
+        requires IsCallableWithArguments<F, T>
     {
         if (!has_value())
             return callback();
@@ -91,8 +88,8 @@ struct [[nodiscard]] Optional {
     }
 
     template <typename U>
-    constexpr T or_else(U value) requires(
-        !requires(U v) { v(); })
+    constexpr T or_else(U value)
+        requires (!IsFunction<U> and IsConvertible<U, T>)
     {
         if (!has_value())
             return T(value);

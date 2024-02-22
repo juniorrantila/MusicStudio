@@ -27,7 +27,7 @@ add_project_arguments(cpp.get_supported_arguments([
   '-Wno-nested-anon-types',
   '-Werror=return-type',
   '-ffreestanding',
-  '-nostdincc++',
+  '-nostdinc++',
   '-Werror=switch',
 ]), language: ['objcpp', 'cpp', 'c'])
 

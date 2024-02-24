@@ -52,11 +52,8 @@ freetype2_dep = freetype2_proj.get_variable('freetype_dep')
 
 c_dep = cpp.find_library('c', static: true)
 
-if target_machine.system() == 'darwin'
-  opengl_dep = dependency('opengl', static: true)
-else
-  opengl_dep = []
-  opengl_dep += dependency('gl', static: true)
+opengl_dep = [dependency('opengl', static: true)]
+if target_machine.system() != 'darwin'
   glew_proj = subproject('glew', default_options: [
     'warning_level=0',
     'default_library=static',

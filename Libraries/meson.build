@@ -1,6 +1,5 @@
 subdir('Rexim')
 subdir('UI')
-subdir('LittleFS')
 
 subdir('Midi')
 subdir('Vst')

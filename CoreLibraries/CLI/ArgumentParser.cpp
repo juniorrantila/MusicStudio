@@ -4,17 +4,51 @@
 
 namespace CLI {
 
-ErrorOr<void> ArgumentParserError::show() const
+ArgumentParser::ArgumentParser()
 {
-    switch (m_state) {
-    case State::Buffer: {
-        TRY(Core::File::stderr().write(m_buffer));
-    } break;
-    case State::Error: {
-        TRY(Core::File::stderr().write(m_error));
-    } break;
-    case State::Invalid: break;
-    }
+    MUST(add_flag("--help"sv, "-h"sv, "show this message"sv, [this] {
+        this->print_usage_and_exit(nullptr);
+    }));
+}
+
+ErrorOr<void> ArgumentParser::add_flag(StringView long_name,
+    StringView short_name, StringView explanation,
+    SmallCapture<void()>&& callback)
+{
+    auto id = flag_callbacks.size();
+    TRY(flags.append({ long_name, short_name, explanation }));
+    TRY(flag_callbacks.append(move(callback)));
+    TRY(long_flag_ids.append(long_name, id));
+    TRY(short_flag_ids.append(short_name, id));
+
+    return {};
+}
+
+ErrorOr<void> ArgumentParser::add_option(StringView long_name,
+    StringView short_name, StringView placeholder,
+    StringView explanation,
+    SmallCapture<void(c_string)>&& callback)
+{
+    auto id = option_callbacks.size();
+    TRY(options.append({
+        long_name,
+        short_name,
+        explanation,
+        placeholder,
+    }));
+    TRY(option_callbacks.append(move(callback)));
+
+    TRY(long_option_ids.append(long_name, id));
+    TRY(short_option_ids.append(short_name, id));
+
+    return {};
+}
+
+ErrorOr<void> ArgumentParser::add_positional_argument(StringView placeholder,
+    SmallCapture<void(c_string)>&& callback)
+{
+    TRY(positional_placeholders.append(placeholder));
+    TRY(positional_callbacks.append(move(callback)));
 
     return {};
 }
@@ -150,4 +184,6 @@ void ArgumentParser::print_usage_and_exit(c_string program_name,
     }
     Core::System::exit(exit_code);
 }
+
+
 }

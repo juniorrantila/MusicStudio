@@ -1,5 +1,6 @@
 cli_lib = library('cli', [
-    'ArgumentParser.cpp'
+    'ArgumentParser.cpp',
+    'ArgumentParserError.cpp'
   ],
   dependencies: [
     core_dep, 

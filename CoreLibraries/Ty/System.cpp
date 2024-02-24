@@ -155,19 +155,6 @@ ErrorOr<void> unlink(c_string path)
     return {};
 }
 
-ErrorOr<int> mkstemps(char* template_, int suffixlen)
-{
-    int fd = ::mkstemps(template_, suffixlen);
-    if (fd < 0)
-        return Error::from_errno();
-    return fd;
-}
-
-ErrorOr<int> mkstemps(char* template_)
-{
-    return TRY(mkstemps(template_, 0));
-}
-
 ErrorOr<pid_t> posix_spawnp(c_string file, c_string const* argv,
     c_string const* envp,
     posix_spawn_file_actions_t const* file_actions,

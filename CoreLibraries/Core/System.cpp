@@ -2,7 +2,6 @@
 #include "Syscall.h"
 #include "Ty/Defer.h"
 #include "Ty/StringBuffer.h"
-#include <stdlib.h> // mkstemps()
 #include <sys/stat.h>
 #include <unistd.h> // sysconf()
 #include <fcntl.h>
@@ -289,19 +288,6 @@ ErrorOr<void> unlink(c_string path)
     if (rv < 0)
         return Error::from_syscall(rv);
     return {};
-}
-
-ErrorOr<int> mkstemps(char* template_, int suffixlen)
-{
-    int fd = ::mkstemps(template_, suffixlen);
-    if (fd < 0)
-        return Error::from_errno();
-    return fd;
-}
-
-ErrorOr<int> mkstemps(char* template_)
-{
-    return TRY(mkstemps(template_, 0));
 }
 
 ErrorOr<pid_t> posix_spawnp(c_string file, c_string const* argv,

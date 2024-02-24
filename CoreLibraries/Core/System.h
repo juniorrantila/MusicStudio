@@ -239,8 +239,6 @@ struct Stat {
 };
 ErrorOr<Stat> fstat(int fd);
 
-ErrorOr<int> mkstemps(char* template_);
-ErrorOr<int> mkstemps(char* template_, int suffixlen);
 ErrorOr<int> open(c_string path, int flags);
 ErrorOr<int> open(c_string path, int flags, mode_t mode);
 ErrorOr<int> open(StringView path, int flags);

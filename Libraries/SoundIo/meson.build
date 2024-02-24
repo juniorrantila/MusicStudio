@@ -26,15 +26,18 @@ else
     soundio_backend_deps += jack_dep
     soundio_c_args += '-DSOUNDIO_HAVE_JACK=1'
     soundio_platform_sources += './jack.c'
-  elif pulseaudio_dep.found()
+  endif
+  if pulseaudio_dep.found()
     soundio_backend_deps += pulseaudio_dep
     soundio_c_args += '-DSOUNDIO_HAVE_PULSEAUDIO=1'
     soundio_platform_sources += './pulseaudio.c'
-  elif alsa_dep.found()
+  endif
+  if alsa_dep.found()
     soundio_backend_deps += alsa_dep
     soundio_c_args += '-DSOUNDIO_HAVE_ALSA=1'
     soundio_platform_sources += './alsa.c'
-  else
+  endif
+  if not jack_dep.found() and not pulseaudio_dep.found() and not alsa_dep.found()
     warning('could not find any backend libraries (jack, pulseaudio or alsa)')
   endif
 endif
@@ -45,7 +48,7 @@ soundio_lib = static_library('soundio', [
     'dummy.c',
     'os.c',
     'ring_buffer.c',
-    'soundio.c',
+    'SoundIo.c',
     'util.c',
   ], c_args: [
     soundio_c_args

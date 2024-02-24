@@ -11,6 +11,19 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef __linux__ // Ubuntu seems to have a weird strdup
+
+static char* dupstr(char const* s)
+{
+    int len = strlen(s);
+    char* new_s = (char*)calloc(len + 1, 1);
+    return (char*)memcpy(new_s, s, len);
+}
+
+#define strdup dupstr
+
+#endif
+
 static void playback_thread_run(void *arg) {
     struct SoundIoOutStreamPrivate *os = (struct SoundIoOutStreamPrivate *)arg;
     struct SoundIoOutStream *outstream = &os->pub;

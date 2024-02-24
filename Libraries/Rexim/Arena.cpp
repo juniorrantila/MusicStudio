@@ -5,6 +5,8 @@
 #define ARENA_ASSERT assert
 #endif
 
+#include <stdlib.h>
+
 // TODO: instead of accepting specific capacity new_region() should accept the size of the object we want to fit into the region
 // It should be up to new_region() to decide the actual capacity to allocate
 Region *new_region(usize capacity)

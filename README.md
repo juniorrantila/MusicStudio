@@ -4,6 +4,16 @@
 
 ![MusicStudio](Res/MusicStudio.png)
 
+## Prerequisites
+
+### Ubuntu
+
+```
+
+sudo apt install clang ccache meson ninja-build freeglut3-dev libglew-dev libjack-jackd2-dev
+
+```
+
 ## Build instructions
 
 ### Setup:

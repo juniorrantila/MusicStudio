@@ -9,7 +9,7 @@ on:
 
 jobs:
   Ubuntu:
-    if: github.event_name != 'schedule' || github.repository == 'juniorrantila/argu-parser'
+    if: github.event_name != 'schedule' || github.repository == 'juniorrantila/MusicStudio'
     runs-on: ubuntu-latest
     env:
       TEST_BUILD_ALL: 1
@@ -23,11 +23,11 @@ jobs:
       - name: Install packages
         run: |
           sudo apt-get update
-          sudo apt-get -y install build-essential python3-pip ninja-build
+          sudo apt-get -y install build-essential clang ccache python3-pip ninja-build freeglut3-dev libglew-dev libjack-jackd2-dev
           python3 -m pip install git+https://github.com/mesonbuild/meson
 
       - name: Setup
-        run: meson setup builddir --prefix $PWD/install-dir
+        run: CC=clang CXX=clang++ meson setup builddir --prefix $PWD/install-dir
 
       - name: Build
         run: ninja -C builddir
@@ -36,7 +36,7 @@ jobs:
         run: ninja -C builddir install
 
   VisualStudio:
-    if: github.event_name != 'schedule' || github.repository == 'juniorrantila/argu-parser'
+    if: github.event_name != 'schedule' || github.repository == 'juniorrantila/MusicStudio'
     runs-on: windows-latest
     env:
       TEST_BUILD_ALL: 1
@@ -63,7 +63,7 @@ jobs:
         run: ninja -C builddir install
 
   VisualStudio-clang-cl:
-    if: github.event_name != 'schedule' || github.repository == 'mesonbuild/wrapdb'
+    if: github.event_name != 'schedule' || github.repository == 'juniorrantila/MusicStudio'
     runs-on: windows-latest
     env:
       CC: clang-cl
@@ -89,7 +89,7 @@ jobs:
         run: ninja -C builddir install
 
   MSYS2:
-    if: github.event_name != 'schedule' || github.repository == 'mesonbuild/wrapdb'
+    if: github.event_name != 'schedule' || github.repository == 'juniorrantila/MusicStudio'
     runs-on: windows-latest
     name: MSYS2-${{matrix.platform}}
     env:
@@ -139,7 +139,7 @@ jobs:
         run: ninja -C builddir install
 
   MacOS:
-    if: github.event_name != 'schedule' || github.repository == 'mesonbuild/wrapdb'
+    if: github.event_name != 'schedule' || github.repository == 'juniorrantila/MusicStudio'
     runs-on: macos-latest
     env:
       TEST_BUILD_ALL: 1
@@ -160,7 +160,7 @@ jobs:
       - name: Install packages
         run: |
           brew install ninja
-          python3 -m pip install git+https://github.com/mesonbuild/meson
+          python3 -m pip install git+https://github.com/mesonbuild/meson --break-system-packages
 
       - name: Setup
         run: meson setup builddir --prefix $PWD/install-dir

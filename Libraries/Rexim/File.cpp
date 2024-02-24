@@ -11,6 +11,7 @@
 #include "./Util.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 Errno read_entire_dir(c_string dir_path, Files* files)
 {

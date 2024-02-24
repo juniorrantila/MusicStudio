@@ -10,8 +10,8 @@
 #include <Rexim/File.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-
 #include <stddef.h>
 
 #define vert_shader_file_path "./Libraries/UI/Shaders/simple.vert"

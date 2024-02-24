@@ -21,15 +21,21 @@ add_project_arguments(cpp.get_supported_arguments([
   '-Wno-gnu-case-range',
   '-Wno-gnu-conditional-omitted-operand',
   '-Wno-gnu-statement-expression-from-macro-expansion',
+  '-Wno-gnu-statement-expression',
   '-Wno-gnu-zero-variadic-macro-arguments',
   '-Wno-keyword-macro',
   '-Wno-user-defined-literals',
   '-Wno-nested-anon-types',
   '-Werror=return-type',
-  '-ffreestanding',
-  '-nostdinc++',
   '-Werror=switch',
 ]), language: ['objcpp', 'cpp', 'c'])
+
+if target_machine.system() == 'darwin'
+  add_project_arguments([
+    '-ffreestanding',
+    '-nostdinc++',
+  ], language: ['objcpp', 'cpp', 'c'])
+endif
 
 add_project_arguments(cpp.get_supported_arguments([
   '-fobjc-arc',
@@ -50,7 +56,10 @@ freetype2_proj = subproject('freetype2', default_options: [
 ])
 freetype2_dep = freetype2_proj.get_variable('freetype_dep')
 
-c_dep = cpp.find_library('c', static: true)
+c_dep = [
+  cpp.find_library('c', static: true),
+  cpp.find_library('m', static: true),
+]
 
 opengl_dep = [dependency('opengl', static: true)]
 if target_machine.system() != 'darwin'
@@ -63,13 +72,10 @@ if target_machine.system() != 'darwin'
     'glu=disabled',
   ])
   opengl_dep += glew_proj.get_variable('glew_dep')
+  if target_machine.system() != 'windows'
+    opengl_dep += dependency('gl', static: true)
+  endif
 endif
-
-embed_gen = generator(
-  find_program('xxd'),
-  output: '@PLAINNAME@.h',
-  arguments: ['-i', '-n', '@PLAINNAME@', '@INPUT@', '@OUTPUT@']
-)
 
 bundle_me = []
 

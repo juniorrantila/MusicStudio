@@ -25,6 +25,7 @@ ui_lib = library('UI', [
     opengl_dep,
     ty_dep,
     bundle_dep,
+    rexim_dep,
   ])
 
 ui_dep = declare_dependency(

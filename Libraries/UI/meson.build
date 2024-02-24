@@ -20,11 +20,11 @@ ui_lib = library('UI', [
     'FreeGlyph.cpp',
     'SimpleRenderer.cpp',
   ], dependencies: [
-    ui_shaders_dep,
     ui_target_deps,
     freetype2_dep,
     opengl_dep,
     ty_dep,
+    bundle_dep,
   ])
 
 ui_dep = declare_dependency(

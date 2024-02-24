@@ -1,13 +1,7 @@
-path = meson.current_source_dir() / '..'
-ui_shaders_sources = [
-  embed_gen.process('./simple.vert', preserve_path_from: path),
-  embed_gen.process('./simple_color.frag', preserve_path_from: path),
-  embed_gen.process('./simple_image.frag', preserve_path_from: path),
-  embed_gen.process('./simple_text.frag', preserve_path_from: path),
-  embed_gen.process('./simple_epic.frag', preserve_path_from: path),
+bundle_me += [
+  resource_gen.process('./simple.vert'),
+  resource_gen.process('./simple_color.frag'),
+  resource_gen.process('./simple_image.frag'),
+  resource_gen.process('./simple_text.frag'),
+  resource_gen.process('./simple_epic.frag'),
 ]
-
-ui_shaders_dep = declare_dependency(
-  sources: ui_shaders_sources,
-  include_directories: '..'
-  )

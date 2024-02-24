@@ -1,4 +1,5 @@
 #include "./SimpleRenderer.h"
+#include <Bundle/Bundle.h>
 
 #include <Ty/ScopeGuard.h>
 #include <Ty/Defer.h>
@@ -13,37 +14,16 @@
 
 #include <stddef.h>
 
-#include "./Shaders/simple.vert.h"
-#include "./Shaders/simple_color.frag.h"
-#include "./Shaders/simple_image.frag.h"
-#include "./Shaders/simple_text.frag.h"
-#include "./Shaders/simple_epic.frag.h"
-
-#define vert_shader_file_path "./Shaders/simple.vert"
+#define vert_shader_file_path "./Libraries/UI/Shaders/simple.vert"
 
 namespace UI {
 
-static const StringView fallback_shaders[] = {
-    StringView::from_parts((char*)simple_vert, simple_vert_len),
-    StringView::from_parts((char*)simple_color_frag, simple_color_frag_len),
-    StringView::from_parts((char*)simple_image_frag, simple_image_frag_len),
-    StringView::from_parts((char*)simple_text_frag, simple_text_frag_len),
-    StringView::from_parts((char*)simple_epic_frag, simple_epic_frag_len),
-};
-static const StringView shader_paths[] = {
-    "./Shaders/simple.vert",
-    "./Shaders/simple_color.frag",
-    "./Shaders/simple_image.frag",
-    "./Shaders/simple_text.frag",
-    "./Shaders/simple_epic.frag",
-};
-
 static_assert(COUNT_SIMPLE_SHADERS == 4, "The amount of fragment shaders has changed");
 const char *frag_shader_file_paths[COUNT_SIMPLE_SHADERS] = {
-    [SHADER_FOR_COLOR] = "./Shaders/simple_color.frag",
-    [SHADER_FOR_IMAGE] = "./Shaders/simple_image.frag",
-    [SHADER_FOR_TEXT] = "./Shaders/simple_text.frag",
-    [SHADER_FOR_EPICNESS] = "./Shaders/simple_epic.frag",
+    [SHADER_FOR_COLOR] = "./Libraries/UI/Shaders/simple_color.frag",
+    [SHADER_FOR_IMAGE] = "./Libraries/UI/Shaders/simple_image.frag",
+    [SHADER_FOR_TEXT] = "./Libraries/UI/Shaders/simple_text.frag",
+    [SHADER_FOR_EPICNESS] = "./Libraries/UI/Shaders/simple_epic.frag",
 };
 
 static const char *shader_type_as_cstr(GLuint shader)
@@ -81,19 +61,13 @@ static ErrorOr<GLuint> compile_shader_source(const GLchar *source, GLenum shader
 
 static ErrorOr<GLuint> compile_shader_file(const char *file_path, GLenum shader_type)
 {
-    i32 shader_id = -1;
-    auto file_name = StringView::from_c_string(file_path);
-    for (i32 i = 0; auto name : shader_paths) {
-        if (file_name == name) {
-            shader_id = i;
-            break;
-        }
-        i++;
-    }
-    if (shader_id == -1) {
+    auto resource_path = StringView::from_c_string(file_path);
+    auto resource = Bundle::the().resource_with_path(resource_path);
+    if (!resource) {
+        fprintf(stderr, "unknown resource: %s\n", file_path);
         return Error::from_string_literal("unknown shader");
     }
-    auto buf = TRY(StringBuffer::create_fill(fallback_shaders[shader_id], "\0"sv));
+    auto buf = TRY(StringBuffer::create_fill(resource->view(), "\0"sv));
     return TRY(compile_shader_source(buf.data(), shader_type));
 }
 

@@ -19,17 +19,17 @@ typedef struct {
 
 double synth_callback(double time, const void* synth_context);
 
-inline void synth_set_key(Synth* synth, SynthKey key)
+static inline void synth_set_key(Synth* synth, SynthKey key)
 {
     synth->synth_keys[key / 8] |= 1 << (key % 8);
 }
 
-inline void synth_unset_key(Synth* synth, SynthKey key)
+static inline void synth_unset_key(Synth* synth, SynthKey key)
 {
     synth->synth_keys[key / 8] &= ~(1 << (key % 8));
 }
 
-inline bool synth_is_key_set(const Synth* synth, SynthKey key)
+static inline bool synth_is_key_set(const Synth* synth, SynthKey key)
 {
     return (synth->synth_keys[key / 8 ] & 1 << (key % 8)) > 0;
 }

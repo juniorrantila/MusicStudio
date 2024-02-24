@@ -1,4 +1,13 @@
 #pragma once
+#ifdef stderr
+#pragma push_macro("stderr")
+#define stderr stderr
+#endif
+
+#ifdef stdout
+#pragma push_macro ("stdout")
+#define stdout stdout
+#endif
 #include <Core/File.h>
 
 namespace Core {
@@ -33,3 +42,11 @@ using Core::dbgln;
 using Core::dbgwrite;
 using Core::outwrite;
 using Core::writeln;
+
+#ifdef stdout
+#pragma pop_macro("stdout")
+#endif
+
+#ifdef stderr
+#pragma pop_macro("stderr")
+#endif

@@ -1,16 +1,17 @@
 #include "./Common.h"
 #include "./FileBrowser.h"
-#include "Rexim/LA.h"
-#include "UI/Application.h"
-#include "UI/KeyCode.h"
-#include <Vst/Rectangle.h>
 
 #include <Main/Main.h>
-
-#include <UI/Window.h>
-#include <UI/UI.h>
+#include <Rexim/LA.h>
+#include <UI/Application.h>
 #include <UI/FreeGlyph.h>
+#include <UI/KeyCode.h>
 #include <UI/SimpleRenderer.h>
+#include <UI/UI.h>
+#include <UI/Window.h>
+#include <Vst/Rectangle.h>
+#include <Bundle/Bundle.h>
+#include <Core/Print.h>
 
 #include <MS/Plugin.h>
 
@@ -24,6 +25,11 @@ static FileBrowser fb = {};
 
 ErrorOr<int> Main::main(int argc, c_string argv[])
 {
+    dbgln("resources:"sv);
+    for (auto resource : Bundle::the().resources()) {
+        dbgln("  "sv, resource.resolved_path());
+    }
+
     Errno err;
 
     FT_Library library = {0};
@@ -37,15 +43,18 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
     // TODO: users should be able to customize the font
     // const char *const font_file_path = "./Fonts/VictorMono-Regular.ttf";
     // const char *const font_file_path = "./Fonts/iosevka-regular.ttf";
-    const char *const font_file_path = "./Fonts/OxaniumLight/Oxanium-Light.ttf";
+    auto font_path = "./Fonts/OxaniumLight/Oxanium-Light.ttf"sv;
+    auto font = TRY(Bundle::the().resource_with_path(font_path).or_throw([&]{
+        return Error::from_string_literal("could not find font");
+    }));
 
     FT_Face face;
-    error = FT_New_Face(library, font_file_path, 0, &face);
+    error = FT_New_Memory_Face(library, font.data(), font.size(), 0, &face);
     if (error == FT_Err_Unknown_File_Format) {
-        fprintf(stderr, "ERROR: `%s` has an unknown format\n", font_file_path);
+        fprintf(stderr, "ERROR: `%.*s` has an unknown format\n", font_path.size(), font_path.data());
         return 1;
     } else if (error) {
-        fprintf(stderr, "ERROR: Could not load file `%s`\n", font_file_path);
+        fprintf(stderr, "ERROR: Could not load file `%.*s`\n", font_path.size(), font_path.data());
         return 1;
     }
 

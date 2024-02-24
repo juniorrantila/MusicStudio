@@ -9,4 +9,5 @@ executable('music-studio', [
     ui_dep,
     vst_dep,
     ms_dep,
+    bundle_dep,
   ])

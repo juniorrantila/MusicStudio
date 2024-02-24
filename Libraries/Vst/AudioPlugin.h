@@ -1,14 +1,15 @@
 #pragma once
-#include <Vst/AEffect.h>
-#include <Vst/Vst.h>
 #include <Ty/Base.h>
-#include <Vst/KnobMode.h>
-#include <Vst/Precision.h>
-#include <Vst/Rectangle.h>
-#include <Vst/ChunkType.h>
-#include <Vst/CanDo.h>
-#include <Vst/Host.h>
-#include <Vst/Config.h>
+
+#include "./AEffect.h"
+#include "./Vst.h"
+#include "./KnobMode.h"
+#include "./Precision.h"
+#include "./Rectangle.h"
+#include "./ChunkType.h"
+#include "./CanDo.h"
+#include "./Host.h"
+#include "./Config.h"
 #ifdef __APPLE__
 #include <objc/runtime.h>
 #endif

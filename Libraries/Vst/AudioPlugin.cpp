@@ -1,5 +1,5 @@
-#include <Vst/AudioPlugin.h>
-#include <Vst/Opcodes.h>
+#include "./AudioPlugin.h"
+#include "./Opcodes.h"
 
 #include <time.h>
 #include <stdio.h>

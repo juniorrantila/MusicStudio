@@ -1,11 +1,11 @@
 #pragma once
-#include <Ty/Base.h>
+#include "./AEffect.h"
+#include "./ChunkType.h"
+#include "./KnobMode.h"
+#include "./Opcodes.h"
+#include "./Precision.h"
+
 #include <Ty/Optional.h>
-#include <Vst/AEffect.h>
-#include <Vst/ChunkType.h>
-#include <Vst/KnobMode.h>
-#include <Vst/Opcodes.h>
-#include <Vst/Precision.h>
 
 #if _WIN32
 #    define VST_EXPORT __declspec(dllexport)

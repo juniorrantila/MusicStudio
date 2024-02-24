@@ -1,7 +1,6 @@
 #pragma once
-#include <Ty/Base.h>
-#include <Vst/Vst.h>
-#include <Vst/AEffect.h>
+#include "./Vst.h"
+#include "./AEffect.h"
 
 namespace Vst {
 

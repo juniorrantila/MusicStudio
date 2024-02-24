@@ -1,8 +1,9 @@
 #pragma once
-#include <Vst/AEffect.h>
-#include <Vst/CanDo.h>
-#include <Vst/Opcodes.h>
-#include <Vst/Vst.h>
+#include "./AEffect.h"
+#include "./CanDo.h"
+#include "./Opcodes.h"
+#include "./Vst.h"
+
 #include <Ty/Base.h>
 
 namespace Vst {

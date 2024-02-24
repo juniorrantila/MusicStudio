@@ -1,11 +1,11 @@
-#include <Vst/AEffect.h>
-#include <Vst/AudioPlugin.h>
-#include <Vst/ChunkType.h>
-#include <Vst/Config.h>
-#include <Vst/KnobMode.h>
-#include <Vst/Opcodes.h>
-#include <Vst/Rectangle.h>
-#include <Vst/Vst.h>
+#include "./AEffect.h"
+#include "./AudioPlugin.h"
+#include "./ChunkType.h"
+#include "./Config.h"
+#include "./KnobMode.h"
+#include "./Opcodes.h"
+#include "./Rectangle.h"
+#include "./Vst.h"
 
 #define LOG_IF(cond, ...) ((void)cond)
 #define LOG(...)

@@ -13,7 +13,8 @@ vst_dep = declare_dependency(
 vst_host_lib = static_library('vst-host', [
     'VstHost.cpp'
   ], dependencies: [
-    vst_dep
+    vst_dep,
+    ty_dep,
   ])
 
 vst_host_dep = declare_dependency(

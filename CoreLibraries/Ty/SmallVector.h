@@ -12,6 +12,17 @@ template <typename T, u32 capacity = 16>
 struct SmallVector {
     constexpr SmallVector() = default;
 
+    SmallVector& operator=(SmallVector const&) = delete;
+    constexpr SmallVector& operator=(SmallVector&& other)
+    {
+        if (this == &other)
+            return *this;
+        m_size = other.m_size;
+        __builtin_memcpy(m_data, other.m_data, other.m_size);
+        other.invalidate();
+        return *this;
+    }
+
     constexpr SmallVector(SmallVector&& other)
         : m_size(other.m_size)
     {
@@ -52,10 +63,10 @@ struct SmallVector {
         return Id<T>(m_size++);
     }
 
-    constexpr View<T> view() { return { m_data, m_size }; }
+    constexpr View<T> view() { return { data(), size()}; }
     constexpr View<T const> view() const
     {
-        return { m_data, m_size };
+        return { data(), size() };
     }
 
     constexpr T const& at(u32 index) const { return *slot(index); }

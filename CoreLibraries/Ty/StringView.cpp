@@ -94,4 +94,29 @@ ErrorOr<StringBuffer> StringView::join(View<StringView const> parts) const
     return buffer;
 }
 
+ErrorOr<StringBuffer> StringView::resolve_path(StringView root) const
+{
+    auto buf = TRY(StringBuffer::create_fill(chop_left(root.size())));
+
+    auto path_parts = Vector<StringView>();
+    for (auto parts = TRY(buf.view().split_on('/')); auto part : parts) {
+        if (part == "."sv)
+            continue;
+        if (part == ".."sv) {
+            TRY(path_parts.pop().or_throw([&]{
+                return Error::from_string_literal("trying to escape root folder");
+            }));
+            continue;
+        }
+        TRY(path_parts.append(part));
+    }
+    buf.clear();
+    for (auto part : path_parts) {
+        TRY(buf.write(part, "/"sv));
+    }
+    buf.chop_right("/"sv.size());
+    return buf;
+}
+
+
 }

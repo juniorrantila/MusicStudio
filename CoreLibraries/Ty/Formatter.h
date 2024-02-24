@@ -359,8 +359,8 @@ struct Ty::Formatter<Bytes> {
     static constexpr ErrorOr<u32> write(U& to, Bytes value)
     {
         u32 size = 0;
-        for (u32 i = 0; i < value.size; i++) {
-            u8 e = value.data[i];
+        for (u32 i = 0; i < value.size(); i++) {
+            u8 e = value[i];
             u8 upper = (e & 0xF0) >> 4;
             u8 lower = (e & 0x0F) >> 0;
 

@@ -1,4 +1,3 @@
-subdir('Ty')
 subdir('Core')
 subdir('CLI')
 subdir('Main')

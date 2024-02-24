@@ -7,6 +7,7 @@
 
 namespace Ty {
 
+constexpr StringView operator""sv(c_string data, usize size);
 struct StringView {
     constexpr StringView() = default;
 
@@ -160,6 +161,8 @@ struct StringView {
 
     constexpr char const* data() const { return m_data; }
     constexpr u32 size() const { return m_size; }
+
+    ErrorOr<StringBuffer> resolve_path(StringView root = ""sv) const;
 
 private:
     [[gnu::flatten]] static constexpr u32 strncpy(

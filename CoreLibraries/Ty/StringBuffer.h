@@ -197,7 +197,14 @@ struct StringBuffer {
         return {};
     }
 
-    operator StringView() const { return view(); }
+    explicit operator StringView() const { return view(); }
+
+    void chop_right(u32 size)
+    {
+        if (m_size > size) {
+            m_size -= size;
+        }
+    }
 
 private:
     static constexpr auto max_chars_in_u64 = 20;

@@ -114,6 +114,14 @@ struct Vector {
         return unchecked_append(value);
     }
 
+    constexpr Optional<T> pop()
+    {
+        if (m_size == 0)
+            return {};
+        m_size -= 1;
+        return move(data()[size()]);
+    }
+
     ALWAYS_INLINE constexpr ErrorOr<void> ensure_capacity(
         u32 capacity)
     {

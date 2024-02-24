@@ -4,9 +4,11 @@
 
 ![MusicStudio](Res/MusicStudio.png)
 
-## Prerequisites
+## Build instructions
 
-### macOS
+### Prerequisites
+
+#### macOS
 
 ```
 
@@ -14,15 +16,13 @@ brew install ccache meson ninja-build
 
 ```
 
-### Ubuntu
+#### Ubuntu
 
 ```
 
 sudo apt install clang ccache meson ninja-build freeglut3-dev libglew-dev libjack-jackd2-dev
 
 ```
-
-## Build instructions
 
 ### Setup:
 

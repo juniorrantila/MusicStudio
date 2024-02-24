@@ -1,7 +1,6 @@
 #include <CLI/ArgumentParser.h>
 #include <MS/Plugin.h>
 #include <Ty/Defer.h>
-#include <Ty/Defer.h>
 #include <Ty/ErrorOr.h>
 #include <Vst/Rectangle.h>
 #include <Vst/Vst.h>

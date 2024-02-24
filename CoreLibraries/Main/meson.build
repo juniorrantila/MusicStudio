@@ -1,4 +1,4 @@
-main_lib = library('main', [
+main_lib = static_library('main', [
     'Main.cpp'
   ], dependencies: [
     core_dep,

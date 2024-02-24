@@ -1,5 +1,5 @@
 #include "Main.h"
-#include "Core/File.h"
+#include <Core/File.h>
 
 int main(int argc, c_string argv[])
 {

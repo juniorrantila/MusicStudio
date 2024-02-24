@@ -6,6 +6,14 @@
 
 ## Prerequisites
 
+### macOS
+
+```
+
+brew install ccache meson ninja-build
+
+```
+
 ### Ubuntu
 
 ```

@@ -89,15 +89,12 @@ subdir('Tools')
 bundled_resources_lib = static_library('bundled-resources', [
     custom_target('bundle',
       output: 'Bundle.cpp',
+      input: bundle_me,
       command: [
         make_bundle_exe,
         meson.project_build_root() / '@OUTPUT@',
-        '@INPUT@',
-      ], input: [
-        bundle_me
-      ]
-    ),
-    bundle_me
+        '@INPUT@'
+      ]),
   ], dependencies: [
     ty_dep,
     bundle_dep,

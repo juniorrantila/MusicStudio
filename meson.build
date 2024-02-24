@@ -74,10 +74,36 @@ embed_gen = generator(
   arguments: ['-i', '-n', '@PLAINNAME@', '@INPUT@', '@OUTPUT@']
 )
 
+bundle_me = []
+
 subdir('CoreLibraries')
+
+subdir('BuildTools')
 subdir('Fonts')
 
 subdir('Libraries')
 subdir('Tools')
+
+bundled_resources_lib = static_library('bundled-resources', [
+    custom_target('bundle',
+      output: 'Bundle.cpp',
+      command: [
+        make_bundle_exe,
+        meson.project_build_root() / '@OUTPUT@',
+        '@INPUT@',
+      ], input: [
+        bundle_me
+      ]
+    ),
+    bundle_me
+  ], dependencies: [
+    ty_dep,
+    bundle_dep,
+  ])
+
+bundle_dep += declare_dependency(
+  link_with: bundled_resources_lib
+)
+
 subdir('Plugins')
 subdir('src')

@@ -1,5 +1,4 @@
 subdir('Core')
-subdir('CLI')
 subdir('Rexim')
 subdir('UI')
 subdir('LittleFS')

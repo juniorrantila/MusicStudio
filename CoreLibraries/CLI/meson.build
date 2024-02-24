@@ -1,7 +1,10 @@
 cli_lib = library('cli', [
     'ArgumentParser.cpp'
   ],
-  dependencies: [ty_dep])
+  dependencies: [
+    core_dep, 
+    ty_dep,
+  ])
 
 cli_dep = declare_dependency(
   link_with: cli_lib,

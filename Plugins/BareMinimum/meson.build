@@ -4,5 +4,6 @@ shared_library('BareMinimum', [
   name_prefix: '',
   name_suffix: 'vst',
   dependencies: [
-    vst_dep
+    vst_dep,
+    ty_dep,
   ])

@@ -20,7 +20,6 @@ add_project_arguments(cpp.get_supported_arguments([
   '-Wno-gnu-anonymous-struct',
   '-Wno-gnu-case-range',
   '-Wno-gnu-conditional-omitted-operand',
-  '-Wno-gnu-statement-expression-from-macro-expansion',
   '-Wno-gnu-statement-expression',
   '-Wno-gnu-zero-variadic-macro-arguments',
   '-Wno-keyword-macro',

@@ -1,0 +1,172 @@
+name: Build all
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  Ubuntu:
+    if: github.event_name != 'schedule' || github.repository == 'juniorrantila/argu-parser'
+    runs-on: ubuntu-latest
+    env:
+      TEST_BUILD_ALL: 1
+      TEST_FATAL_WARNINGS: ${{ github.event.inputs.fatal_warnings }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fetch tags and unshallow
+        run: git fetch --unshallow --tags
+
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install build-essential python3-pip ninja-build
+          python3 -m pip install git+https://github.com/mesonbuild/meson
+
+      - name: Setup
+        run: meson setup builddir --prefix $PWD/install-dir
+
+      - name: Build
+        run: ninja -C builddir
+
+      - name: Install
+        run: ninja -C builddir install
+
+  VisualStudio:
+    if: github.event_name != 'schedule' || github.repository == 'juniorrantila/argu-parser'
+    runs-on: windows-latest
+    env:
+      TEST_BUILD_ALL: 1
+      TEST_FATAL_WARNINGS: ${{ github.event.inputs.fatal_warnings }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fetch tags and unshallow
+        run: git fetch --unshallow --tags
+
+      - name: Install packages
+        run: |
+          python -m pip install git+https://github.com/mesonbuild/meson
+
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Setup
+        run: meson setup builddir --prefix $PWD/install-dir
+
+      - name: Build
+        run: ninja -C builddir
+
+      - name: Install
+        run: ninja -C builddir install
+
+  VisualStudio-clang-cl:
+    if: github.event_name != 'schedule' || github.repository == 'mesonbuild/wrapdb'
+    runs-on: windows-latest
+    env:
+      CC: clang-cl
+      CXX: clang-cl
+      TEST_BUILD_ALL: 1
+      TEST_FATAL_WARNINGS: ${{ github.event.inputs.fatal_warnings }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fetch tags and unshallow
+        run: git fetch --unshallow --tags
+
+      - name: Install packages
+        run: |
+          python -m pip install git+https://github.com/mesonbuild/meson
+
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Setup
+        run: meson setup builddir --prefix $PWD/install-dir
+
+      - name: Install
+        run: ninja -C builddir install
+
+  MSYS2:
+    if: github.event_name != 'schedule' || github.repository == 'mesonbuild/wrapdb'
+    runs-on: windows-latest
+    name: MSYS2-${{matrix.platform}}
+    env:
+      TEST_BUILD_ALL: 1
+      TEST_FATAL_WARNINGS: ${{ github.event.inputs.fatal_warnings }}
+    strategy:
+      matrix:
+        platform: ['UCRT64', 'CLANG32', 'CLANG64']
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fetch tags and unshallow
+        run: git fetch --unshallow --tags
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          path-type: strict
+          msystem: ${{matrix.platform}}
+          install: >-
+            git
+          pacboy: >-
+            cc:p
+            cmake:p
+            curl:p
+            ninja:p
+            pkgconf:p
+            python-certifi:p
+            python-pip:p
+          # Make sure Python is updated to >=3.11 (fix https://github.com/msys2/MINGW-packages/issues/17415).
+          update: true
+
+      - name: Install packages
+        shell: msys2 {0}
+        run: |
+          python -m pip install git+https://github.com/mesonbuild/meson
+
+      - name: Setup
+        shell: msys2 {0}
+        run: meson setup builddir --prefix $PWD/install-dir
+
+      - name: Build
+        shell: msys2 {0}
+        run: ninja -C builddir
+
+      - name: Install
+        shell: msys2 {0}
+        run: ninja -C builddir install
+
+  MacOS:
+    if: github.event_name != 'schedule' || github.repository == 'mesonbuild/wrapdb'
+    runs-on: macos-latest
+    env:
+      TEST_BUILD_ALL: 1
+      TEST_FATAL_WARNINGS: ${{ github.event.inputs.fatal_warnings }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fetch tags and unshallow
+        run: git fetch --unshallow --tags
+
+      - run: brew update
+      # github actions overwrites brew's python. Force it to reassert itself, by running in a separate step.
+      - name: unbreak python in github actions
+        run: |
+          find /usr/local/bin -lname '*/Library/Frameworks/Python.framework/*' -delete
+          sudo rm -rf /Library/Frameworks/Python.framework/
+          brew install --force python3 && brew unlink python3 && brew unlink python3 && brew link --overwrite python3
+      - name: Install packages
+        run: |
+          brew install ninja
+          python3 -m pip install git+https://github.com/mesonbuild/meson
+
+      - name: Setup
+        run: meson setup builddir --prefix $PWD/install-dir
+
+      - name: Build
+        run: ninja -C builddir
+
+      - name: Install
+        run: ninja -C builddir install

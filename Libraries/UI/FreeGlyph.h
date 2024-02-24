@@ -6,7 +6,7 @@
 
 #include <Rexim/LA.h>
 
-#include <Graphics/GL.h>
+#include "./Graphics/GL.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

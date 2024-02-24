@@ -1,7 +1,7 @@
 #pragma once
 #import <AppKit/AppKit.h>
 #include "../Application.h"
-#include <Graphics/GL.h>
+#include "../Graphics/GL.h"
 
 @interface UIApp : NSWindow <NSApplicationDelegate, NSWindowDelegate> {
 }

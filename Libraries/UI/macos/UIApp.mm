@@ -1,6 +1,7 @@
 #import "./UIApp.h"
-#include "Application.h"
-#include <Graphics/GL.h>
+#include "./Application.h"
+
+#include "../Graphics/GL.h"
 #include <AppKit/AppKit.h>
 
 @implementation UIApp

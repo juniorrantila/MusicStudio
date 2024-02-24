@@ -1,6 +1,6 @@
 #pragma once
 #include <Ty/ErrorOr.h>
-#include <Graphics/GL.h>
+#include "./Graphics/GL.h"
 
 #include <Rexim/LA.h>
 

@@ -30,6 +30,9 @@ struct View;
 struct Json;
 struct Hash;
 
+template <typename T>
+struct RefPtr;
+
 }
 
 using Ty::StringBuffer;

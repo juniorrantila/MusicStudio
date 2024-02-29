@@ -1,3 +1,4 @@
+#pragma once
 #include <Midi/Packet.h>
 #include <Ty/Defer.h>
 #include <Ty/ErrorOr.h>

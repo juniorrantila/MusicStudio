@@ -90,19 +90,19 @@ struct AudioPlugin {
 
     virtual char const* preset_name() const
     {
-        return "noname";
+        return nullptr;
     }
 
     virtual char const* parameter_label(i32 parameter_id) const
     {
         (void)parameter_id;
-        return "noname";
+        return nullptr;
     }
 
     virtual char const* parameter_display(i32 parameter_id) const
     {
         (void)parameter_id;
-        return "noname";
+        return nullptr;
     }
 
     virtual char const* parameter_name(i32 parameter_id) const

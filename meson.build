@@ -32,6 +32,7 @@ add_project_arguments(cpp.get_supported_arguments([
 if target_machine.system() == 'darwin'
   add_languages('objcpp')
   add_project_arguments([
+    '-DGL_SILENCE_DEPRECATION=1',
     '-ffreestanding',
     '-nostdinc++',
   ], language: ['objcpp', 'cpp', 'c'])

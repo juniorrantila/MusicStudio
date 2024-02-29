@@ -4,7 +4,6 @@ ui_target_sources = []
 ui_target_deps = []
 
 if target_machine.system() == 'darwin'
-  add_languages('objcpp')
   ui_target_deps += dependency('appkit', static: true)
   ui_target_sources += 'macos/Window.mm'
   ui_target_sources += 'macos/Application.mm'

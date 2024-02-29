@@ -30,6 +30,7 @@ add_project_arguments(cpp.get_supported_arguments([
 ]), language: ['objcpp', 'cpp', 'c'])
 
 if target_machine.system() == 'darwin'
+  add_languages('objcpp')
   add_project_arguments([
     '-ffreestanding',
     '-nostdinc++',

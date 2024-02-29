@@ -1,3 +1,4 @@
+#pragma once
 #include <Ty/ErrorOr.h>
 #include <Ty/StringBuffer.h>
 

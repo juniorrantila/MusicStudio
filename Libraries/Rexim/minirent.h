@@ -33,6 +33,8 @@
 
 #pragma once
 
+#if _WIN32
+
 #define WIN32_LEAN_AND_MEAN
 #include "windows.h"
 
@@ -46,3 +48,5 @@ typedef struct DIR DIR;
 DIR *opendir(const char *dirpath);
 struct dirent *readdir(DIR *dirp);
 int closedir(DIR *dirp);
+
+#endif

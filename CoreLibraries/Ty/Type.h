@@ -39,8 +39,8 @@ struct Type {
             std::source_location::current().function_name());
         constexpr auto start
             = "static Ty::StringView Ty::Type::name_of() [T = "sv
-                  .size;
-        constexpr auto end = name.size - "]"sv.size;
+                  .size();
+        constexpr auto end = name.size() - "]"sv.size();
         return name.part(start, end);
     }
     template <typename T>

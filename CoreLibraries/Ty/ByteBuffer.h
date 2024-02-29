@@ -121,7 +121,7 @@ struct ByteBuffer {
 
     constexpr ErrorOr<u32> write(StringView string)
     {
-        TRY(expand_if_needed_for_write(string.size));
+        TRY(expand_if_needed_for_write(string.size()));
         auto size = string.unchecked_copy_to((char*)&m_data[m_size]);
         m_size += size;
         return size;

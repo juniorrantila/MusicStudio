@@ -70,8 +70,8 @@ struct Bench {
         auto buffer = StringBuffer();
         auto bytes = __builtin_snprintf(buffer.mutable_data(),
             buffer.capacity(),
-            "%12.*s: %4d%s cycles | total: %d%s\n", message.size,
-            message.data, (u32)cycles, cycles_postfix, (u32)total,
+            "%12.*s: %4d%s cycles | total: %d%s\n", message.size(),
+            message.data(), (u32)cycles, cycles_postfix, (u32)total,
             total_postfix);
         auto view = StringView { buffer.data(), (u32)bytes };
         m_out.write(view).ignore();

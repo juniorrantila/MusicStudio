@@ -33,6 +33,7 @@
 #include <Ty/Defer.h>
 #include <Ty/Verify.h>
 #include <Ty/BitCast.h>
+#include <Ty/Move.h>
 
 namespace Ty {
 

@@ -18,28 +18,30 @@ ErrorOr<Application> Application::create(StringView title, i32 x, i32 y, i32 wid
     app.title = [NSString stringWithFormat:@"%.*s", title.size(), title.data()];
     [NSApp setDelegate:app];
 
-    return Application(app, width, height);
+    void* handle = (void*)CFBridgingRetain(app);
+    return Application(handle, width, height);
 }
 
-Application::Application(NativeHandle native_handle, f32 width, f32 height)
+Application::Application(void* native_handle, f32 width, f32 height)
     : m_native_handle(native_handle)
     , m_width(width)
     , m_height(height)
 {
-    UIApp* app = native_handle;
+    UIApp* app = (__bridge UIApp*)native_handle;
     app.instance = this;
 }
 
 Application::~Application()
 {
     if (is_valid()) {
+        CFBridgingRelease(m_native_handle);
         invalidate();
     }
 }
 
 void Application::handle_move(Application* into)
 {
-    UIApp* app = m_native_handle;
+    UIApp* app = (__bridge UIApp*)m_native_handle;
     app.instance = into;
 }
 
@@ -51,15 +53,16 @@ void Application::update() const
 }
 
 void Application::run() const {
-    UIApp* app = m_native_handle;
+    UIApp* app = (__bridge UIApp*)m_native_handle;
     [app makeKeyAndOrderFront:app];
     [NSApp run];
 }
 
 void Application::add_child_window(Window const& window) const
 {
-    UIApp* app = m_native_handle;
-    NSView* view = window.native_handle();
+    UIApp* app = (__bridge UIApp*)m_native_handle;
+    NSView* view = CFBridgingRelease(window.native_handle());
+    CFBridgingRetain(view.window);
     [app addChildWindow:view.window ordered:NSWindowAbove];
 }
 

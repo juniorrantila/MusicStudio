@@ -1,19 +1,10 @@
 #pragma once
 #include <Ty/ErrorOr.h>
 #include <Ty/SmallCapture.h>
-#ifdef __APPLE__
-#include <objc/runtime.h>
-#endif
 
 #include "./KeyCode.h"
 
 namespace UI {
-
-#ifdef __APPLE__
-using NativeHandle = id;
-#else
-using NativeHandle = void*;
-#endif
 
 struct Window;
 struct Application {
@@ -65,13 +56,13 @@ struct Application {
 
     void update() const;
 private:
-    Application(NativeHandle native_handle, f32 width, f32 height);
+    Application(void* native_handle, f32 width, f32 height);
 
     void handle_move(Application* into);
     void invalidate() { m_native_handle = nullptr; }
     bool is_valid() const { return m_native_handle != nullptr; }
 
-    NativeHandle m_native_handle { 0 };
+    void* m_native_handle { 0 };
     f32 m_width { 0.0f };
     f32 m_height { 0.0f };
 };

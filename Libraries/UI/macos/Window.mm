@@ -3,8 +3,8 @@
 
 namespace UI {
 
-Window::Window(NativeHandle handle)
-    : m_handle(handle)
+Window::Window(void const* handle)
+    : m_handle((void*)handle)
 {
 }
 
@@ -15,22 +15,26 @@ ErrorOr<Window> Window::create(StringView title, i32 x, i32 y, i32 width, i32 he
                                               backing: NSBackingStoreBuffered
                                                 defer: YES];
     window.title = [NSString stringWithFormat:@"%.*s", title.size(), title.data()]; 
-    return Window(window);
+    auto* handle = CFBridgingRetain(window);
+    return Window(handle);
 }
 
 Window::~Window()
 {
+    if (m_handle != nullptr) {
+        CFRelease(m_handle);
+    }
 }
 
-id Window::native_handle() const
+void* Window::native_handle() const
 {
-    NSWindow* window = m_handle;
-    return [window contentView];
+    NSWindow* window = (__bridge NSWindow*)m_handle;
+    return (void*)CFBridgingRetain([window contentView]);
 }
 
 void Window::show() const
 {
-    NSWindow* window = (NSWindow*)m_handle;
+    NSWindow* window = (__bridge NSWindow*)m_handle;
     [window makeKeyAndOrderFront:window];
 }
 

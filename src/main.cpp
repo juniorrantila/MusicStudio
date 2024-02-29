@@ -135,7 +135,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
 
     application.on_scroll = [&](f32 x, f32 y) {
         ui.set_scroll_x(x);
-        ui.set_scroll_x(y);
+        ui.set_scroll_y(y);
     };
 
     application.on_key_down = [&](UI::KeyCode code, u32) {

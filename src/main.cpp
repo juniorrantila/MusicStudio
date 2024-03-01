@@ -110,8 +110,9 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
     auto application = TRY(UI::Application::create("MusicStudio"sv, 0, 0, 800, 600));
 
     auto sr = TRY(UI::SimpleRenderer::create());
-    sr.set_resolution(vec2f(application.width(), application.height()));
-    sr.set_camera_pos(vec2f(application.width(), application.height()) / 2.0f);
+    auto titlebar_size = 32.0f; // FIXME: This should not be needed
+    sr.set_resolution(vec2f(application.width(), application.height() + titlebar_size));
+    sr.set_camera_pos(vec2f(application.width(), application.height() + titlebar_size) / 2.0f);
 
     auto atlas = TRY(UI::FreeGlyphAtlas::create(face));
     auto ui = UI::UI(&sr, &atlas);

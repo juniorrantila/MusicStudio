@@ -1,8 +1,11 @@
 #pragma once
 #include <Ty/Base.h>
 
+struct Vec4f;
 struct Vec2f {
     f32 x, y;
+
+    constexpr bool is_inside(Vec4f) const;
 };
 
 static constexpr Vec2f vec2f(f32 x, f32 y) { return { x, y }; }
@@ -87,6 +90,11 @@ static constexpr Vec4f& operator-=(Vec4f& a, Vec4f b) { a = a - b; return a; }
 static constexpr Vec4f& operator*=(Vec4f& a, Vec4f b) { a = a * b; return a; }
 static constexpr Vec4f& operator/=(Vec4f& a, Vec4f b) { a = a / b; return a; }
 static constexpr Vec4f& operator/=(Vec4f& a, f32 b) { a = a / b; return a; }
+
+constexpr bool Vec2f::is_inside(Vec4f rect) const
+{
+    return *this >= rect.start_point() && *this <= rect.end_point();
+}
 
 static constexpr f32 lerpf(f32 a, f32 b, f32 t) { return a + (b - a) * t; }
 static constexpr Vec2f vec2f_lerp(Vec2f a, Vec2f b, Vec2f t) { return vec2f(lerpf(a.x, b.x, t.x), lerpf(a.y, b.y, t.y)); }

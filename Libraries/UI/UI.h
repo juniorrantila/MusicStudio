@@ -86,7 +86,8 @@ private:
     SimpleRenderer* m_renderer { nullptr };
     FreeGlyphAtlas* m_atlas { nullptr };
 
-    i64 m_active_id { 0 };
+    static constexpr i64 null_action = -1;
+    i64 m_active_id { null_action };
 
     Vec2f m_mouse_pos { 0.0f, 0.0f };
 

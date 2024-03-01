@@ -64,6 +64,9 @@ struct Vec4f {
             f32 r, g, b, a;
         };
     };
+
+    constexpr Vec2f start_point() const { return vec2f(x, y); }
+    constexpr Vec2f end_point() const { return start_point() + vec2f(width, height); }
 };
 
 static constexpr Vec4f vec4f(f32 x, f32 y, f32 z, f32 w) { return { .x = x, .y = y, .z = z, .w = w }; }

@@ -16,7 +16,6 @@ struct UI {
         : m_uid(other.m_uid)
         , m_renderer(other.m_renderer)
         , m_active_id(other.m_active_id)
-        , m_last_mouse_pos(other.m_last_mouse_pos)
         , m_mouse_pos(other.m_mouse_pos)
         , m_scroll_x(other.m_scroll_x)
         , m_scroll_y(other.m_scroll_y)
@@ -35,7 +34,6 @@ struct UI {
         m_uid = other.m_uid;
         m_renderer = other.m_renderer;
         m_active_id = other.m_active_id;
-        m_last_mouse_pos = other.m_last_mouse_pos;
         m_mouse_pos = other.m_mouse_pos;
         m_scroll_x = other.m_scroll_x;
         m_scroll_y = other.m_scroll_y;
@@ -94,7 +92,6 @@ private:
 
     i64 m_active_id { 0 };
 
-    Vec2f m_last_mouse_pos { 0.0f, 0.0f };
     Vec2f m_mouse_pos { 0.0f, 0.0f };
 
     i32 m_scroll_x { 0 };

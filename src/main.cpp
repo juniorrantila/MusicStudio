@@ -139,76 +139,6 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
         ui.set_scroll_y(y);
     };
 
-    application.on_key_down = [&](UI::KeyCode code, u32) {
-        switch (code) {
-        case UI::KEYCODE_K:
-        case UI::KEYCODE_UP: {
-            if (fb.cursor > 0) fb.cursor -= 1;
-        }
-        break;
-
-        case UI::KEYCODE_J:
-        case UI::KEYCODE_DOWN: {
-            if (fb.cursor + 1 < fb.files.count) fb.cursor += 1;
-        }
-        break;
-
-        case UI::KEYCODE_RETURN: {
-            const char *file_path = fb_file_path(&fb);
-            if (file_path) {
-                File_Type ft;
-                Errno err = type_of_file(file_path, &ft);
-                if (err != 0) {
-                    flash_error("Could not determine type of file %s: %s", file_path, strerror(err));
-                } else {
-                    switch (ft) {
-                    case FT_DIRECTORY: {
-                        err = fb_change_dir(&fb);
-                        if (err != 0) {
-                            flash_error("Could not change directory to %s: %s", file_path, strerror(err));
-                        }
-                    }
-                    break;
-
-                    case FT_REGULAR: {
-                        if (auto result = MS::Plugin::create_from(file_path); result.is_error()) {
-                            flash_error("Could not load plugin '%s'", file_path);
-                        } else {
-                            auto plugin = result.release_value();
-                            if (plugin.has_editor()) {
-                                auto rect = plugin.editor_rectangle().or_else(Vst::Rectangle{0, 0, 800, 600});
-                                if (auto result = UI::Window::create(plugin.name().or_else(""sv), rect.x, rect.y, rect.width, rect.height); result.is_error()) {
-                                    auto message = result.error().message();
-                                    flash_error("Could not open plugin editor: %.*s", message.size(), message.data());
-                                } else {
-                                    auto plugin_window = result.release_value();
-                                    application.add_child_window(plugin_window);
-                                    if (!plugin.open_editor(plugin_window.native_handle())) {
-                                        auto name = plugin.name().or_else("<noname>"sv);
-                                        fprintf(stderr, "ERROR: Could not open editor for plugin: '%.*s'\n", name.size(), name.data());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    break;
-
-                    case FT_OTHER: {
-                        flash_error("%s is neither a regular file nor a directory. We can't open it.", file_path);
-                    }
-                    break;
-
-                    default:
-                        UNREACHABLE("unknown File_Type");
-                    }
-                }
-            }
-        }
-        break;
-        default: break;
-        }
-    };
-
     application.on_update = [&] {
         f32 border_size = 2.0f;
         Vec4f background_color = hex_to_vec4f(0x636A72FF);
@@ -264,18 +194,6 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
                 file_browser_indent_color
             );
 
-            if (fb.cursor < fb.files.count) {
-                const Vec2f begin = vec2f(indent_size + 2.0f, space.y -((f32)fb.cursor + CURSOR_OFFSET + 1) * FREE_GLYPH_FONT_SIZE);
-                Vec2f end = begin;
-                StringView file_name = StringView::from_c_string(fb.files.items[fb.cursor].name);
-                end += ui.measure_text(file_name);
-                if (fb.files.items[fb.cursor].type == FT_DIRECTORY) {
-                    end += ui.measure_text("/"sv);
-                }
-                auto box = vec4fv(begin, vec2f(end.x - begin.x, FREE_GLYPH_FONT_SIZE));
-                ui.fill_rect(box, vec4f(1.0f, 1.0f, 1.0f, 0.25));
-            }
-
             for (usize row = 0; row < fb.files.count; ++row) {
                 const Vec2f pos = vec2f(indent_size + 2.0f, space.y - ((f32)row + 1) * FREE_GLYPH_FONT_SIZE);
                 StringView file_name = StringView::from_c_string(fb.files.items[row].name);
@@ -287,6 +205,71 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
                     auto slash_pos = pos + ui.measure_text(file_name);
                     box_size.x += ui.measure_text("/"sv).x;
                     ui.text(slash_pos, "/"sv, text_alternate_color);
+                }
+
+                auto box = vec4fv(
+                    pos - vec2f(0.0f, 3.0f),
+                    vec2f(200.0f - indent_size - 3.0f * 2.0f, FREE_GLYPH_FONT_SIZE)
+                );
+                auto button = ui.button(box);
+                if (button.action) {
+                    ui.fill_rect(box, vec4f(1.0f, 0.0f, 0.0f, 0.50));
+
+                    const char *file_path = fb_file_path(&fb);
+                    if (file_path) {
+                        File_Type ft;
+                        Errno err = type_of_file(file_path, &ft);
+                        if (err != 0) {
+                            flash_error("Could not determine type of file %s: %s", file_path, strerror(err));
+                        } else {
+                            switch (ft) {
+                            case FT_DIRECTORY: {
+                                err = fb_change_dir(&fb);
+                                if (err != 0) {
+                                    flash_error("Could not change directory to %s: %s", file_path, strerror(err));
+                                }
+                            }
+                            break;
+
+                            case FT_REGULAR: {
+                                if (auto result = MS::Plugin::create_from(file_path); result.is_error()) {
+                                    flash_error("Could not load plugin '%s'", file_path);
+                                } else {
+                                    auto plugin = result.release_value();
+                                    if (plugin.has_editor()) {
+                                        auto rect = plugin.editor_rectangle().or_else(Vst::Rectangle{0, 0, 800, 600});
+                                        if (auto result = UI::Window::create(plugin.name().or_else(""sv), rect.x, rect.y, rect.width, rect.height); result.is_error()) {
+                                            auto message = result.error().message();
+                                            flash_error("Could not open plugin editor: %.*s", message.size(), message.data());
+                                        } else {
+                                            auto plugin_window = result.release_value();
+                                            application.add_child_window(plugin_window);
+                                            if (!plugin.open_editor(plugin_window.native_handle())) {
+                                                auto name = plugin.name().or_else("<noname>"sv);
+                                                fprintf(stderr, "ERROR: Could not open editor for plugin: '%.*s'\n", name.size(), name.data());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            break;
+
+                            case FT_OTHER: {
+                                flash_error("%s is neither a regular file nor a directory. We can't open it.", file_path);
+                            }
+                            break;
+
+                            default:
+                                UNREACHABLE("unknown File_Type");
+                            }
+                        }
+                    }
+
+                } else if (button.pressed) {
+                    ui.fill_rect(box, vec4f(0.2f, 0.5f, 0.5f, 0.25));
+                } else if (button.hovered) {
+                    ui.fill_rect(box, vec4f(1.0f, 1.0f, 1.0f, 0.25));
+                    fb.cursor = row;
                 }
             }
         }

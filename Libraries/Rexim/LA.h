@@ -24,6 +24,15 @@ static constexpr Vec2f& operator*=(Vec2f& a, Vec2f b) { a = a * b; return a; }
 static constexpr Vec2f& operator/=(Vec2f& a, Vec2f b) { a = a / b; return a; }
 static constexpr Vec2f& operator/=(Vec2f& a, f32 b) { a = a / b; return a; }
 
+static constexpr bool operator==(Vec2f a, Vec2f b) { return a.x == b.x & a.y == b.y; }
+static constexpr bool operator!=(Vec2f a, Vec2f b) { return !(a == b); }
+
+static constexpr bool operator<(Vec2f a, Vec2f b) { return a.x < b.x & a.y < b.y; }
+static constexpr bool operator>(Vec2f a, Vec2f b) { return a.x > b.x & a.y > b.y; }
+
+static constexpr bool operator<=(Vec2f a, Vec2f b) { return a.x <= b.x & a.y <= b.y; }
+static constexpr bool operator>=(Vec2f a, Vec2f b) { return a.x >= b.x & a.y >= b.y; }
+
 struct Vec2i {
     i32 x, y;
 };

@@ -65,10 +65,11 @@ BOOL shouldStop = NO;
         self.instance->set_height(size.height);
     }
     if (self.instance) {
+        [[glView openGLContext] makeCurrentContext];
         self.instance->update();
+        [glView update];
+        [[glView openGLContext] flushBuffer];
     }
-    [glView update];
-    [[glView openGLContext] flushBuffer];
 }
 
 - (void)keyDown:(NSEvent *)event {

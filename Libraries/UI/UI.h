@@ -73,12 +73,8 @@ struct UI {
     Vec2f measure_text(StringView text) const;
     void text(Vec2f pos, StringView text, Vec4f color);
 
-    void set_mouse_pos(f32 x, f32 y)
-    {
-        m_last_mouse_pos = m_mouse_pos;
-        m_mouse_pos.x = x;
-        m_mouse_pos.y = y;
-    };
+    Vec2f mouse_pos() const;
+    void set_mouse_pos(f32 x, f32 y);
 
 private:
     bool is_valid() const { return true; }

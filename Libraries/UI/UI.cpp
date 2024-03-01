@@ -61,27 +61,28 @@ Button UI::button(Vec4f box, StringView file, u32 line)
         .djbd(line)
         .hash();
 
-    bool pressed = m_active_id == (i64)uid;
+    bool pressed = false;
     bool hovered = false;
     bool action = false;
-    if (m_mouse_pos.x >= box.x && m_mouse_pos.x <= box.x + box.width) {
-        if (m_mouse_pos.y >= box.y && m_mouse_pos.y < box.y + box.height) {
-            if (m_active_id == -1) {
-                if (m_mouse_left_down) {
-                    pressed = true;
-                    m_active_id = uid;
-                }
-            }
-            if (pressed && !m_mouse_left_down) {
+    if (mouse_pos().is_inside(box)) {
+        hovered = true;
+        if (m_active_id == uid) {
+            pressed = true;
+            if (!m_mouse_left_down) {
                 action = true;
-                m_active_id = -1;
+                m_active_id = null_action;
             }
-            hovered = true;
-        } else if (m_active_id != -1 && !m_mouse_left_down) {
-            m_active_id = -1;
+        } else if (m_active_id == null_action) {
+            if (m_mouse_left_down) {
+                pressed = true;
+                m_active_id = uid;
+            } else {
+                pressed = false;
+                m_active_id = null_action;
+            }
         }
-    } else if (m_active_id != -1 && !m_mouse_left_down) {
-        m_active_id = -1;
+    } else if (m_active_id == uid && !m_mouse_left_down) {
+        m_active_id = null_action;
     }
 
     return {

@@ -110,26 +110,30 @@ Errno fb_change_dir(FileBrowser *fb)
 
     c_string dir_name = fb->files.items[fb->cursor].name;
 
-    fb->dir_path.count -= 1;
+    String_Builder new_path = {};
+    da_append_many(&new_path, fb->dir_path.items, fb->dir_path.count);
+
+    new_path.count -= 1;
 
     // TODO: fb->dir_path grows indefinitely if we hit the root
-    sb_append_cstr(&fb->dir_path, "/");
-    sb_append_cstr(&fb->dir_path, dir_name);
+    sb_append_cstr(&new_path, "/");
+    sb_append_cstr(&new_path, dir_name);
 
     String_Builder result = {};
-    normpath(sb_to_sv(fb->dir_path), &result);
-    da_move(&fb->dir_path, result);
-    sb_append_null(&fb->dir_path);
+    normpath(sb_to_sv(new_path), &result);
+    da_move(&new_path, result);
+    sb_append_null(&new_path);
 
+    Files new_files = {};
+    Errno err = read_entire_dir(new_path.items, &new_files);
+    if (err != 0)
+        return err;
+
+    da_move(&fb->files, new_files);
+    da_move(&fb->dir_path, new_path);
+    fb->cursor = 0;
     printf("Changed dir to %s\n", fb->dir_path.items);
 
-    fb->files.count = 0;
-    fb->cursor = 0;
-    Errno err = read_entire_dir(fb->dir_path.items, &fb->files);
-
-    if (err != 0) {
-        return err;
-    }
     qsort(fb->files.items, fb->files.count, sizeof(*fb->files.items), file_cmp);
 
     return 0;

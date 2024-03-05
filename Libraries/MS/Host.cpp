@@ -98,8 +98,13 @@ iptr Host::dispatch(Vst::Effect* effect, Vst::HostOpcode opcode,
                 LOG_IF(should_log_opcodes, "    index: %d", index);
             if (value)
                 LOG_IF(should_log_opcodes, "    value: %ld", value);
-            if (ptr)
-                LOG_IF(should_log_opcodes, "    ptr:   0x%p", ptr);
+            if (ptr) {
+                if (opcode == Vst::HostOpcode::CanDo) {
+                    LOG_IF(should_log_opcodes, "    ptr:   %s", (char*)ptr);
+                } else {
+                    LOG_IF(should_log_opcodes, "    ptr:   0x%p", ptr);
+                }
+            }
             if (opt)
                 LOG_IF(should_log_opcodes, "    opt:   %f", opt);
         }

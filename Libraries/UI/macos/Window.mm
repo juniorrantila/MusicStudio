@@ -33,7 +33,7 @@ struct MacOSWindowHandle : WindowHandle {
         frame.size.width = new_size.x;
         frame.size.height = new_size.y;
         [window setFrame:frame display:YES];
-        [view setFrameOrigin:NSPoint(0, 0)];
+        [view setFrameOrigin:NSMakePoint(0, 0)];
     }
 };
 

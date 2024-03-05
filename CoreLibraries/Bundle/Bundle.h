@@ -14,7 +14,7 @@ struct Bundle {
     Bundle& operator=(Bundle&&) = delete;
     Bundle(Bundle&&) = delete;
 
-    static Bundle& the();
+    static Bundle& the(); // NOTE: Generated via make-bundle
 
     Optional<Resource> resource_with_path(StringView path) const;
     void add_resource(Resource resource);

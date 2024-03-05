@@ -86,28 +86,28 @@ struct Vector {
         }
     }
 
-    ALWAYS_INLINE constexpr Id<T> unchecked_append(
+    constexpr Id<T> unchecked_append(
         T&& value) requires(!is_trivially_copyable<T>)
     {
         new (current_slot()) T(move(value));
         return Id<T>(m_size++);
     }
 
-    ALWAYS_INLINE constexpr Id<T> unchecked_append(
+    constexpr Id<T> unchecked_append(
         T value) requires(is_trivially_copyable<T>)
     {
         new (current_slot()) T(value);
         return Id<T>(m_size++);
     }
 
-    ALWAYS_INLINE constexpr ErrorOr<Id<T>> append(
+    constexpr ErrorOr<Id<T>> append(
         T&& value) requires(!is_trivially_copyable<T>)
     {
         TRY(expand_if_needed());
         return unchecked_append(move(value));
     }
 
-    ALWAYS_INLINE constexpr ErrorOr<Id<T>> append(T value) requires(
+    constexpr ErrorOr<Id<T>> append(T value) requires(
         is_trivially_copyable<T>)
     {
         TRY(expand_if_needed());
@@ -122,7 +122,7 @@ struct Vector {
         return move(data()[size()]);
     }
 
-    ALWAYS_INLINE constexpr ErrorOr<void> ensure_capacity(
+    constexpr ErrorOr<void> ensure_capacity(
         u32 capacity)
     {
         if (m_capacity < capacity)
@@ -130,14 +130,14 @@ struct Vector {
         return {};
     }
 
-    ALWAYS_INLINE constexpr ErrorOr<void> reserve(u32 elements)
+    constexpr ErrorOr<void> reserve(u32 elements)
     {
         if (elements > 0)
             TRY(expand(m_capacity + elements));
         return {};
     }
 
-    ALWAYS_INLINE constexpr Optional<Id<T>> find(
+    constexpr Optional<Id<T>> find(
         T const& value) const requires requires(T value, T other)
     {
         value == other;
@@ -150,65 +150,66 @@ struct Vector {
         return {};
     }
 
-    FLATTEN constexpr View<T> view() { return { data(), size() }; }
-    FLATTEN constexpr View<T const> view() const
+    constexpr View<T> view() { return { data(), size() }; }
+    constexpr View<T const> view() const
     {
         return { data(), size() };
     }
 
-    FLATTEN constexpr T const& at(u32 index) const
+    constexpr T const& at(u32 index) const
     {
         VERIFY(index < size());
         return data()[index];
     }
 
-    FLATTEN constexpr T const& at(Id<T> id) const
+    constexpr T const& at(Id<T> id) const
     {
         VERIFY(id.raw() < size());
         return at(id.raw());
     }
 
-    FLATTEN constexpr T const& operator[](u32 index) const
+    constexpr T const& operator[](u32 index) const
     {
         VERIFY(index < size());
         return at(index);
     }
 
-    FLATTEN constexpr T const& operator[](Id<T> id) const
+    constexpr T const& operator[](Id<T> id) const
     {
         VERIFY(id.raw() < size());
         return at(id);
     }
 
-    FLATTEN constexpr T& operator[](u32 index)
+    constexpr T& operator[](u32 index)
     {
         VERIFY(index < size());
         return data()[index];
     }
 
-    FLATTEN constexpr T& operator[](Id<T> id)
+    constexpr T& operator[](Id<T> id)
     {
         VERIFY(id.raw() < size());
         return data()[id.raw()];
     }
 
-    FLATTEN constexpr T* begin()
+    constexpr T* begin()
     {
         VERIFY(data() != nullptr);
         return data();
     }
-    FLATTEN constexpr T* end()
+    constexpr T* end()
     {
         VERIFY(data() != nullptr);
         return &data()[m_size];
     }
 
-    FLATTEN constexpr T const* begin() const
+    constexpr T const* begin() const
     {
         VERIFY(data() != nullptr);
         return data();
     }
-    FLATTEN constexpr T const* end() const
+
+    constexpr T const* end() const
     {
         VERIFY(data() != nullptr);
         return &data()[m_size];
@@ -221,12 +222,12 @@ struct Vector {
 
     ReverseIterator<T> in_reverse() { return { begin(), end() }; }
 
-    FLATTEN constexpr T* data()
+    constexpr T* data()
     {
         return m_data ?: inline_buffer();
     }
 
-    FLATTEN constexpr T const* data() const
+    constexpr T const* data() const
     {
         return m_data ?: inline_buffer();
     }
@@ -234,7 +235,7 @@ struct Vector {
     constexpr T const& last() const { return data()[m_size - 1]; }
     constexpr T& last() { return data()[m_size - 1]; }
 
-    ALWAYS_INLINE constexpr u32 size() const { return m_size; }
+    constexpr u32 size() const { return m_size; }
 
     constexpr bool is_empty() const { return m_size == 0; }
 
@@ -266,7 +267,7 @@ private:
         return {};
     }
 
-    ALWAYS_INLINE constexpr bool is_hydrated() const
+    constexpr bool is_hydrated() const
     {
         return m_data != nullptr;
     }
@@ -285,25 +286,19 @@ private:
     }
 
     constexpr void destroy_elements() const
-        requires(!is_trivially_destructible<T>)
     {
         for (u32 i = 0; i < m_size; i++)
             data()[i].~T();
     }
 
-    ALWAYS_INLINE constexpr void destroy_elements() const
-        requires(is_trivially_destructible<T>)
-    {
-    }
-
-    ALWAYS_INLINE constexpr void invalidate()
+    constexpr void invalidate()
     {
         m_size = 0xFFFFFFFF;
     }
 
-    FLATTEN constexpr T* current_slot() { return &data()[m_size]; }
+    constexpr T* current_slot() { return &data()[m_size]; }
 
-    ALWAYS_INLINE constexpr ErrorOr<void> expand_if_needed()
+    constexpr ErrorOr<void> expand_if_needed()
     {
         if (m_size >= m_capacity)
             TRY(expand());
@@ -322,12 +317,12 @@ private:
     {
     }
 
-    ALWAYS_INLINE T* inline_buffer()
+    T* inline_buffer()
     {
         return reinterpret_cast<T*>(m_storage);
     }
 
-    ALWAYS_INLINE T const* inline_buffer() const
+    T const* inline_buffer() const
     {
         return reinterpret_cast<T const*>(m_storage);
     }

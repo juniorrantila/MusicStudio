@@ -129,8 +129,10 @@ Vec2f FreeGlyphAtlas::measure_line_sized(StringView text) const
     return pos;
 }
 
-void FreeGlyphAtlas::render_line_sized(SimpleRenderer *sr, StringView text, Vec2f *pos, Vec4f color)
+void FreeGlyphAtlas::render_line_sized(SimpleRenderer* sr, StringView text, Vec4f box, Vec4f color)
 {
+    auto glyph_pos = box.start_point();
+    f32 width_left = box.width;
     for (usize i = 0; i < text.size(); ++i) {
         usize glyph_index = text[i];
         // TODO: support for glyphs outside of ASCII range
@@ -138,13 +140,17 @@ void FreeGlyphAtlas::render_line_sized(SimpleRenderer *sr, StringView text, Vec2
             glyph_index = '?';
         }
         GlyphMetric metric = m_metrics[glyph_index];
-        f32 x2 = pos->x + metric.bl;
-        f32 y2 = -pos->y - metric.bt;
+        f32 x2 = glyph_pos.x + metric.bl;
+        f32 y2 = -glyph_pos.y - metric.bt;
         f32 w  = metric.bw;
         f32 h  = metric.bh;
 
-        pos->x += metric.ax;
-        pos->y += metric.ay;
+        glyph_pos.x += metric.ax;
+        glyph_pos.y += metric.ay;
+
+        width_left -= metric.ax;
+        if (width_left < 0)
+            break;
 
         sr->image_rect(
             vec2f(x2, -y2),

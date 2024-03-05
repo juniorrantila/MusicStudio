@@ -36,7 +36,7 @@ struct FreeGlyphAtlas {
 
     f32 cursor_pos(StringView text, Vec2f pos, usize col) const;
     Vec2f measure_line_sized(StringView text) const;
-    void render_line_sized(SimpleRenderer *sr, StringView text, Vec2f *pos, Vec4f color);
+    void render_line_sized(SimpleRenderer* sr, StringView text, Vec4f box, Vec4f color);
 
     FT_UInt m_atlas_width { 0 };
     FT_UInt m_atlas_height { 0 };

@@ -72,6 +72,7 @@ struct UI {
 
     Vec2f measure_text(StringView text) const;
     void text(Vec2f pos, StringView text, Vec4f color);
+    void text(Vec4f box, StringView text, Vec4f color);
 
     Vec2f mouse_pos() const;
     void set_mouse_pos(f32 x, f32 y);

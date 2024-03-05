@@ -155,10 +155,16 @@ Vec2f UI::measure_text(StringView text) const
     return m_atlas->measure_line_sized(text);
 }
 
-void UI::text(Vec2f pos, StringView text, Vec4f color)
+void UI::text(Vec2f pos, StringView content, Vec4f color)
+{
+    auto size = atlas().measure_line_sized(content);
+    text(vec4fv(pos, size + vec2f(0.0f, m_current_font_size.x)), content, color);
+}
+
+void UI::text(Vec4f box, StringView text, Vec4f color)
 {
     m_renderer->set_shader(SHADER_FOR_TEXT);
-    m_atlas->render_line_sized(m_renderer, text, &pos, color);
+    atlas().render_line_sized(m_renderer, text, box, color);
 }
 
 }

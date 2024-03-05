@@ -4,6 +4,7 @@
 #include "./Move.h"
 #include "./New.h"
 #include "./Traits.h"
+#include "./Verify.h"
 
 namespace Ty {
 
@@ -28,7 +29,11 @@ struct [[nodiscard]] Optional {
     constexpr Optional(Optional&& other)
         : m_has_value(other.has_value())
     {
-        new (storage()) T(other.release_value());
+        if (m_has_value) {
+            new (storage()) T(other.release_value());
+        } else {
+            new (storage()) T();
+        }
     }
 
     constexpr ~Optional() { clear_if_needed(); }
@@ -72,7 +77,7 @@ struct [[nodiscard]] Optional {
     constexpr decltype(auto) or_throw(F error_callback)
     {
         using Return = ErrorOr<T, decltype(error_callback())>;
-        if (m_has_value)
+        if (has_value())
             return Return(release_value());
         return Return(error_callback());
     }
@@ -114,14 +119,14 @@ struct [[nodiscard]] Optional {
 
     constexpr bool has_value() const { return m_has_value; }
 
-    constexpr T* operator->() { return storage(); }
-    constexpr T const* operator->() const { return storage(); }
+    constexpr T* operator->() { VERIFY(has_value()); return storage(); }
+    constexpr T const* operator->() const { VERIFY(has_value()); return storage(); }
 
-    constexpr T operator*() { return release_value(); }
+    constexpr T operator*() { VERIFY(has_value()); return release_value(); }
 
-    explicit constexpr operator bool() { return has_value(); }
+    explicit constexpr operator bool() const { return has_value(); }
 
-    constexpr bool operator ==(T const& other)
+    constexpr bool operator==(T const& other) const
     {
         return has_value() && value() == other;
     }
@@ -164,30 +169,39 @@ struct [[nodiscard]] Optional<T*> {
 
     ~Optional() { m_value = nullptr; }
 
-    constexpr Optional& operator=(Optional other)
+    constexpr Optional(Optional&& other)
+        : m_value(other.m_value)
     {
+    }
+
+    constexpr Optional& operator=(Optional&& other)
+    {
+        if (this == &other)
+            return *this;
         m_value = other.m_value;
         return *this;
     }
 
-    constexpr T*& value() { return m_value; }
-    constexpr T const* const& value() const { return m_value; }
+    constexpr T*& value() { VERIFY(has_value()); return m_value; }
+    constexpr T const* const& value() const { VERIFY(has_value()); return m_value; }
 
     constexpr T* release_value()
     {
+        VERIFY(has_value());
         auto value = m_value;
         m_value = nullptr;
         return value;
     }
 
     constexpr bool has_value() const { return m_value != nullptr; }
-    constexpr T* operator->() { return value(); }
+    constexpr T* operator->() { VERIFY(has_value()); return value(); }
 
-    constexpr T const* operator->() const { return value(); }
+    constexpr T const* operator->() const { VERIFY(has_value()); return value(); }
 
-    constexpr T operator*() { return release_value(); }
+    constexpr T* operator*() { VERIFY(has_value()); return release_value(); }
+    constexpr T const* operator*() const { VERIFY(has_value()); return release_value(); }
 
-    explicit constexpr operator bool() { return has_value(); }
+    explicit constexpr operator bool() const { return has_value(); }
 
     template <typename F>
     constexpr decltype(auto) or_throw(F error_callback)

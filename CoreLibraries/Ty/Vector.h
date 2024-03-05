@@ -240,6 +240,12 @@ struct Vector {
 
     constexpr bool is_valid() const { return m_size != 0xFFFFFFFF; }
 
+    void clear()
+    {
+        destroy_elements();
+        m_size = 0;
+    }
+
 private:
     constexpr static auto inline_capacity = 8;
 

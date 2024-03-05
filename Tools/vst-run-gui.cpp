@@ -2,9 +2,10 @@
 #include <MS/Plugin.h>
 #include <Ty/Defer.h>
 #include <Ty/ErrorOr.h>
+#include <UI/Application.h>
+#include <UI/Window.h>
 #include <Vst/Rectangle.h>
 #include <Vst/Vst.h>
-#include <UI/Window.h>
 
 #include <stdio.h>
 
@@ -58,14 +59,14 @@ ErrorOr<int> main(int argc, char const* argv[])
     printf("----------------------------------\n\n");
 
     auto rect = plugin.editor_rectangle().or_else(Vst::Rectangle{ 0, 0, 800, 600 });
+    auto app = TRY(UI::Application::create(plugin_name, rect.x, rect.y, rect.width, rect.height));
     auto window = TRY(UI::Window::create(plugin_name, rect.x, rect.y, rect.width, rect.height));
-    if (!plugin.open_editor(window.native_handle())) {
+    if (!plugin.open_editor(window->native_handle())) {
         return Error::from_string_literal("could not open editor");
     }
+    app.add_child_window(window);
 
-    window.show();
-    window.run();
-
+    app.run();
     return 0;
 }
 

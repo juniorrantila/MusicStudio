@@ -33,7 +33,7 @@ struct Application {
 
     void run() const;
 
-    void add_child_window(Window const&) const;
+    void add_child_window(RefPtr<Window>) const;
 
     SmallCapture<void()> on_update;
 

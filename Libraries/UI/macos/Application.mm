@@ -58,12 +58,11 @@ void Application::run() const {
     [NSApp run];
 }
 
-void Application::add_child_window(Window const& window) const
+void Application::add_child_window(RefPtr<Window> window) const
 {
     UIApp* app = (__bridge UIApp*)m_native_handle;
-    NSView* view = CFBridgingRelease(window.native_handle());
-    CFBridgingRetain(view.window);
-    [app addChildWindow:view.window ordered:NSWindowAbove];
+    NSWindow* win = CFBridgingRelease(window->native_window());
+    [app addChildWindow:win ordered:NSWindowAbove];
 }
 
 }

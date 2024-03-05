@@ -32,6 +32,7 @@ struct GlyphMetric {
 
 struct FreeGlyphAtlas {
     static ErrorOr<FreeGlyphAtlas> create(FT_Face face);
+    void load();
 
     f32 cursor_pos(StringView text, Vec2f pos, usize col) const;
     Vec2f measure_line_sized(StringView text) const;

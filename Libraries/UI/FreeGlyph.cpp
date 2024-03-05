@@ -5,6 +5,12 @@
 
 namespace UI {
 
+void FreeGlyphAtlas::load()
+{
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_glyphs_texture);
+}
+
 ErrorOr<FreeGlyphAtlas> FreeGlyphAtlas::create(FT_Face face)
 {
     auto atlas = FreeGlyphAtlas();

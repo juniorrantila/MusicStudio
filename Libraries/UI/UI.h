@@ -94,6 +94,11 @@ struct UI {
     Vec2f mouse_pos() const;
     void set_mouse_pos(f32 x, f32 y);
 
+    void set_title_bar_height(f32 height)
+    {
+        m_title_bar_height = height;
+    }
+
 private:
     bool is_valid() const { return m_renderer != nullptr; }
     void invalidate() { m_renderer = nullptr; }
@@ -135,6 +140,7 @@ private:
     i32 m_scroll_y { 0 };
 
     f32 m_time { 0.0f };
+    f32 m_title_bar_height { 0.0f };
 
     bool m_mouse_left_down : 1 { false };
 };

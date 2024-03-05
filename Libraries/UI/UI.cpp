@@ -30,7 +30,7 @@ Vec2f UI::mouse_pos() const
 
 void UI::set_mouse_pos(f32 x, f32 y)
 {
-    auto titlebar_size = vec2f(0.0f, 32.0f); // FIXME: This should not be needed
+    auto titlebar_size = vec2f(0.0f, m_title_bar_height);
     m_mouse_pos = vec2f(x, y) / (m_renderer->resolution() - titlebar_size);
 }
 

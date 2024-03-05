@@ -145,13 +145,31 @@ private:
     bool m_mouse_left_down : 1 { false };
 };
 
+enum class ButtonState {
+    None,
+    Hovered,
+    Pressed,
+    Action,
+};
+
 struct Button {
     UI& ui;
     Vec4f box;
 
-    bool hovered : 1;
-    bool pressed : 1;
     bool action : 1;
+    bool pressed : 1;
+    bool hovered : 1;
+
+    ButtonState state() const
+    {
+        if (action)
+            return ButtonState::Action;
+        if (pressed)
+            return ButtonState::Pressed;
+        if (hovered)
+            return ButtonState::Hovered;
+        return ButtonState::None;
+    }
 
     void fill_rect(Vec4f color) const;
 };

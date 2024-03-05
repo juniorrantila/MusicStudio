@@ -87,9 +87,9 @@ Button UI::button(Vec4f box, StringView file, u32 line)
     return {
         .ui = *this,
         .box = box,
-        .hovered = hovered,
-        .pressed = pressed,
         .action = action,
+        .pressed = pressed,
+        .hovered = hovered,
     };
 }
 

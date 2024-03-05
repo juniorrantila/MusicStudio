@@ -10,7 +10,7 @@
 
 #### macOS
 
-    brew install ccache meson ninja-build
+    brew install ccache meson ninja
 
 #### Ubuntu
 

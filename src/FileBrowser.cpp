@@ -1,11 +1,18 @@
 #include "./FileBrowser.h"
 #include "./Common.h"
+#include "./EventLoop.h"
+#include "./StatusBar.h"
+#include "./Style.h"
 
 #include <UI/FreeGlyph.h>
 #include <UI/SimpleRenderer.h>
+#include <UI/UI.h>
 
 #include <Rexim/Util.h>
 #include <Rexim/StringView.h>
+
+#include <Ty/StringBuffer.h>
+#include <Ty/Optional.h>
 
 static int file_cmp(const void *ap, const void *bp)
 {
@@ -14,21 +21,29 @@ static int file_cmp(const void *ap, const void *bp)
     return strcmp(a, b);
 }
 
-Errno fb_open_dir(FileBrowser* fb, c_string dir_path)
+ErrorOr<FileBrowser> FileBrowser::create(StringView path)
 {
-    fb->files.count = 0;
-    fb->cursor = 0;
-    Errno err = read_entire_dir(dir_path, &fb->files);
-    if (err != 0) {
-        return err;
-    }
-    qsort(fb->files.items, fb->files.count, sizeof(*fb->files.items), file_cmp);
+    auto browser = FileBrowser();
+    TRY(browser.open_dir(path));
+    return browser;
+}
 
-    fb->dir_path.count = 0;
-    sb_append_cstr(&fb->dir_path, dir_path);
-    sb_append_null(&fb->dir_path);
+ErrorOr<void> FileBrowser::open_dir(StringView path)
+{
+    auto path_buf = TRY(StringBuffer::create_fill(path, "\0"sv));
 
-    return 0;
+    m_files.count = 0;
+    m_cursor = 0;
+
+    if (auto err = read_entire_dir(path_buf.data(), &m_files); err != 0)
+        return Error::from_errno(err);
+    qsort(m_files.items, m_files.count, sizeof(*m_files.items), file_cmp);
+
+    m_dir_path.count = 0;
+    sb_append_cstr(&m_dir_path, path_buf.data());
+    sb_append_null(&m_dir_path);
+
+    return {};
 }
 
 #define PATH_SEP "/"
@@ -101,17 +116,17 @@ void normpath(String_View path, String_Builder *result)
     free(new_comps.items);
 }
 
-Errno fb_change_dir(FileBrowser *fb)
+ErrorOr<void> FileBrowser::change_dir()
 {
-    assert(fb->dir_path.count > 0 && "You need to call fb_open_dir() before fb_change_dir()");
-    assert(fb->dir_path.items[fb->dir_path.count - 1] == '\0');
+    assert(m_dir_path.count > 0 && "You need to call fb_open_dir() before fb_change_dir()");
+    assert(m_dir_path.items[m_dir_path.count - 1] == '\0');
 
-    if (fb->cursor >= fb->files.count) return 0;
+    if (m_cursor >= m_files.count) return {};
 
-    c_string dir_name = fb->files.items[fb->cursor].name;
+    c_string dir_name = m_files.items[m_cursor].name;
 
     String_Builder new_path = {};
-    da_append_many(&new_path, fb->dir_path.items, fb->dir_path.count);
+    da_append_many(&new_path, m_dir_path.items, m_dir_path.count);
 
     new_path.count -= 1;
 
@@ -127,30 +142,100 @@ Errno fb_change_dir(FileBrowser *fb)
     Files new_files = {};
     Errno err = read_entire_dir(new_path.items, &new_files);
     if (err != 0)
-        return err;
+        return Error::from_errno(err);
 
-    da_move(&fb->files, new_files);
-    da_move(&fb->dir_path, new_path);
-    fb->cursor = 0;
-    printf("Changed dir to %s\n", fb->dir_path.items);
+    da_move(&m_files, new_files);
+    da_move(&m_dir_path, new_path);
+    m_cursor = 0;
+    printf("Changed dir to %s\n", m_dir_path.items);
 
-    qsort(fb->files.items, fb->files.count, sizeof(*fb->files.items), file_cmp);
+    qsort(m_files.items, m_files.count, sizeof(*m_files.items), file_cmp);
 
-    return 0;
+    return {};
 }
 
-c_string fb_file_path(FileBrowser *fb)
+Optional<StringView> FileBrowser::current_file()
 {
-    assert(fb->dir_path.count > 0 && "You need to call fb_open_dir() before fb_file_path()");
-    assert(fb->dir_path.items[fb->dir_path.count - 1] == '\0');
+    assert(m_dir_path.count > 0 && "You need to call fb_open_dir() before fb_file_path()");
+    assert(m_dir_path.items[m_dir_path.count - 1] == '\0');
 
-    if (fb->cursor >= fb->files.count) return NULL;
+    if (m_cursor >= m_files.count) return {};
 
-    fb->file_path.count = 0;
-    sb_append_buf(&fb->file_path, fb->dir_path.items, fb->dir_path.count - 1);
-    sb_append_buf(&fb->file_path, "/", 1);
-    sb_append_cstr(&fb->file_path, fb->files.items[fb->cursor].name);
-    sb_append_null(&fb->file_path);
+    m_file_path.count = 0;
+    sb_append_buf(&m_file_path, m_dir_path.items, m_dir_path.count - 1);
+    sb_append_buf(&m_file_path, "/", 1);
+    sb_append_cstr(&m_file_path, m_files.items[m_cursor].name);
+    sb_append_null(&m_file_path);
 
-    return fb->file_path.items;
+    return StringView::from_c_string(m_file_path.items);
+}
+
+void FileBrowser::render(UI::UI& ui, EventLoop& event_loop, Vec4f box)
+{
+    f32 border_size = 2.0f;
+
+    auto font_size = Style::the().file_browser_font_size();
+    MUST(ui.set_font_size(font_size));
+
+    ui.outline_rect({
+        .box = box,
+        .outline_size = border_size,
+        .fill_color = Style::the().file_browser_color(),
+        .right_color = Style::the().file_browser_border_color(),
+    });
+
+    auto indent_size = Style::the().file_browser_indent_width();
+    ui.fill_rect(vec4fv(
+            vec2f(0.0f, 0.0f),
+            vec2f(indent_size, box.height)
+        ),
+        Style::the().file_browser_indent_color()
+    );
+
+    for (usize row = 0; row < m_files.count; ++row) {
+        const Vec2f pos = vec2f(indent_size + 2.0f, box.height - ((f32)row + 1) * font_size.y);
+        StringView file_name = StringView::from_c_string(m_files.items[row].name);
+
+        auto text_size = ui.measure_text(file_name);
+        ui.text(vec4fv(pos, box.size() - pos + box.start_point()), file_name, Style::the().text_color());
+
+        if (text_size.x < box.width) {
+            if (m_files.items[row].type == FT_DIRECTORY) {
+                auto slash_pos = pos + text_size;
+                auto text_box = vec4fv(slash_pos, box.size() - slash_pos);
+                ui.text(text_box, "/"sv, Style::the().text_alternate_color());
+            }
+        }
+
+        auto box = vec4fv(
+            pos - vec2f(0.0f, 3.0f),
+            vec2f(200.0f - indent_size - 3.0f * 2.0f, font_size.y)
+        );
+        auto button = ui.button(box);
+        switch (button.state()) {
+        case UI::ButtonState::Action:
+            ui.fill_rect(box, vec4f(1.0f, 0.0f, 0.0f, 0.50));
+            if (auto file_path = current_file()) {
+                MUST(event_loop.dispatch_event(ChangePathEvent {
+                    .file_path_buf = MUST(StringBuffer::create_fill(file_path.value(), "\0"sv)),
+                }));
+            }
+            break;
+        case UI::ButtonState::Pressed:
+            ui.fill_rect(box, vec4f(0.2f, 0.5f, 0.5f, 0.25));
+            break;
+        case UI::ButtonState::Hovered:
+            if (auto file_path = current_file()) {
+                if (file_path != m_hovered_file) {
+                    m_hovered_file = file_path.value();
+                    StatusBar::the().set_text(StatusKind::Info, "%.*s", file_path->size(), file_path->data());
+                }
+            }
+            ui.fill_rect(box, vec4f(1.0f, 1.0f, 1.0f, 0.25));
+            m_cursor = row;
+            break;
+        case UI::ButtonState::None:
+            break;
+        }
+    }
 }

@@ -10,8 +10,51 @@ namespace MS {
 
 struct Plugin {
     Core::Library plugin_library;
-    Vst::Effect* vst;
-    Host* host;
+    Vst::Effect* vst { nullptr };
+    Host* host { nullptr };
+    SmallCapture<void(i32, i32)> on_editor_resize { nullptr };
+
+    Plugin(Core::Library plugin_library, Vst::Effect* vst, Host* host)
+        : plugin_library(move(plugin_library))
+        , vst(vst)
+        , host(host)
+    {
+        host->on_resize = [this](i32 x, i32 y) {
+            if (on_editor_resize) {
+                on_editor_resize(x, y);
+            }
+        };
+    }
+
+    Plugin(Plugin&& other)
+        : plugin_library(move(other.plugin_library))
+        , vst(other.vst)
+        , host(other.host)
+    {
+        other.invalidate();
+        host->on_resize = [this](i32 x, i32 y) {
+            if (on_editor_resize) {
+                on_editor_resize(x, y);
+            }
+        };
+    }
+
+    Plugin& operator=(Plugin&& other)
+    {
+        if (this == &other)
+            return *this;
+
+        plugin_library = move(other.plugin_library);
+        vst = other.vst;
+        host = other.host;
+        host->on_resize = [this](i32 x, i32 y) {
+            if (on_editor_resize) {
+                on_editor_resize(x, y);
+            }
+        };
+        other.invalidate();
+        return *this;
+    }
 
     static ErrorOr<Plugin> create_from(char const* path);
     void destroy() const;

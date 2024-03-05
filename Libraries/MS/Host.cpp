@@ -447,8 +447,11 @@ bool Host::io_changed()
     return false;
 }
 
-bool Host::resize_window(i32, i32)
+bool Host::resize_window(i32 x, i32 y)
 {
+    if (on_resize) {
+        on_resize(x, y);
+    }
     return false;
 }
 

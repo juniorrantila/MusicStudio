@@ -40,7 +40,7 @@ ErrorOr<Plugin> Plugin::create_from(const char *path)
     return Plugin {
         move(library),
         plugin,
-        host
+        host,
     };
 }
 

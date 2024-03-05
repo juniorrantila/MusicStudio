@@ -1,9 +1,10 @@
 #pragma once
 #include <Midi/Packet.h>
+#include <Ty/Base.h>
 #include <Ty/Defer.h>
 #include <Ty/ErrorOr.h>
+#include <Ty/SmallCapture.h>
 #include <Ty/StringView.h>
-#include <Ty/Base.h>
 #include <Vst/AEffect.h>
 #include <Vst/Opcodes.h>
 #include <Vst/Vst.h>
@@ -39,6 +40,8 @@ struct Host {
     u32 block_size;
     bool effect_is_initialized { false };
     Vst::TimeInfo time_info;
+
+    SmallCapture<void(i32, i32)> on_resize;
 
     static ErrorOr<Host*> create(Vst::Effect* effect);
     void destroy() const;

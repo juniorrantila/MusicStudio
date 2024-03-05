@@ -30,7 +30,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
 
     auto output_file = TRY(Core::File::open_for_writing(output_path, O_TRUNC));
 
-    TRY(output_file.writeln("// Geneeated with make-bundle"sv));
+    TRY(output_file.writeln("// Generated with make-bundle"sv));
     for (int i = 0; i < argc; i++) {
         auto arg = StringView::from_c_string(argv[i]);
         TRY(output_file.writeln("// "sv, arg));

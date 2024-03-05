@@ -116,6 +116,7 @@ BOOL shouldStop = NO;
         return;
     }
     if ([self isVisible]) {
+        [self update];
         [[glView openGLContext] makeCurrentContext];
         if (self.instance) {
             self.instance->update();

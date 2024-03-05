@@ -1,5 +1,6 @@
 #include "../Application.h"
 #include <Ty/Verify.h>
+#include <Ty/RefPtr.h>
 
 namespace UI {
 
@@ -15,7 +16,7 @@ void Application::run() const
     VERIFY(false && "unimplemented");
 }
 
-void Application::add_child_window(Window const&) const
+void Application::add_child_window(RefPtr<Window>) const
 {
     VERIFY(false && "unimplemented");
 }

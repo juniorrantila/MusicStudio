@@ -105,6 +105,12 @@ struct SmallVector {
 
     constexpr bool is_valid() const { return m_size != capacity; }
 
+    constexpr void clear()
+    {
+        destroy_elements();
+        m_size = 0;
+    }
+
 private:
     constexpr void destroy_elements() const
         requires(!is_trivially_destructible<T>)

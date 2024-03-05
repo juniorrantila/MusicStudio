@@ -9,7 +9,7 @@ struct RefPtr {
 
     static ErrorOr<RefPtr> create(T data)
     {
-        return RefPtr(new Storage(0, move(data)));
+        return RefPtr(new Storage(move(data)));
     }
     ~RefPtr()
     {
@@ -54,8 +54,13 @@ struct RefPtr {
     
 private:
     struct Storage {
+        Storage(T&& data)
+            : data(move(data))
+        {
+        }
+
         usize reference_count { 0 };
-        T data {};
+        T data;
     };
     RefPtr(Storage* storage)
         : m_outline(storage)

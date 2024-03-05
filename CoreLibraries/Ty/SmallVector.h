@@ -26,9 +26,9 @@ struct SmallVector {
     constexpr SmallVector(SmallVector&& other)
         : m_size(other.m_size)
     {
+        destroy_elements();
         for (u32 i = 0; i < m_size; i++) {
             new (slot(i)) T(move(*other.slot(i)));
-            other.slot(i)->~T();
         }
         other.invalidate();
     }

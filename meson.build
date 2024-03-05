@@ -86,7 +86,6 @@ subdir('BuildTools')
 subdir('Fonts')
 
 subdir('Libraries')
-subdir('Tools')
 
 bundled_resources_lib = static_library('bundled-resources', [
     custom_target('bundle',
@@ -106,5 +105,6 @@ bundle_dep += declare_dependency(
   link_with: bundled_resources_lib
 )
 
+subdir('Tools')
 subdir('Plugins')
 subdir('src')

@@ -5,16 +5,26 @@
 #include <Ty/StringView.h>
 #include <Rexim/LA.h>
 
+#include <UI/FreeGlyph.h>
+
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
+#include <Ty/SmallMap.h>
+
 namespace UI {
 
 struct Button;
 struct Tab;
 struct UI {
-    UI(SimpleRenderer* sr, FreeGlyphAtlas* atlas);
+    UI(SimpleRenderer* sr);
 
     UI(UI&& other)
         : m_uid(other.m_uid)
         , m_renderer(other.m_renderer)
+        , m_font_library(other.m_font_library)
+        , m_font_atlas(move(other.m_font_atlas))
+        , m_current_font_size(other.m_current_font_size)
         , m_active_id(other.m_active_id)
         , m_mouse_pos(other.m_mouse_pos)
         , m_scroll_x(other.m_scroll_x)
@@ -32,6 +42,9 @@ struct UI {
             return *this;
         this->~UI();
         m_uid = other.m_uid;
+        m_font_library = other.m_font_library;
+        m_font_atlas = move(other.m_font_atlas);
+        m_current_font_size = other.m_current_font_size;
         m_renderer = other.m_renderer;
         m_active_id = other.m_active_id;
         m_mouse_pos = other.m_mouse_pos;
@@ -71,21 +84,47 @@ struct UI {
     void end_frame();
 
     Vec2f measure_text(StringView text) const;
+
     void text(Vec2f pos, StringView text, Vec4f color);
     void text(Vec4f box, StringView text, Vec4f color);
+
+    ErrorOr<void> load_font(Bytes ttf_data, Vec2f font_size);
+    ErrorOr<void> set_font_size(Vec2f);
 
     Vec2f mouse_pos() const;
     void set_mouse_pos(f32 x, f32 y);
 
 private:
-    bool is_valid() const { return true; }
-    void invalidate() { }
+    bool is_valid() const { return m_renderer != nullptr; }
+    void invalidate() { m_renderer = nullptr; }
     void destroy();
+
+    FreeGlyphAtlas const& atlas() const
+    {
+        auto id = MUST(m_font_atlas.find(m_current_font_size).or_throw([]{
+            return Error::from_string_literal("invalid font size");
+        }));
+        return m_font_atlas[id];
+    }
+
+    FreeGlyphAtlas& atlas()
+    {
+        auto id = MUST(m_font_atlas.find(m_current_font_size).or_throw([]{
+            return Error::from_string_literal("invalid font size");
+        }));
+        return m_font_atlas[id];
+    }
 
     u64 m_uid { 0 };
 
     SimpleRenderer* m_renderer { nullptr };
-    FreeGlyphAtlas* m_atlas { nullptr };
+
+    using FontSize = Vec2f;
+
+    FT_Library m_font_library { nullptr };
+    FT_Face m_font_face { nullptr };
+    SmallMap<FontSize, FreeGlyphAtlas> m_font_atlas {};
+    FontSize m_current_font_size { 0.0f, 0.0f };
 
     static constexpr i64 null_action = -1;
     i64 m_active_id { null_action };

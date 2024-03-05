@@ -6,9 +6,8 @@
 
 namespace UI {
 
-UI::UI(SimpleRenderer* simple_renderer, FreeGlyphAtlas* atlas)
+UI::UI(SimpleRenderer* simple_renderer)
     : m_renderer(simple_renderer)
-    , m_atlas(atlas)
 {
 }
 
@@ -150,9 +149,49 @@ void UI::outline_rect(UI::OutlineRect const& args)
     });
 }
 
+ErrorOr<void> UI::load_font(Bytes ttf_data, Vec2f font_size)
+{
+    if (m_font_library == nullptr) {
+        if (FT_Init_FreeType(&m_font_library) != FT_Err_Ok) {
+            return Error::from_string_literal("Could not initialize FreeType2 library");
+        }
+    }
+
+    auto error = FT_New_Memory_Face(m_font_library, ttf_data.data(), ttf_data.size(), 0, &m_font_face);
+    if (error) {
+        return Error::from_string_literal(FT_Error_String(error));
+    }
+
+    TRY(set_font_size(font_size));
+
+    return {};
+}
+
+ErrorOr<void> UI::set_font_size(Vec2f size)
+{
+    if (m_current_font_size == size)
+        return {};
+
+    auto error = FT_Set_Pixel_Sizes(m_font_face, size.x, size.y);
+    if (error) {
+        return Error::from_string_literal(FT_Error_String(error));
+    }
+
+    if (m_font_atlas.find(size)) {
+        m_current_font_size = size;
+        atlas().load();
+        return {};
+    }
+
+    TRY(m_font_atlas.append(size, TRY(FreeGlyphAtlas::create(m_font_face))));
+    m_current_font_size = size;
+
+    return {};
+}
+
 Vec2f UI::measure_text(StringView text) const
 {
-    return m_atlas->measure_line_sized(text);
+    return atlas().measure_line_sized(text);
 }
 
 void UI::text(Vec2f pos, StringView content, Vec4f color)

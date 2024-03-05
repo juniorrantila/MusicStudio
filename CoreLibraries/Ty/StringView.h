@@ -30,7 +30,7 @@ struct StringView {
 
     consteval StringView(c_string data)
         : m_data(data)
-        , m_size(__builtin_strlen(data))
+        , m_size(data == nullptr ? 0 : __builtin_strlen(data))
     {
     }
 
@@ -53,7 +53,7 @@ struct StringView {
         return same;
     }
 
-    constexpr bool is_empty() const { return size() == 0; }
+    constexpr bool is_empty() const { return data() == nullptr || size() == 0; }
 
     constexpr char const& operator[](u32 index) const
     {

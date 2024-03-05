@@ -182,7 +182,7 @@ void ArgumentParser::print_usage_and_exit(c_string program_name,
         }
         out.writeln().ignore();
     }
-    Core::System::exit(exit_code);
+    System::exit(exit_code);
 }
 
 

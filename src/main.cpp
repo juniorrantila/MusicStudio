@@ -18,7 +18,6 @@
 #include <UI/UI.h>
 #include <UI/Window.h>
 #include <Vst/Rectangle.h>
-#include <Core/System.h>
 #include <sys/errno.h>
 #include <sys/fcntl.h>
 #include <unistd.h>

@@ -1,6 +1,6 @@
 #include "./File.h"
+
 #include "./MappedFile.h"
-#include "./System.h"
 #include <Ty/Defer.h>
 #include <Ty/IOVec.h>
 #include <Ty/Try.h>
@@ -36,7 +36,7 @@ ErrorOr<File> File::open_for_writing(StringView path, u32 flags, mode_t mode)
 
 ErrorOr<File> File::open_for_writing(c_string path, u32 flags, mode_t mode)
 {
-    auto fd = TRY(Core::System::open(path, flags|O_WRONLY, mode));
+    auto fd = TRY(System::open(path, flags|O_WRONLY, mode));
     return File(fd, true);
 }
 
@@ -49,7 +49,7 @@ ErrorOr<void> File::flush()
 {
     if (m_buffer.size() == 0)
         return {};
-    TRY(Core::System::write(m_fd, m_buffer.data(), m_buffer.size()));
+    TRY(System::write(m_fd, m_buffer.data(), m_buffer.size()));
     m_buffer.clear();
     return {};
 }
@@ -62,7 +62,7 @@ ErrorOr<u32> File::write(void const* data, usize size)
 ErrorOr<u32> File::write(StringView string)
 {
     if (m_fd == STDERR_FILENO) {
-        return TRY(Core::System::write(m_fd, string.data(), string.size()));
+        return TRY(System::write(m_fd, string.data(), string.size()));
     }
     if (string.size() > m_buffer.size_left()) {
         TRY(flush());
@@ -72,7 +72,7 @@ ErrorOr<u32> File::write(StringView string)
 
 bool File::is_tty() const
 {
-    return Core::System::isatty(m_fd);
+    return System::isatty(m_fd);
 }
 
 File& File::stdout()

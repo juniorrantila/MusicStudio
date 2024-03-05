@@ -9,7 +9,7 @@
 #define stdout stdout
 #endif
 
-#include "./System.h"
+#include <Ty/System.h>
 #include <Ty/Traits.h>
 #include <Ty/ErrorOr.h>
 #include <Ty/Forward.h>

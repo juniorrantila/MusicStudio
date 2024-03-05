@@ -1,7 +1,6 @@
 core_lib = library('core', [
     'File.cpp',
     'MappedFile.cpp',
-    'System.cpp',
     'Library.cpp',
   ], dependencies: [
     ty_dep

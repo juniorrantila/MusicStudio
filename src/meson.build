@@ -2,6 +2,7 @@ executable('music-studio', [
     'FileBrowser.cpp',
     'StatusBar.cpp',
     'Style.cpp',
+    'Toolbar.cpp',
     'main.cpp',
   ], dependencies: [
     cli_dep,

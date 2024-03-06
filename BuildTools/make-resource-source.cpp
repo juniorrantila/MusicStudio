@@ -4,6 +4,7 @@
 #include <Core/Print.h>
 #include <Main/Main.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 struct CurrentLocation {
     constexpr CurrentLocation(StringView file = __builtin_FILE(), u32 line = __builtin_LINE())
@@ -26,12 +27,12 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
     }));
 
     auto input = StringView();
-    TRY(argument_parser.add_positional_argument("input-file", [&](c_string arg) {
+    TRY(argument_parser.add_positional_argument("input", [&](c_string arg) {
         input = StringView::from_c_string(arg);
     }));
 
     auto output = StringView();
-    TRY(argument_parser.add_positional_argument("output-cpp", [&](c_string arg) {
+    TRY(argument_parser.add_positional_argument("output", [&](c_string arg) {
         output = StringView::from_c_string(arg);
     }));
 
@@ -71,46 +72,40 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
 
     {
         auto file = TRY(Core::File::open_for_writing(output, O_CREAT|O_TRUNC));
-        TRY(file.writeln("// Generated with bundle "sv));
+        TRY(file.writeln("// Generated with make-resource-source "sv));
         TRY(file.writeln("// root:   \""sv, root, "\""sv));
         TRY(file.writeln("// input:  \""sv, input, "\""sv));
         TRY(file.writeln("// output: \""sv, output, "\""sv));
         TRY(file.writeln("// build_dir: \""sv, build_dir_path, "\""sv));
         TRY(file.writeln());
-        TRY(file.writeln("#include <Bundle/Resource.h> "sv, CurrentLocation()));
+        TRY(file.writeln("#pragma clang diagnostic ignored \"-Weverything\""sv, CurrentLocation()));
         TRY(file.writeln());
-        TRY(file.writeln("static u8 "sv, normalized_path.view(), "_bytes[] = { "sv, CurrentLocation()));
+        TRY(file.writeln("_Static_assert(sizeof(unsigned char) == 1, \"just making sure\");"sv, CurrentLocation()));
+        TRY(file.writeln("const unsigned char __"sv, normalized_path.view(), "_bytes[1 + "sv, input_file.size(), "ULL] ="sv, CurrentLocation()));
 
-        auto file_bytes = Bytes(input_file.data(), input_file.size());
-        u32 numbers_per_line = 8;
-        for (u32 y = 0; y < file_bytes.size() / numbers_per_line; y++) {
-            TRY(file.write("        "sv));
-            for (u32 x = 0; x < numbers_per_line; x++) {
-                u32 i = y * numbers_per_line + x;
-                Bytes byte = Bytes(&file_bytes[i], 1);
-                TRY(file.write("0x"sv, byte, ", "sv));
+        TRY(file.write("    \""sv));
+        usize printed_chars = 0;
+        usize row_break = 80;
+        for (usize i = 0; i < input_file.size(); i++) {
+            unsigned char c = (unsigned char)input_file.data()[i];
+
+            if (printed_chars >= row_break) {
+                printed_chars = TRY(file.write("\"\n    \""sv));
             }
-            TRY(file.writeln(CurrentLocation()));
-        }
-        if (file_bytes.size() % numbers_per_line != 0) {
-            u32 last_bytes = file_bytes.size() % numbers_per_line;
-            u32 start = file_bytes.size() - last_bytes;
-            TRY(file.write("        "sv));
-            for (u32 i = 0; i < last_bytes; i++) {
-                auto byte = Bytes(&file_bytes[start + i], 1);
-                TRY(file.write("0x"sv, byte, ", "sv));
+
+            if (c == '"') {
+                printed_chars += TRY(file.write("\\\""sv));
+            } else if (c == '\n') {
+                printed_chars += TRY(file.write("\\n"sv));
+            } else if (c == '\r'){
+                printed_chars += TRY(file.write("\\r"sv));
+            } else if (c == '\\') {
+                printed_chars += TRY(file.write("\\\\"sv));
+            } else [[likely]] {
+                printed_chars += TRY(file.write(StringView::from_parts((char*)&c, 1)));
             }
-            TRY(file.writeln(CurrentLocation()));
         }
-
-        TRY(file.writeln("}; "sv, CurrentLocation()));
-
-        TRY(file.writeln("static inline const Bundle::Resource "sv, normalized_path.view(), " = Bundle::Resource::create_with_resolved_path("sv, CurrentLocation()));
-        TRY(file.writeln("    \""sv, file_path.view(), "\", "sv, CurrentLocation()));
-
-        auto path = normalized_path.view();
-        TRY(file.writeln("    Bytes("sv, path, "_bytes, "sv, "sizeof("sv, path, "_bytes)) "sv, CurrentLocation()));
-        TRY(file.writeln("); "sv, CurrentLocation()));
+        TRY(file.writeln("\";\n"sv));
     }
 
     return 0;
@@ -122,6 +117,6 @@ struct Ty::Formatter<CurrentLocation> {
         requires Ty::Writable<U>
     static constexpr ErrorOr<u32> write(U& to, CurrentLocation location)
     {
-        return TRY(to.write("// "sv, location.file, ":"sv, location.line));
+        return TRY(to.write(" // "sv, location.file, ":"sv, location.line));
     }
 };

@@ -1,5 +1,5 @@
-make_resource_exe = executable('make-resource', [
-    'make-resource.cpp',
+make_resource_header_exe = executable('make-resource-header', [
+    'make-resource-header.cpp',
   ], dependencies: [
     main_dep,
     cli_dep,
@@ -7,9 +7,28 @@ make_resource_exe = executable('make-resource', [
     ty_dep,
   ])
 
-resource_gen = generator(
-  make_resource_exe,
+make_resource_source_exe = executable('make-resource-source', [
+    'make-resource-source.cpp',
+  ], dependencies: [
+    main_dep,
+    cli_dep,
+    core_dep,
+    ty_dep,
+  ])
+
+resource_header_gen = generator(
+  make_resource_header_exe,
   output: ['@PLAINNAME@.h'],
+  arguments: [
+    '../',
+    '@INPUT@',
+    '@OUTPUT@',
+    meson.build_root() / '@BUILD_DIR@',
+  ])
+
+resource_source_gen = generator(
+  make_resource_source_exe,
+  output: ['@PLAINNAME@.c'],
   arguments: [
     '../',
     '@INPUT@',

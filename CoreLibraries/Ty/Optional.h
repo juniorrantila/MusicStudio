@@ -119,6 +119,12 @@ struct [[nodiscard]] Optional {
 
     constexpr bool has_value() const { return m_has_value; }
 
+    T unwrap()
+    {
+        VERIFY(has_value());
+        return release_value();
+    }
+
     constexpr T* operator->() { VERIFY(has_value()); return storage(); }
     constexpr T const* operator->() const { VERIFY(has_value()); return storage(); }
 

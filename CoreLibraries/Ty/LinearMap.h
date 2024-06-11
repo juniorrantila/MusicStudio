@@ -91,17 +91,13 @@ struct LinearMap {
         return Return(error_callback());
     }
 
-    constexpr ErrorOr<Value> fetch(Key const& key,
-        c_string function = __builtin_FUNCTION(),
-        c_string file = __builtin_FILE(),
-        u32 line = __builtin_LINE()) const
+    constexpr Optional<Value> fetch(Key const& key) const
     {
         for (u32 i = 0; i < m_keys.size(); i++) {
             if (m_keys[i] == key)
                 return operator[](Id<Value>(i));
         }
-        return Error::from_string_literal("value not in map",
-            function, file, line);
+        return {};
     }
 
     constexpr Value const& operator[](Id<Value> id) const

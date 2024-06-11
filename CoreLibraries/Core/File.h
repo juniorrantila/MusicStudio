@@ -67,7 +67,7 @@ struct File {
     }
 
     template <typename... Args>
-    constexpr ErrorOr<u32> writeln(Args... args)
+    constexpr ErrorOr<u32> writeln(Args const&... args)
     {
         return TRY(write(args..., "\n"sv));
     }

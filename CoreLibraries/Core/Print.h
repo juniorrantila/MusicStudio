@@ -13,27 +13,27 @@
 namespace Core {
 
 template <typename... Args>
-constexpr u32 writeln(Args... args)
+constexpr u32 writeln(Args const&... args)
 {
-    return MUST(Core::File::stdout().writeln(args...));
+    return MUST(Core::File::stdout().writeln(forward<Args const&>(args)...));
 }
 
 template <typename... Args>
-constexpr u32 dbgln(Args... args)
+constexpr u32 dbgln(Args const&... args)
 {
-    return MUST(Core::File::stderr().writeln(args...));
+    return MUST(Core::File::stderr().writeln(forward<Args const&>(args)...));
 }
 
 template <typename... Args>
-constexpr u32 outwrite(Args... args) requires(sizeof...(Args) > 0)
+constexpr u32 outwrite(Args const&... args) requires(sizeof...(Args) > 0)
 {
-    return MUST(Core::File::stdout().write(args...));
+    return MUST(Core::File::stdout().write(forward<Args const&>(args)...));
 }
 
 template <typename... Args>
-constexpr u32 dbgwrite(Args... args) requires(sizeof...(Args) > 0)
+constexpr u32 dbgwrite(Args const&... args) requires(sizeof...(Args) > 0)
 {
-    return MUST(Core::File::stderr().write(args...));
+    return MUST(Core::File::stderr().write(forward<Args const&>(args)...));
 }
 
 }

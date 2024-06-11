@@ -20,6 +20,16 @@ struct JsonNumber {
     {
     }
 
+    constexpr JsonNumber(isize number)
+        : m_number(number)
+    {
+    }
+
+    constexpr JsonNumber(usize number)
+        : m_number(number)
+    {
+    }
+
     constexpr operator f64() const { return as_f64();; }
     constexpr f64 as_f64() const { return m_number; }
 
@@ -65,6 +75,18 @@ struct JsonValue {
     }
 
     constexpr JsonValue(double value)
+        : m_number(value)
+        , m_type(Number)
+    {
+    }
+
+    constexpr JsonValue(usize value)
+        : m_number(value)
+        , m_type(Number)
+    {
+    }
+
+    constexpr JsonValue(isize value)
         : m_number(value)
         , m_type(Number)
     {

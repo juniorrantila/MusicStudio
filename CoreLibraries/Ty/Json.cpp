@@ -358,7 +358,7 @@ ErrorOr<SingleValue> parse_object(StringView source,
 
         auto value = TRY(
             parse_single_value(source, tokens, objects, arrays));
-        TRY(object.append(key.value.unsafe_as_string(),
+        TRY(object.set(key.value.unsafe_as_string(),
             value.value));
 
         consumed_tokens += value.consumed_tokens;

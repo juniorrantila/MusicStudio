@@ -17,7 +17,7 @@ struct LinearMap {
         };
     }
 
-    constexpr ErrorOr<void> append(Key key, Value value) requires(
+    constexpr ErrorOr<void> set(Key key, Value value) requires(
         is_trivially_copyable<Key>and is_trivially_copyable<Value>)
     {
         if (auto index = find(key)) {
@@ -30,7 +30,7 @@ struct LinearMap {
         return {};
     }
 
-    constexpr ErrorOr<void> append(Key&& key, Value value) requires(
+    constexpr ErrorOr<void> set(Key&& key, Value value) requires(
         !is_trivially_copyable<
             Key> and is_trivially_copyable<Value>)
     {
@@ -44,7 +44,7 @@ struct LinearMap {
         return {};
     }
 
-    constexpr ErrorOr<void> append(Key key, Value&& value) requires(
+    constexpr ErrorOr<void> set(Key key, Value&& value) requires(
         is_trivially_copyable<
             Key> and !is_trivially_copyable<Value>)
     {
@@ -59,7 +59,7 @@ struct LinearMap {
     }
 
     constexpr ErrorOr<void>
-    append(Key&& key, Value&& value) requires(
+    set(Key&& key, Value&& value) requires(
         !is_trivially_copyable<
             Key> and !is_trivially_copyable<Value>)
     {

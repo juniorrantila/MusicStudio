@@ -72,7 +72,7 @@ ErrorOr<usize> writev(int fd, IOVec const* iovec, int count)
 {
     auto rv = ::writev(fd, (struct iovec*)iovec, count);
     if (rv < 0)
-        return Error::from_syscall(rv);
+        return Error::from_errno();
     return rv;
 }
 
@@ -165,8 +165,10 @@ ErrorOr<pid_t> posix_spawnp(c_string file, c_string const* argv,
     pid_t pid = -1;
     auto rc = ::posix_spawnp(&pid, file, file_actions, attrp,
         (char**)argv, (char**)envp);
-    if (rc != 0)
-        return Error::from_errno(rc);
+    if (rc != 0) {
+        errno = rc;
+        return Error::from_errno();
+    }
     if (pid < 0)
         return Error::from_errno();
     return pid;

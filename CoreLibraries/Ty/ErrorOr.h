@@ -105,6 +105,7 @@ struct [[nodiscard]] ErrorOr {
         VERIFY(m_state != State::Moved);
         return m_value;
     }
+
     constexpr E const& error() const
     {
         VERIFY(m_state != State::Moved);

@@ -1,10 +1,8 @@
 #pragma once
-#include "Assert.h"
-#include "Formatter.h"
-#include "Forward.h"
-#include "LinearMap.h"
-#include "Vector.h"
-#include "StringBuffer.h"
+#include "./Forward.h"
+#include "./LinearMap.h"
+#include "./Vector.h"
+#include "./StringBuffer.h"
 
 namespace Ty {
 
@@ -15,6 +13,35 @@ using JsonArray = Vector<JsonValue>;
 
 using JsonObjects = Vector<JsonObject>;
 using JsonArrays = Vector<JsonArray>;
+
+struct JsonNumber {
+    constexpr JsonNumber(f64 number)
+        : m_number(number)
+    {
+    }
+
+    constexpr operator f64() const { return as_f64();; }
+    constexpr f64 as_f64() const { return m_number; }
+
+    constexpr Optional<isize> as_isize() const
+    {
+        if (m_number != (f64)(isize)m_number)
+            return {};
+        return (isize)m_number;
+    }
+
+    constexpr Optional<usize> as_usize() const
+    {
+        if (m_number < 0.0)
+            return {};
+        if (m_number != (f64)(usize)m_number)
+            return {};
+        return (usize)m_number;
+    }
+
+private:
+    f64 m_number { 0.0 };
+};
 
 struct JsonValue {
     enum Type : u8 {
@@ -64,38 +91,52 @@ struct JsonValue {
     constexpr Type type() const { return m_type; }
 
     constexpr bool unsafe_as_bool() const { return m_bool; }
-    constexpr double unsafe_as_number() const { return m_number; }
+    constexpr JsonNumber unsafe_as_number() const { return m_number; }
     constexpr Id<JsonObject> unsafe_as_object() const { return m_object; }
     constexpr Id<JsonArray> unsafe_as_array() const { return m_array; }
 
     constexpr StringView unsafe_as_string() const { return m_string; }
 
-    constexpr ErrorOr<bool> as_bool() const
+    constexpr Optional<bool> as_bool() const
     {
-        ASSERT(m_type == Bool);
+        if (m_type != Bool) {
+            return {};
+        }
         return m_bool;
     }
 
-    constexpr ErrorOr<double> as_number() const
+    constexpr Optional<JsonNumber> as_number() const
     {
-        ASSERT(m_type == Number);
+        if (m_type != Number) {
+            return {};
+        }
         return m_number;
     }
-    constexpr ErrorOr<Id<JsonObject>> as_object() const
+
+    constexpr Optional<Id<JsonObject>> as_object() const
     {
-        ASSERT(m_type == Object);
+        if (m_type != Object)
+            return {};
         return m_object;
     }
-    constexpr ErrorOr<Id<JsonArray>> as_array() const
+
+    constexpr Optional<Id<JsonArray>> as_array() const
     {
-        ASSERT(m_type == Array);
+        if (m_type != Array) {
+            return {};
+        }
         return m_array;
     }
-    constexpr ErrorOr<StringView> as_string() const
+
+    constexpr Optional<StringView> as_string() const
     {
-        ASSERT(m_type == String);
+        if (m_type != String) {
+            return {};
+        }
         return m_string;
     }
+
+    ErrorOr<StringBuffer> serialize(Json const&) const;
 
 private:
     union {
@@ -103,13 +144,24 @@ private:
         Id<JsonObject> m_object;
         StringView m_string;
         bool m_bool;
-        double m_number;
+        JsonNumber m_number;
     };
     Type m_type;
 };
 
 struct Json {
+    friend JsonValue;
     static ErrorOr<Json> create_from(StringView);
+
+    ErrorOr<StringBuffer> serialize() const;
+
+    constexpr JsonObject const& operator[](Id<JsonObject> id) const { return m_objects[id]; }
+    constexpr JsonArray const& operator[](Id<JsonArray> id) const { return m_arrays[id]; }
+
+    JsonValue const& root() const { return m_root; }
+
+private:
+    constexpr Json(JsonValue root, JsonObjects&& objects, JsonArrays&& arrays);
 
     template <typename T>
         requires requires(T const& value) { T::serialize(value); }
@@ -119,17 +171,8 @@ struct Json {
     }
 
     static ErrorOr<StringBuffer> serialize(bool value);
-    static ErrorOr<StringBuffer> serialize(double value);
+    static ErrorOr<StringBuffer> serialize(JsonNumber value);
     static ErrorOr<StringBuffer> serialize(StringView value);
-
-    constexpr JsonObject const& operator[](Id<JsonObject> id) const { return m_objects[id]; }
-
-    constexpr JsonArray const& operator[](Id<JsonArray> id) const { return m_arrays[id]; }
-
-    JsonValue const& root() const { return m_root; }
-
-private:
-    constexpr Json(JsonValue root, JsonObjects&& objects, JsonArrays&& arrays);
 
     JsonValue m_root;
     JsonObjects m_objects;

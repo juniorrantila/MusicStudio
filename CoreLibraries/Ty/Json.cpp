@@ -1,9 +1,8 @@
-#include "Json.h"
+#include "./Json.h"
 
-#include "Assert.h"
-#include "Parse.h"
-#include "Verify.h"
-#include "View.h"
+#include "./Assert.h"
+#include "./Parse.h"
+#include "./View.h"
 
 namespace {
 
@@ -59,19 +58,73 @@ ErrorOr<Json> Json::create_from(StringView source)
     };
 }
 
+ErrorOr<StringBuffer> JsonValue::serialize(Json const& json) const
+{
+    switch (type()) {
+    case JsonValue::Type::Bool:
+        return TRY(Json::serialize(unsafe_as_bool()));
+    case JsonValue::Type::Null:
+        return StringBuffer::create_fill("null"sv);
+    case JsonValue::Type::Number:
+        return TRY(Json::serialize(unsafe_as_number()));
+    case JsonValue::Type::String:
+        return TRY(Json::serialize(unsafe_as_string()));
+    case JsonValue::Type::Array: {
+        auto buffer = TRY(StringBuffer::create());
+        TRY(buffer.write("["sv));
+        auto& array = json[unsafe_as_array()];
+        for (usize i = 0; i < array.size(); i++) {
+            auto value = array[i];
+            TRY(buffer.write(TRY(value.serialize(json))));
+            if (i == array.size() - 1)
+                continue;
+            TRY(buffer.write(","sv));
+        }
+        TRY(buffer.write("]"sv));
+        return buffer;
+    }
+    case JsonValue::Type::Object: {
+        auto buffer = TRY(StringBuffer::create());
+        TRY(buffer.write("{"sv));
+        auto& object = json[unsafe_as_object()];
+        auto keys = object.keys();
+        for (usize i = 0; i < keys.size(); i++) {
+            auto key = keys[i];
+            auto value = *object.fetch(key);
+            TRY(buffer.write(TRY(Json::serialize(key))));
+            TRY(buffer.write(":"sv));
+            TRY(buffer.write(TRY(value.serialize(json))));
+            if (i == keys.size() - 1)
+                continue;
+            TRY(buffer.write(","sv));
+        }
+        TRY(buffer.write("}"sv));
+        return buffer;
+    };
+    }
+}
+
 ErrorOr<StringBuffer> Json::serialize(bool value)
 {
     return StringBuffer::create_fill(value);
 }
 
-ErrorOr<StringBuffer> Json::serialize(double value)
+ErrorOr<StringBuffer> Json::serialize(JsonNumber value)
 {
-    return StringBuffer::create_fill(value);
+    if (auto int_value = value.as_isize()) {
+        return StringBuffer::create_fill(*int_value);
+    }
+    return StringBuffer::create_fill(value.as_f64());
 }
 
 ErrorOr<StringBuffer> Json::serialize(StringView value)
 {
     return StringBuffer::create_fill("\""sv, value, "\""sv);
+}
+
+ErrorOr<StringBuffer> Json::serialize() const
+{
+    return root().serialize(*this);
 }
 
 }

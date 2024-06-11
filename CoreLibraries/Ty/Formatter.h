@@ -1,11 +1,11 @@
 #pragma once
-#include "Bytes.h"
-#include "Concepts.h"
-#include "Error.h"
-#include "ErrorOr.h"
-#include "Forward.h"
-#include "StringView.h"
-#include "Try.h"
+#include "./Bytes.h"
+#include "./Concepts.h"
+#include "./Error.h"
+#include "./ErrorOr.h"
+#include "./Forward.h"
+#include "./StringView.h"
+#include "./Try.h"
 
 namespace Ty {
 
@@ -257,9 +257,14 @@ struct Formatter<Error> {
         u32 size = 0;
         if (!error.function().is_empty())
             size += TRY(to.write(error.function(), ": "sv));
-        size += TRY(to.write(error.message()));
+        if (auto message = error.user_message(); message.has_value()) {
+            size += TRY(to.write(*message));
+        }
+        if (auto message = error.errno_message(); message.has_value()) {
+            size += TRY(to.write(": "sv, *message));
+        }
         if (!error.file().is_empty()) {
-            size += TRY(to.writeln(" ["sv, error.file(), ":"sv,
+            size += TRY(to.write(" ["sv, error.file(), ":"sv,
                 error.line_in_file(), "]"sv));
         }
 

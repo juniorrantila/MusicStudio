@@ -3,7 +3,6 @@ main_lib = static_library('main', [
   ], dependencies: [
     core_dep,
     ty_dep,
-    c_dep,
   ])
 
 main_dep = declare_dependency(

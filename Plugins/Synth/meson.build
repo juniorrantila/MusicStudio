@@ -6,5 +6,4 @@ executable('standalone', [
 ], dependencies: [
   audio_dep,
   synth_dep,
-  c_dep,
 ])

@@ -33,7 +33,6 @@ if target_machine.system() == 'darwin'
   add_languages('objcpp')
   add_project_arguments([
     '-DGL_SILENCE_DEPRECATION=1',
-    '-ffreestanding',
     '-nostdinc++',
   ], language: ['objcpp', 'cpp', 'c'])
 endif
@@ -56,11 +55,6 @@ freetype2_proj = subproject('freetype2', default_options: [
   'zlib=disabled',
 ])
 freetype2_dep = freetype2_proj.get_variable('freetype_dep')
-
-c_dep = [
-  cpp.find_library('c', static: true),
-  cpp.find_library('m', static: true),
-]
 
 opengl_dep = [dependency('opengl', static: true)]
 if target_machine.system() != 'darwin'

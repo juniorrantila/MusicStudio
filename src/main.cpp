@@ -5,7 +5,7 @@
 #include "./Toolbar.h"
 #include "./Style.h"
 
-#include <Bundle/Bundle.h>
+#include <FS/Bundle.h>
 #include <CLI/ArgumentParser.h>
 #include <Core/Print.h>
 #include <Main/Main.h>
@@ -88,7 +88,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
     auto& status_bar = StatusBar::the();
 
     dbgln("resources:"sv);
-    for (auto resource : Bundle::the().resources()) {
+    for (auto resource : FS::Bundle::the().resources()) {
         dbgln("  "sv, resource.resolved_path());
     }
 
@@ -104,7 +104,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
     // const char *const font_file_path = "./Fonts/VictorMono-Regular.ttf";
     // const char *const font_file_path = "./Fonts/iosevka-regular.ttf";
     auto font_path = "./Fonts/OxaniumLight/Oxanium-Light.ttf"sv;
-    auto font = TRY(Bundle::the().resource_with_path(font_path).or_throw([&]{
+    auto font = TRY(FS::Bundle::the().resource_with_path(font_path).or_throw([&]{
         return Error::from_string_literal("could not find font");
     }));
 

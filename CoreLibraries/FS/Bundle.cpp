@@ -1,7 +1,7 @@
 #include "./Bundle.h"
 #include <Ty/StringBuffer.h>
 
-namespace Bundle {
+namespace FS {
 
 Optional<Resource> Bundle::resource_with_path(StringView path) const
 {

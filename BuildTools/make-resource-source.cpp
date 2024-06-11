@@ -3,8 +3,6 @@
 #include <Core/MappedFile.h>
 #include <Core/Print.h>
 #include <Main/Main.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 struct CurrentLocation {
     constexpr CurrentLocation(StringView file = __builtin_FILE(), u32 line = __builtin_LINE())

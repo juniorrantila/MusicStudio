@@ -3,7 +3,6 @@
 #include <Core/MappedFile.h>
 #include <Core/Print.h>
 #include <Main/Main.h>
-#include <stdio.h>
 
 struct CurrentLocation {
     constexpr CurrentLocation(StringView file = __builtin_FILE(), u32 line = __builtin_LINE())
@@ -36,7 +35,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
         TRY(output_file.writeln("// "sv, arg));
     }
     TRY(output_file.writeln());
-    TRY(output_file.writeln("#include <Bundle/Bundle.h> "sv, CurrentLocation()));
+    TRY(output_file.writeln("#include <FS/Bundle.h> "sv, CurrentLocation()));
     TRY(output_file.writeln());
 
     auto desc_file_paths = TRY(Vector<StringBuffer>::create(file_paths.size()));
@@ -51,7 +50,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
     }
     TRY(output_file.writeln());
 
-    TRY(output_file.writeln("namespace Bundle { "sv, CurrentLocation()));
+    TRY(output_file.writeln("namespace FS { "sv, CurrentLocation()));
     TRY(output_file.writeln());
 
     TRY(output_file.writeln("Bundle& Bundle::the() { "sv, CurrentLocation()));

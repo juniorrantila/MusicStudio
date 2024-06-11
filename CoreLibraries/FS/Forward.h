@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Bundle {
+namespace FS {
 
 struct Bundle;
 struct Resource;

@@ -5,7 +5,7 @@
 #include <Ty/Optional.h>
 #include <Ty/SmallVector.h>
 
-namespace Bundle {
+namespace FS {
 
 struct Bundle {
     Bundle& operator=(Bundle const&) = delete;
@@ -26,7 +26,5 @@ private:
 
     SmallVector<Resource, 256> m_resources {};
 };
-
-static inline Bundle& the() { return Bundle::the(); }
 
 }

@@ -99,10 +99,10 @@ bundled_resources_lib = static_library('bundled-resources', [
       ]),
   ], dependencies: [
     ty_dep,
-    bundle_dep,
+    fs_bundle_dep,
   ], link_with: bundle_libs)
 
-bundle_dep += declare_dependency(
+fs_bundle_dep += declare_dependency(
   link_with: bundled_resources_lib
 )
 

@@ -1,9 +1,8 @@
 #pragma once
 #include <Ty/Bytes.h>
 #include <Ty/StringView.h>
-#include <Ty/Verify.h>
 
-namespace Bundle {
+namespace FS {
 
 struct Resource {
     static Resource create_with_resolved_path(StringView path, Bytes bytes)

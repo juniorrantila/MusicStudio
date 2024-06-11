@@ -23,5 +23,6 @@ executable('vst-run-gui', 'vst-run-gui.cpp', dependencies: [
     cli_dep,
     main_dep,
     ui_dep,
-    bundle_dep,
+    fs_dep,
+    fs_bundle_dep
   ])

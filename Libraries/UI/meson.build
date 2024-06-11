@@ -23,7 +23,8 @@ ui_lib = library('UI', [
     freetype2_dep,
     opengl_dep,
     ty_dep,
-    bundle_dep,
+    fs_dep,
+    fs_bundle_dep,
     rexim_dep,
   ])
 

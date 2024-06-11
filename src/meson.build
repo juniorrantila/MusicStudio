@@ -13,6 +13,7 @@ executable('music-studio', [
     ui_dep,
     vst_dep,
     ms_dep,
-    bundle_dep,
+    fs_dep,
+    fs_bundle_dep,
     zip_dep
   ])

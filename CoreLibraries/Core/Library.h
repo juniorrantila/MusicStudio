@@ -1,6 +1,7 @@
 #pragma once
 #include <Ty/Base.h>
 #include <Ty/ErrorOr.h>
+#include <Ty/Try.h>
 
 namespace Core {
 

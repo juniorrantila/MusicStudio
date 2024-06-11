@@ -112,6 +112,9 @@ struct LinearMap {
         return m_values[id];
     }
 
+    View<Key const> keys() const { return m_keys; }
+    View<Value const> values() const { return m_values; }
+
 private:
     constexpr LinearMap(Vector<Key>&& keys, Vector<Value>&& values)
         : m_keys(move(keys))

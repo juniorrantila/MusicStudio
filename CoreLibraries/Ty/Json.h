@@ -157,8 +157,20 @@ struct Json {
 
     constexpr JsonObject const& operator[](Id<JsonObject> id) const { return m_objects[id]; }
     constexpr JsonArray const& operator[](Id<JsonArray> id) const { return m_arrays[id]; }
+    constexpr JsonObject& operator[](Id<JsonObject> id) { return m_objects[id]; }
+    constexpr JsonArray& operator[](Id<JsonArray> id) { return m_arrays[id]; }
 
-    JsonValue const& root() const { return m_root; }
+    constexpr JsonValue const& root() const { return m_root; }
+
+    constexpr ErrorOr<Id<JsonObject>> add_object(JsonObject&& object)
+    {
+        return TRY(m_objects.append(move(object)));
+    }
+
+    constexpr ErrorOr<Id<JsonArray>> add_array(JsonArray&& array)
+    {
+        return TRY(m_arrays.append(move(array)));
+    }
 
 private:
     constexpr Json(JsonValue root, JsonObjects&& objects, JsonArrays&& arrays);

@@ -1,6 +1,8 @@
 #include "../Window.h"
 #include "./Rexim/LA.h"
 
+#include <Ty/Try.h>
+
 #import <AppKit/AppKit.h>
 
 namespace UI {

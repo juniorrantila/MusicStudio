@@ -20,6 +20,10 @@ struct LinearMap {
     constexpr ErrorOr<void> append(Key key, Value value) requires(
         is_trivially_copyable<Key>and is_trivially_copyable<Value>)
     {
+        if (auto index = find(key)) {
+            m_values[index->raw()] = value;
+            return {};
+        }
         TRY(m_keys.append(key));
         TRY(m_values.append(value));
 
@@ -30,6 +34,10 @@ struct LinearMap {
         !is_trivially_copyable<
             Key> and is_trivially_copyable<Value>)
     {
+        if (auto index = find(key)) {
+            m_values[index->raw()] = value;
+            return {};
+        }
         TRY(m_keys.append(move(key)));
         TRY(m_values.append(value));
 
@@ -40,6 +48,10 @@ struct LinearMap {
         is_trivially_copyable<
             Key> and !is_trivially_copyable<Value>)
     {
+        if (auto index = find(key)) {
+            m_values[index->raw()] = move(value);
+            return {};
+        }
         TRY(m_keys.append(key));
         TRY(m_values.append(move(value)));
 
@@ -51,6 +63,10 @@ struct LinearMap {
         !is_trivially_copyable<
             Key> and !is_trivially_copyable<Value>)
     {
+        if (auto index = find(key)) {
+            m_values[index->raw()] = move(value);
+            return {};
+        }
         TRY(m_keys.append(move(key)));
         TRY(m_values.append(move(value)));
 

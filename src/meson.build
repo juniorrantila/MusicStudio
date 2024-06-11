@@ -14,4 +14,5 @@ executable('music-studio', [
     vst_dep,
     ms_dep,
     bundle_dep,
+    zip_dep
   ])

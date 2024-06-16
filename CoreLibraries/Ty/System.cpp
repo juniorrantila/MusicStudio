@@ -49,6 +49,12 @@ ErrorOr<Stat> stat(c_string path)
     return Stat(buf);
 }
 
+ErrorOr<Stat> stat(StringView path)
+{
+    auto path_buf = TRY(StringBuffer::create_fill(path, "\0"sv));
+    return TRY(stat(path_buf.data()));
+}
+
 ErrorOr<usize> write(int fd, void const* data, usize size)
 {
     auto rv = ::write(fd, data, size);

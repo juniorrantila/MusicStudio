@@ -235,11 +235,18 @@ struct Stat {
         return (raw.st_mode & flag) > 0;
     }
 
+    constexpr bool is_directory() const
+    {
+        return S_ISDIR(raw.st_mode);
+    }
+
     constexpr off_t size() const { return raw.st_size; }
 
     struct stat raw;
 };
 ErrorOr<Stat> fstat(int fd);
+ErrorOr<Stat> stat(c_string);
+ErrorOr<Stat> stat(StringView);
 
 ErrorOr<int> open(c_string path, int flags);
 ErrorOr<int> open(c_string path, int flags, mode_t mode);

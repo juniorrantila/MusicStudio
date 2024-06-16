@@ -105,6 +105,16 @@ struct StringBuffer {
         return *this;
     }
 
+    bool operator==(StringView other) const
+    {
+        return view() == other;
+    }
+
+    bool operator==(StringBuffer const& other) const
+    {
+        return view() == other.view();
+    }
+
     template <typename... Args>
     constexpr ErrorOr<u32> write(Args... args) requires(
         sizeof...(Args) > 1)

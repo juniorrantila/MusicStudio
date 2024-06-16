@@ -1,6 +1,8 @@
 #pragma once
-#include "Base.h"
-#include "Verify.h"
+#include "./Forward.h"
+
+#include "./Base.h"
+#include "./Verify.h"
 
 namespace Ty {
 
@@ -24,6 +26,7 @@ struct Bytes {
 
     u8 const* data() const { return m_data; }
     usize size() const { return m_size; }
+    StringView as_view() const;
 
 private:
     u8 const* m_data { nullptr };

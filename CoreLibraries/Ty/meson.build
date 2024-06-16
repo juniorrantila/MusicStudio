@@ -5,6 +5,7 @@ ty_lib = library('ty', [
     'StringView.cpp',
     'Parse.cpp',
     'System.cpp',
+    'Bytes.cpp',
     'StringBuffer.cpp',
   ])
 

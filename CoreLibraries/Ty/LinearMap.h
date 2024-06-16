@@ -132,6 +132,7 @@ struct LinearMap {
 
     View<Key const> keys() const { return m_keys; }
     View<Value const> values() const { return m_values; }
+    usize size() const { return m_keys.size(); }
 
 private:
     constexpr LinearMap(Vector<Key>&& keys, Vector<Value>&& values)

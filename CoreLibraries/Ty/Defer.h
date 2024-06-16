@@ -10,10 +10,26 @@ public:
     {
     }
 
-    ~Defer() { callback(); }
+    constexpr void run()
+    {
+        callback();
+        disarm();
+    }
+
+    constexpr void disarm()
+    {
+        m_is_armed = false;
+    }
+
+    constexpr ~Defer() {
+        if (m_is_armed) {
+            callback();
+        }
+    }
 
 private:
     F callback;
+    bool m_is_armed { true };
 };
 
 }

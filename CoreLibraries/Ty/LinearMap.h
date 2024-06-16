@@ -1,14 +1,16 @@
 #pragma once
-#include "ErrorOr.h"
-#include "Move.h"
-#include "Try.h"
-#include "Vector.h"
-#include "Verify.h"
+#include "./ErrorOr.h"
+#include "./Move.h"
+#include "./Try.h"
+#include "./Vector.h"
+#include "./Verify.h"
 
 namespace Ty {
 
 template <typename Key, typename Value>
 struct LinearMap {
+    constexpr LinearMap() = default;
+
     static ErrorOr<LinearMap> create()
     {
         return LinearMap {
@@ -138,8 +140,8 @@ private:
     {
     }
 
-    Vector<Key> m_keys;
-    Vector<Value> m_values;
+    Vector<Key> m_keys {};
+    Vector<Value> m_values {};
 };
 
 }

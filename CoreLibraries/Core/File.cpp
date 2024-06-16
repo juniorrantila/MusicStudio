@@ -1,6 +1,6 @@
 #include "./File.h"
 
-#include "./MappedFile.h"
+#include <Ty/System.h>
 #include <Ty/Defer.h>
 #include <Ty/IOVec.h>
 #include <Ty/Try.h>
@@ -73,6 +73,11 @@ ErrorOr<u32> File::write(StringView string)
 bool File::is_tty() const
 {
     return System::isatty(m_fd);
+}
+
+ErrorOr<bool> File::is_directory(StringView path)
+{
+    return TRY(System::stat(path)).is_directory();
 }
 
 File& File::stdout()

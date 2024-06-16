@@ -82,6 +82,7 @@ struct File {
     }
 
     bool is_tty() const;
+    static ErrorOr<bool> is_directory(StringView path);
 
     ErrorOr<void> flush();
 

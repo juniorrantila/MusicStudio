@@ -206,6 +206,8 @@ struct StringBuffer {
         }
     }
 
+    StringView uppercase();
+
 private:
     static constexpr auto max_chars_in_u64 = 20;
     static constexpr auto inline_capacity = 64;

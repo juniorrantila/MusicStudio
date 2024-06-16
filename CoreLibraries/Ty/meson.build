@@ -5,6 +5,7 @@ ty_lib = library('ty', [
     'StringView.cpp',
     'Parse.cpp',
     'System.cpp',
+    'StringBuffer.cpp',
   ])
 
 ty_dep = declare_dependency(

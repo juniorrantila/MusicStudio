@@ -28,6 +28,8 @@ struct Bytes {
     usize size() const { return m_size; }
     StringView as_view() const;
 
+    ErrorOr<StringBuffer> as_c_source_file(StringView variable_name) const;
+
 private:
     u8 const* m_data { nullptr };
     usize m_size { 0 };

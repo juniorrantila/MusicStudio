@@ -1,13 +1,14 @@
 #pragma once
 #include <Ty/Bytes.h>
 #include <Ty/StringView.h>
+#include <Ty/StringBuffer.h>
 
 namespace FS {
 
-struct Resource {
-    static Resource create_with_resolved_path(StringView path, Bytes bytes)
+struct ResourceView {
+    static ResourceView create_with_resolved_path(StringView path, Bytes bytes)
     {
-        return Resource(path, bytes);
+        return ResourceView(path, bytes);
     }
 
     StringView resolved_path() const { return m_resolved_path; }
@@ -18,7 +19,7 @@ struct Resource {
     usize size() const { return m_bytes.size(); }
 
 private:
-    constexpr Resource(StringView resolved_path, Bytes bytes)
+    constexpr ResourceView(StringView resolved_path, Bytes bytes)
         : m_resolved_path(resolved_path)
         , m_bytes(bytes)
     {
@@ -26,6 +27,35 @@ private:
 
     StringView m_resolved_path {};
     Bytes m_bytes {};
+};
+
+struct Resource {
+    static Resource create_with_resolved_path(StringBuffer path, StringBuffer bytes)
+    {
+        return Resource(move(path), move(bytes));
+    }
+
+    StringView resolved_path() const { return m_resolved_path.view(); }
+    Bytes bytes() const { return m_bytes.view().as_bytes(); }
+    StringView view() const { return StringView::from_parts((char const*)m_bytes.data(), m_bytes.size()); }
+
+    u8 const* data() const { return (u8 const*)m_bytes.data(); }
+    usize size() const { return m_bytes.size(); }
+
+    ResourceView resource_view() const
+    {
+        return ResourceView::create_with_resolved_path(m_resolved_path.view(), bytes());
+    }
+
+private:
+    constexpr Resource(StringBuffer resolved_path, StringBuffer bytes)
+        : m_resolved_path(move(resolved_path))
+        , m_bytes(move(bytes))
+    {
+    }
+
+    StringBuffer m_resolved_path {};
+    StringBuffer m_bytes {};
 };
 
 }

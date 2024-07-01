@@ -16,6 +16,16 @@ make_resource_source_exe = executable('make-resource-source', [
     ty_dep,
   ])
 
+bundle_fs_exe = executable('bundle-fs', [
+    'bundle-fs.cpp',
+  ], dependencies: [
+    main_dep,
+    cli_dep,
+    core_dep,
+    fs_dep,
+    ty_dep,
+  ])
+
 resource_header_gen = generator(
   make_resource_header_exe,
   output: ['@PLAINNAME@.h'],

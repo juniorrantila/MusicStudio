@@ -1,6 +1,7 @@
 ms_lib = static_library('MS', [
     'Host.cpp',
     'Plugin.cpp',
+    'Project.cpp',
   ], dependencies: [
     vst_host_dep,
     core_dep,

@@ -32,7 +32,7 @@ struct LinearMap {
         return {};
     }
 
-    constexpr ErrorOr<void> set(Key&& key, Value value) requires(
+    constexpr ErrorOr<Id<Value>> set(Key&& key, Value value) requires(
         !is_trivially_copyable<
             Key> and is_trivially_copyable<Value>)
     {
@@ -49,7 +49,7 @@ struct LinearMap {
         return Id<Value>(raw_id);
     }
 
-    constexpr ErrorOr<void> set(Key key, Value&& value) requires(
+    constexpr ErrorOr<Id<Value>> set(Key key, Value&& value) requires(
         is_trivially_copyable<
             Key> and !is_trivially_copyable<Value>)
     {

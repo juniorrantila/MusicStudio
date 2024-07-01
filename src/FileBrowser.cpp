@@ -1,8 +1,9 @@
 #include "./FileBrowser.h"
-#include "./Common.h"
 #include "./EventLoop.h"
 #include "./StatusBar.h"
 #include "./Style.h"
+
+#include "./PathEvent.h"
 
 #include <UI/FreeGlyph.h>
 #include <UI/SimpleRenderer.h>

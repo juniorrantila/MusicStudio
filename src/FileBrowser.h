@@ -10,18 +10,6 @@
 #include <Rexim/File.h>
 #include <Rexim/LA.h>
 
-struct ChangePathEvent {
-    mutable StringBuffer file_path_buf;
-
-    c_string file_path() const
-    {
-        if (file_path_buf.data()[file_path_buf.size() - 1] != '\0') {
-            MUST(file_path_buf.write("\0"sv));
-        }
-        return file_path_buf.data();
-    }
-};
-
 struct FileBrowser : Widget {
     static ErrorOr<FileBrowser> create(StringView path);
     virtual ~FileBrowser() = default;

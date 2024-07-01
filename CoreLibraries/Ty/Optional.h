@@ -128,7 +128,7 @@ struct [[nodiscard]] Optional {
     constexpr T* operator->() { VERIFY(has_value()); return storage(); }
     constexpr T const* operator->() const { VERIFY(has_value()); return storage(); }
 
-    constexpr T operator*() { VERIFY(has_value()); return release_value(); }
+    constexpr T const& operator*() { VERIFY(has_value()); return value(); }
 
     explicit constexpr operator bool() const { return has_value(); }
 

@@ -83,7 +83,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
         TRY(file.writeln("#include <FS/Resource.h>"sv, CurrentLocation()));
         TRY(file.writeln());
         TRY(file.writeln("extern \"C\" const u8 __"sv, path, "_bytes["sv, input_file.size(), "ULL];"sv, CurrentLocation()));
-        TRY(file.writeln("static inline const FS::Resource __"sv, path, " = FS::Resource::create_with_resolved_path("sv, CurrentLocation()));
+        TRY(file.writeln("static inline const FS::ResourceView __"sv, path, " = FS::ResourceView::create_with_resolved_path("sv, CurrentLocation()));
         TRY(file.writeln("    \""sv, file_path.view(), "\","sv, CurrentLocation()));
         TRY(file.writeln("    Bytes(__"sv, path, "_bytes, "sv, input_file.size(), "ULL)"sv, CurrentLocation()));
         TRY(file.writeln(");"sv, CurrentLocation()));

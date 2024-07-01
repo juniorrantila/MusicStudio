@@ -60,7 +60,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
     for (auto const& path : desc_file_paths) {
         auto desc_file = TRY(Core::MappedFile::open(path.view()));
         auto resource = desc_file.view().shrink("\n"sv.size());
-        TRY(output_file.writeln("    bundle.add_resource("sv, resource, "); "sv, CurrentLocation()));
+        TRY(output_file.writeln("    bundle.unsafe_add_resource("sv, resource, "); "sv, CurrentLocation()));
     }
     TRY(output_file.writeln("    return is_initialized = true, bundle; "sv, CurrentLocation()));
     TRY(output_file.writeln("} "sv, CurrentLocation()));

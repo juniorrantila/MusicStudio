@@ -62,7 +62,7 @@ static ErrorOr<GLuint> compile_shader_source(const GLchar *source, GLenum shader
 static ErrorOr<GLuint> compile_shader_file(const char *file_path, GLenum shader_type)
 {
     auto resource_path = StringView::from_c_string(file_path);
-    auto resource = FS::Bundle::the().resource_with_path(resource_path);
+    auto resource = FS::Bundle::the().open(resource_path);
     if (!resource) {
         fprintf(stderr, "unknown resource: %s\n", file_path);
         return Error::from_string_literal("unknown shader");

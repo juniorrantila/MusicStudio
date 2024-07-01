@@ -1,5 +1,6 @@
 #pragma once
 #include "./Forward.h"
+
 #include "./Widget.h"
 
 #include <Ty/Forward.h>
@@ -24,27 +25,6 @@ struct ChangePathEvent {
 struct FileBrowser : Widget {
     static ErrorOr<FileBrowser> create(StringView path);
     virtual ~FileBrowser() = default;
-
-    FileBrowser(FileBrowser&& other)
-        : m_files(other.m_files)
-        , m_cursor(other.m_cursor)
-        , m_dir_path(other.m_dir_path)
-        , m_file_path(other.m_file_path)
-        , m_hovered_file(move(other.m_hovered_file))
-    {
-    }
-    FileBrowser& operator=(FileBrowser&& other)
-    {
-        if (this == &other)
-            return *this;
-
-        m_files = other.m_files;
-        m_cursor = other.m_cursor;
-        m_dir_path = other.m_dir_path;
-        m_file_path = other.m_file_path;
-        m_hovered_file = move(other.m_hovered_file);
-        return *this;
-    }
 
     ErrorOr<void> open_dir(StringView path);
     ErrorOr<void> change_dir();

@@ -148,7 +148,8 @@ ErrorOr<void> Application::change_path(StringView path)
     }
     switch (ft) {
     case FT_DIRECTORY: {
-        m_file_browser.open_dir(path).or_else([=](Error error){
+        // FIXME: Change this in to something like open_dir.
+        m_file_browser.change_dir().or_else([=](Error error){
             auto message = error.message();
             flash_error("Could open directory %s: %.*s", file_path, message.size(), message.data());
         });

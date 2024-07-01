@@ -1,4 +1,5 @@
 executable('music-studio', [
+    'Application.cpp',
     'FileBrowser.cpp',
     'StatusBar.cpp',
     'Style.cpp',

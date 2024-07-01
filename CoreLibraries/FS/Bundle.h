@@ -1,13 +1,16 @@
 #pragma once
 #include "./Resource.h"
+#include "Ty/LinearMap.h"
 
 #include <Ty/Forward.h>
 #include <Ty/Optional.h>
-#include <Ty/SmallVector.h>
+#include <Ty/Vector.h>
+#include <Ty/StringBuffer.h>
 
 namespace FS {
 
 struct Bundle {
+    constexpr Bundle() = default;
     Bundle& operator=(Bundle const&) = delete;
     Bundle(Bundle const&) = delete;
 
@@ -15,16 +18,31 @@ struct Bundle {
     Bundle(Bundle&&) = delete;
 
     static Bundle& the(); // NOTE: Generated via make-bundle
+    static ErrorOr<Bundle> create_from_bytes(Bytes);
+    static ErrorOr<Bundle> create_from_path(StringView);
 
-    Optional<Resource> resource_with_path(StringView path) const;
-    void add_resource(Resource resource);
+    ErrorOr<void> mount_bytes(Bytes, StringView mount_point);
+    ErrorOr<void> mount(StringView path, StringView mount_point);
 
-    View<Resource const> resources() const { return m_resources.view(); }
+    Optional<ResourceView> open(StringView path);
+    void unsafe_add_resource(ResourceView resource);
+
+    View<ResourceView const> resources() const { return m_unsafe_resources.view(); }
+    ErrorOr<Bytes> bytes();
 
 private:
-    constexpr Bundle() = default;
+    ErrorOr<void> saturate_zip_buffer();
+    ErrorOr<ResourceView> saturate_resource_file(StringView fs_path, StringView mount_point);
 
-    SmallVector<Resource, 256> m_resources {};
+    Vector<ResourceView> m_unsafe_resources {};
+
+    using MountPoint = StringBuffer;
+    LinearMap<MountPoint, Resource> m_cached_resources {};
+    LinearMap<MountPoint, StringBuffer> m_file_mounts {};
+    LinearMap<MountPoint, StringBuffer> m_directory_mounts {};
+    LinearMap<MountPoint, StringBuffer> m_zip_mounts {};
+
+    StringBuffer m_combined_zip_buffer {};
 };
 
 }

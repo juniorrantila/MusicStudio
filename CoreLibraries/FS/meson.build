@@ -2,6 +2,7 @@ fs_lib = static_library('fs', [
   './Bundle.cpp',
 ], dependencies: [
   ty_dep,
+  zip_dep
 ])
 
 fs_dep = declare_dependency(

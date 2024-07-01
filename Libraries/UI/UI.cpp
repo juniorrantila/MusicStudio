@@ -6,32 +6,20 @@
 
 namespace UI {
 
-UI::UI(SimpleRenderer* simple_renderer)
-    : m_renderer(simple_renderer)
-{
-}
-
-UI::~UI()
-{
-    if (is_valid()) {
-        destroy();
-        invalidate();
-    }
-}
-
-void UI::destroy()
+UI::UI(SimpleRenderer&& simple_renderer)
+    : m_renderer(move(simple_renderer))
 {
 }
 
 Vec2f UI::mouse_pos() const
 {
-    return m_mouse_pos * m_renderer->resolution();
+    return m_mouse_pos * m_renderer.resolution();
 }
 
 void UI::set_mouse_pos(f32 x, f32 y)
 {
     auto titlebar_size = vec2f(0.0f, m_title_bar_height);
-    m_mouse_pos = vec2f(x, y) / (m_renderer->resolution() - titlebar_size);
+    m_mouse_pos = vec2f(x, y) / (m_renderer.resolution() - titlebar_size);
 }
 
 void UI::clear(Vec4f color) const
@@ -49,7 +37,7 @@ void UI::end_frame()
 {
     m_scroll_x = 0;
     m_scroll_y = 0;
-    m_renderer->flush();
+    m_renderer.flush();
 }
 
 Button UI::button(Vec4f box, StringView file, u32 line)
@@ -118,8 +106,8 @@ Tab UI::tab(Vec4f box, StringView, u32)
 
 void UI::fill_rect(Vec4f box, Vec4f color)
 {
-    m_renderer->set_shader(SHADER_FOR_COLOR);
-    m_renderer->solid_rect(
+    m_renderer.set_shader(SHADER_FOR_COLOR);
+    m_renderer.solid_rect(
         vec2f(box.x, box.y),
         vec2f(box.width, box.height),
         color
@@ -128,16 +116,16 @@ void UI::fill_rect(Vec4f box, Vec4f color)
 
 void UI::outline_rect(Vec4f box, f32 outline_size, Vec4f fill_color, Vec4f outline_color)
 {
-    m_renderer->set_shader(SHADER_FOR_COLOR);
-    m_renderer->outline_rect(
+    m_renderer.set_shader(SHADER_FOR_COLOR);
+    m_renderer.outline_rect(
         vec2f(box.x, box.y), vec2f(box.width, box.height),
         outline_size, fill_color, outline_color);
 }
 
 void UI::outline_rect(UI::OutlineRect const& args)
 {
-    m_renderer->set_shader(SHADER_FOR_COLOR);
-    m_renderer->outline_rect({
+    m_renderer.set_shader(SHADER_FOR_COLOR);
+    m_renderer.outline_rect({
         .point = vec2f(args.box.x, args.box.y),
         .size = vec2f(args.box.width, args.box.height),
         .outline_size = args.outline_size,
@@ -202,8 +190,8 @@ void UI::text(Vec2f pos, StringView content, Vec4f color)
 
 void UI::text(Vec4f box, StringView text, Vec4f color)
 {
-    m_renderer->set_shader(SHADER_FOR_TEXT);
-    atlas().render_line_sized(m_renderer, text, box, color);
+    m_renderer.set_shader(SHADER_FOR_TEXT);
+    atlas().render_line_sized(&m_renderer, text, box, color);
 }
 
 }

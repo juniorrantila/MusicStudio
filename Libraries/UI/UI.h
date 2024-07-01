@@ -11,50 +11,14 @@
 #include FT_FREETYPE_H
 
 #include <Ty/SmallMap.h>
+#include <UI/SimpleRenderer.h>
 
 namespace UI {
 
 struct Button;
 struct Tab;
 struct UI {
-    UI(SimpleRenderer* sr);
-
-    UI(UI&& other)
-        : m_uid(other.m_uid)
-        , m_renderer(other.m_renderer)
-        , m_font_library(other.m_font_library)
-        , m_font_atlas(move(other.m_font_atlas))
-        , m_current_font_size(other.m_current_font_size)
-        , m_active_id(other.m_active_id)
-        , m_mouse_pos(other.m_mouse_pos)
-        , m_scroll_x(other.m_scroll_x)
-        , m_scroll_y(other.m_scroll_y)
-        , m_time(other.m_time)
-        , m_mouse_left_down(other.m_mouse_left_down)
-    {
-        other.invalidate();
-    }
-    ~UI();
-
-    UI& operator=(UI&& other)
-    {
-        if (&other == this)
-            return *this;
-        this->~UI();
-        m_uid = other.m_uid;
-        m_font_library = other.m_font_library;
-        m_font_atlas = move(other.m_font_atlas);
-        m_current_font_size = other.m_current_font_size;
-        m_renderer = other.m_renderer;
-        m_active_id = other.m_active_id;
-        m_mouse_pos = other.m_mouse_pos;
-        m_scroll_x = other.m_scroll_x;
-        m_scroll_y = other.m_scroll_y;
-        m_time = other.m_time;
-        m_mouse_left_down = other.m_mouse_left_down;
-        other.invalidate();
-        return *this;
-    }
+    UI(SimpleRenderer&& sr);
 
     void set_scroll_x(i32 x) { m_scroll_x = x; }
     void set_scroll_y(i32 y) { m_scroll_y = y; }
@@ -99,11 +63,15 @@ struct UI {
         m_title_bar_height = height;
     }
 
-private:
-    bool is_valid() const { return m_renderer != nullptr; }
-    void invalidate() { m_renderer = nullptr; }
-    void destroy();
+    void set_resolution(Vec2f resolution)
+    {
+        m_renderer.set_resolution(resolution);
+        m_renderer.set_camera_pos(resolution / 2.0f);
+    }
 
+    Vec2f resolution() const { return m_renderer.resolution(); }
+
+private:
     FreeGlyphAtlas const& atlas() const
     {
         auto id = MUST(m_font_atlas.find(m_current_font_size).or_throw([]{
@@ -122,10 +90,9 @@ private:
 
     u64 m_uid { 0 };
 
-    SimpleRenderer* m_renderer { nullptr };
-
     using FontSize = Vec2f;
 
+    SimpleRenderer m_renderer;
     FT_Library m_font_library { nullptr };
     FT_Face m_font_face { nullptr };
     SmallMap<FontSize, FreeGlyphAtlas> m_font_atlas {};

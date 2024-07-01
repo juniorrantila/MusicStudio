@@ -38,12 +38,15 @@ struct LinearMap {
     {
         if (auto index = find(key)) {
             m_values[index->raw()] = value;
-            return {};
+            return *index;
         }
+
+        auto raw_id = size();
+
         TRY(m_keys.append(move(key)));
         TRY(m_values.append(value));
 
-        return {};
+        return Id<Value>(raw_id);
     }
 
     constexpr ErrorOr<void> set(Key key, Value&& value) requires(
@@ -52,30 +55,36 @@ struct LinearMap {
     {
         if (auto index = find(key)) {
             m_values[index->raw()] = move(value);
-            return {};
+            return *index;
         }
+
+        auto raw_id = size();
+
         TRY(m_keys.append(key));
         TRY(m_values.append(move(value)));
 
-        return {};
+        return Id<Value>(raw_id);
     }
 
-    constexpr ErrorOr<void>
+    constexpr ErrorOr<Id<Value>>
     set(Key&& key, Value&& value) requires(
         !is_trivially_copyable<
             Key> and !is_trivially_copyable<Value>)
     {
         if (auto index = find(key)) {
             m_values[index->raw()] = move(value);
-            return {};
+            return *index;
         }
+        auto raw_id = size();
+
         TRY(m_keys.append(move(key)));
         TRY(m_values.append(move(value)));
 
-        return {};
+        return Id<Value>(raw_id);
     }
 
-    constexpr Optional<Id<Value>> find(Key const& key) const
+    template <typename Other>
+    constexpr Optional<Id<Value>> find(Other const& key) const
     {
         for (u32 i = 0; i < m_keys.size(); i++) {
             if (m_keys[i] == key)
@@ -84,8 +93,8 @@ struct LinearMap {
         return {};
     }
 
-    template <typename F>
-    constexpr decltype(auto) find(Key const& key,
+    template <typename Other, typename F>
+    constexpr decltype(auto) find(Other const& key,
         F error_callback) const
     {
         using Return
@@ -97,8 +106,8 @@ struct LinearMap {
         return Return(error_callback());
     }
 
-    template <typename F>
-    constexpr decltype(auto) fetch(Key const& key,
+    template <typename Other, typename F>
+    constexpr decltype(auto) fetch(Other const& key,
         F error_callback) const
     {
         using Return = ErrorOr<Value, decltype(error_callback())>;
@@ -109,7 +118,8 @@ struct LinearMap {
         return Return(error_callback());
     }
 
-    constexpr Optional<Value> fetch(Key const& key) const
+    template <typename Other>
+    constexpr Optional<Value> fetch(Other const& key) const
     {
         for (u32 i = 0; i < m_keys.size(); i++) {
             if (m_keys[i] == key)

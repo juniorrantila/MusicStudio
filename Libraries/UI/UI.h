@@ -106,7 +106,6 @@ private:
     i32 m_scroll_x { 0 };
     i32 m_scroll_y { 0 };
 
-    f32 m_time { 0.0f };
     f32 m_title_bar_height { 0.0f };
 
     bool m_mouse_left_down : 1 { false };

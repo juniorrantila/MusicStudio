@@ -1,0 +1,27 @@
+module Image {
+    umbrella "Image"
+    module * {
+        export *
+    }
+}
+
+module Rexim {
+    umbrella "Rexim"
+    module * {
+        export *
+    }
+}
+
+module SoundIo {
+    umbrella "SoundIo"
+    module * {
+        export *
+    }
+}
+
+module UI {
+    umbrella "UI"
+    module * {
+        export *
+    }
+}

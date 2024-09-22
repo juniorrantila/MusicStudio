@@ -137,6 +137,12 @@ struct Vector {
         return {};
     }
 
+    constexpr ErrorOr<Id<T>> reserve_slot()
+    {
+        TRY(expand_if_needed());
+        return Id<T>(m_size++);
+    }
+
     constexpr Optional<Id<T>> find(
         T const& value) const requires requires(T value, T other)
     {

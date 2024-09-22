@@ -5,14 +5,6 @@ namespace Ty {
 
 template <typename T>
 struct Id {
-    struct InvalidToken { };
-    static constexpr InvalidToken Invalid;
-    constexpr Id(InvalidToken) { }
-    constexpr bool operator==(InvalidToken) const
-    {
-        return !is_valid();
-    }
-
     constexpr Id() = default;
 
     constexpr explicit Id(u32 raw_id)

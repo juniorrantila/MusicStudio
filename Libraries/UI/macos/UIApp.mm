@@ -58,11 +58,7 @@ BOOL shouldStop = NO;
     [super setFrame:frameRect display:flag];
     auto size = frameRect.size;
     if (self.instance) {
-        if (self.instance->on_window_resize) {
-            self.instance->on_window_resize(size.width, size.height);
-        }
-        self.instance->set_width(size.width);
-        self.instance->set_height(size.height);
+        self.instance->window_size.update(vec2f(size.width, size.height));
     }
     if (self.instance) {
         [[glView openGLContext] makeCurrentContext];
@@ -85,27 +81,33 @@ BOOL shouldStop = NO;
 }
 
 - (void)mouseDown:(NSEvent *)event {
-    if (self.instance && self.instance->on_mouse_down) {
-        self.instance->on_mouse_down();
+    if (self.instance) {
+        self.instance->is_mouse_left_down.update(true);
     }
 }
 
 - (void)mouseUp:(NSEvent *)event {
-    if (self.instance && self.instance->on_mouse_up) {
-        self.instance->on_mouse_up();
+    if (self.instance) {
+        self.instance->is_mouse_left_down.update(false);
     }
 }
 
 - (void)mouseMoved:(NSEvent *)event {
-    if (self.instance && self.instance->on_mouse_move) {
+    if (self.instance) {
         auto loc = event.locationInWindow;
-        self.instance->on_mouse_move(loc.x, loc.y);
+        self.instance->mouse_pos.update([&](Vec2f& pos) {
+            pos.x = loc.x;
+            pos.y = loc.y;
+        });
     }
 }
 
 - (void)scrollWheel:(NSEvent *)event {
-    if (self.instance && self.instance->on_scroll) {
-        self.instance->on_scroll(event.scrollingDeltaX, event.scrollingDeltaY);
+    if (self.instance) {
+        self.instance->scroll.update([&](Vec2f& scroll) {
+            scroll.x = event.scrollingDeltaX;
+            scroll.y = event.scrollingDeltaY;
+        });
     }
 }
 

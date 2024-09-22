@@ -1,5 +1,7 @@
 #pragma once
+#include <Rexim/LA.h>
 #include <Ty/ErrorOr.h>
+#include <Ty/Signal.h>
 #include <Ty/SmallCapture.h>
 
 #include "./KeyCode.h"
@@ -37,22 +39,16 @@ struct Application {
 
     SmallCapture<void()> on_update;
 
-    SmallCapture<void(f32, f32)> on_window_resize;
-
     SmallCapture<void(KeyCode, u32)> on_key_down;
     SmallCapture<void(KeyCode, u32)> on_key_up;
 
-    SmallCapture<void()> on_mouse_down;
-    SmallCapture<void()> on_mouse_up;
-    SmallCapture<void(f32, f32)> on_mouse_move;
+    Signal<Vec2f> window_size { 0, 0 };
+    Signal<Vec2f> mouse_pos { 0, 0 };
+    Signal<Vec2f> scroll { 0, 0 };
+    Signal<bool> is_mouse_left_down { false };
 
-    SmallCapture<void(f32, f32)> on_scroll;
-
-    f32 width() const { return m_width; }
-    f32 height() const { return m_height; }
-
-    void set_width(f32 width) { m_width = width; }
-    void set_height(f32 height) { m_height = height; }
+    f32 width() const { return window_size->x; }
+    f32 height() const { return window_size->y; }
 
     void update() const;
 private:
@@ -63,8 +59,6 @@ private:
     bool is_valid() const { return m_native_handle != nullptr; }
 
     void* m_native_handle { 0 };
-    f32 m_width { 0.0f };
-    f32 m_height { 0.0f };
 };
 
 }

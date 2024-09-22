@@ -2,7 +2,6 @@
 #include "./StatusBar.h"
 #include "./Style.h"
 
-#include "./PluginEvent.h"
 #include "./PathEvent.h"
 
 #include <UI/Application.h>
@@ -47,26 +46,22 @@ ErrorOr<Application> Application::create(FS::Bundle& bundle)
 
 void Application::run()
 {
-    m_application.on_window_resize = [this](f32 width, f32 height) {
-        m_ui.set_resolution(vec2f(width, height));
-    };
+    MUST(m_application.window_size.add_observer([this](Vec2f size) {
+        m_ui.set_resolution(size);
+    }));
 
-    m_application.on_mouse_move = [this](f32 x, f32 y) {
-        m_ui.set_mouse_pos(x, y);
-    };
+    MUST(m_application.mouse_pos.add_observer([this](Vec2f pos) {
+        m_ui.set_mouse_pos(pos.x, pos.y);
+    }));
 
-    m_application.on_mouse_down = [this] {
-        m_ui.set_mouse_down(true);
-    };
+    MUST(m_application.is_mouse_left_down.add_observer([this](bool down) {
+        m_ui.set_mouse_down(down);
+    }));
 
-    m_application.on_mouse_up = [this] {
-        m_ui.set_mouse_down(false);
-    };
-
-    m_application.on_scroll = [this](f32 x, f32 y) {
-        m_ui.set_scroll_x(x);
-        m_ui.set_scroll_y(y);
-    };
+    MUST(m_application.scroll.add_observer([this](Vec2f scroll) {
+        m_ui.set_scroll_x(scroll.x);
+        m_ui.set_scroll_y(scroll.y);
+    }));
 
     m_application.on_update = [this]() {
         handle_events();
@@ -81,6 +76,10 @@ void Application::run()
 
         m_ui.end_frame();
     };
+
+    MUST(m_current_path.add_observer([this](StringBuffer const& path) {
+        MUST(change_path(path.view()));
+    }));
 
     m_application.run();
 }
@@ -130,11 +129,6 @@ ErrorOr<void> Application::open_plugin(StringView path)
     return {};
 }
 
-void Application::on_open_plugin(OpenPluginEvent const& event)
-{
-    MUST(open_plugin(event.file_path_buf.view()));
-}
-
 ErrorOr<void> Application::change_path(StringView path)
 {
     auto buf = TRY(StringBuffer::create_fill(path, "\0"sv));
@@ -157,9 +151,7 @@ ErrorOr<void> Application::change_path(StringView path)
     break;
 
     case FT_REGULAR: {
-        MUST(m_event_loop.dispatch_event(OpenPluginEvent {
-            .file_path_buf = move(buf),
-        }));
+        TRY(open_plugin(buf.view()));
     }
     break;
 
@@ -175,20 +167,15 @@ ErrorOr<void> Application::change_path(StringView path)
     return {};
 }
 
-void Application::on_change_path(ChangePathEvent const& event)
-{
-    MUST(change_path(event.file_path_buf.view()));
-}
-
 void Application::handle_events()
 {
     for (auto event : m_event_loop.events()) {
         event.match(
-            On<OpenPluginEvent>([this](OpenPluginEvent const& event) {
-                on_open_plugin(event);
-            }),
-            On<ChangePathEvent>([this](ChangePathEvent const& path) {
-                on_change_path(path);
+            On<ChangePathEvent>([this](ChangePathEvent const& event) {
+                m_current_path.update([&](StringBuffer& path) {
+                    path.clear();
+                    MUST(path.write(event.file_path_buf.view()));
+                });
             })
         );
     }

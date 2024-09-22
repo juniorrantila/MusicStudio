@@ -1,14 +1,14 @@
 #pragma once
 #include "./Forward.h"
-
 #include "./Widget.h"
 
 #include <Ty/Forward.h>
-#include <Ty/StringBuffer.h>
 #include <UI/Forward.h>
 
 #include <Rexim/File.h>
 #include <Rexim/LA.h>
+#include <Ty/Signal.h>
+#include <Ty/StringBuffer.h>
 
 struct FileBrowser : Widget {
     static ErrorOr<FileBrowser> create(StringView path);

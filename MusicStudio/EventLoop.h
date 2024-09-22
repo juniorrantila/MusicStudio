@@ -32,7 +32,7 @@ template<typename T>
 concept IsEventMatch = IsConvertible<T const&, EventMatch const&>;
 
 struct Event {
-    void* data;
+    void const* data;
     TypeId kind;
 
     constexpr void match(IsEventMatch auto const&... args) const

@@ -23,9 +23,8 @@ ErrorOr<Application> Application::create(StringView title, i32 x, i32 y, i32 wid
 }
 
 Application::Application(void* native_handle, f32 width, f32 height)
-    : m_native_handle(native_handle)
-    , m_width(width)
-    , m_height(height)
+    : window_size(width, height)
+    , m_native_handle(native_handle)
 {
     UIApp* app = (__bridge UIApp*)native_handle;
     app.instance = this;

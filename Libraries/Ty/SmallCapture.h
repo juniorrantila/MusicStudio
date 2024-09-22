@@ -27,13 +27,13 @@
 
 #pragma once
 
-#include <Ty/Forward.h>
-#include <Ty/Concepts.h>
-#include <Ty/Traits.h>
-#include <Ty/Defer.h>
-#include <Ty/Verify.h>
-#include <Ty/BitCast.h>
-#include <Ty/Move.h>
+#include "./Forward.h"
+#include "./Base.h"
+#include "./Traits.h"
+#include "./Defer.h"
+#include "./Verify.h"
+#include "./Move.h"
+#include "./BitCast.h"
 
 namespace Ty {
 

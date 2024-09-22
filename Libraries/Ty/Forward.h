@@ -33,6 +33,9 @@ struct Hash;
 template <typename T>
 struct RefPtr;
 
+template <typename T>
+struct Signal;
+
 }
 
 using Ty::StringBuffer;
@@ -48,3 +51,4 @@ using Ty::Bytes;
 using Ty::View;
 using Ty::Json;
 using Ty::Hash;
+using Ty::Signal;

@@ -260,8 +260,8 @@ ErrorOr<pid_t> posix_spawnp(c_string file, c_string const* argv,
     posix_spawnattr_t const* attrp = nullptr);
 
 struct Status {
-    constexpr bool did_exit() const { return WIFEXITED(raw); }
-    constexpr int exit_status() const { return WEXITSTATUS(raw); }
+    constexpr bool did_exit() const { int s = raw; return WIFEXITED(s); }
+    constexpr int exit_status() const { int s = raw; return WEXITSTATUS(s); }
 
     int raw;
 };

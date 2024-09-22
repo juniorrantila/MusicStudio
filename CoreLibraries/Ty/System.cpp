@@ -1,6 +1,5 @@
 #include "./System.h"
 #include "./Defer.h"
-#include "./Formatter.h"
 #include "./StringBuffer.h"
 
 #include <fcntl.h>
@@ -76,7 +75,7 @@ ErrorOr<usize> write(int fd, StringBuffer const& string)
 
 ErrorOr<usize> writev(int fd, IOVec const* iovec, int count)
 {
-    auto rv = ::writev(fd, (struct iovec*)iovec, count);
+    auto rv = ::writev(fd, (struct iovec const*)iovec, count);
     if (rv < 0)
         return Error::from_errno();
     return rv;
@@ -99,7 +98,7 @@ ErrorOr<u8*> mmap(usize size, int prot, int flags, int fd,
 
 ErrorOr<void> munmap(void const* addr, usize size)
 {
-    auto rv = ::munmap((void*)addr, size);
+    auto rv = ::munmap(const_cast<void*>(addr), size);
     if (rv < 0)
         return Error::from_errno();
     return {};
@@ -170,7 +169,7 @@ ErrorOr<pid_t> posix_spawnp(c_string file, c_string const* argv,
 {
     pid_t pid = -1;
     auto rc = ::posix_spawnp(&pid, file, file_actions, attrp,
-        (char**)argv, (char**)envp);
+        const_cast<char**>(argv), const_cast<char**>(envp));
     if (rc != 0) {
         errno = rc;
         return Error::from_errno();
@@ -444,5 +443,3 @@ ErrorOr<StringBuffer> inet_ntop(struct sockaddr_storage sa)
 }
 
 }
-
-int meaning_of_life(void) { return 42; }

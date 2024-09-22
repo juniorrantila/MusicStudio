@@ -18,7 +18,7 @@ ErrorOr<Application> Application::create(StringView title, i32 x, i32 y, i32 wid
     app.title = [NSString stringWithFormat:@"%.*s", title.size(), title.data()];
     [NSApp setDelegate:app];
 
-    void* handle = (void*)CFBridgingRetain(app);
+    void* handle = const_cast<void*>(static_cast<void const*>(CFBridgingRetain(app)));
     return Application(handle, width, height);
 }
 

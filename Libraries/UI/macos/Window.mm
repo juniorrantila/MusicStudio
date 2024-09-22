@@ -15,12 +15,12 @@ struct MacOSWindowHandle : WindowHandle {
     void* native_handle() const override
     {
         CFBridgingRetain(window);
-        return (void*)CFBridgingRetain(view);
+        return const_cast<void*>(static_cast<void const*>(CFBridgingRetain(view)));
     }
 
     void* native_window() const override
     {
-        return (void*)CFBridgingRetain(window);
+        return const_cast<void*>(static_cast<void const*>(CFBridgingRetain(window)));
     }
 
     void resize(i32 x, i32 y) override

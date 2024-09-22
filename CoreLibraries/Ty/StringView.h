@@ -40,23 +40,22 @@ struct StringView {
         if (m_size != other.size())
             return false;
 
+        if (m_size == 0)
+            return true;
+
         if (!is_constant_evaluated()) {
             if (m_data == other.data())
                 return true;
         }
 
-        bool same = true;
-        // clang-format off
-        while (other.m_size --> 0)
-            same &= m_data[other.size()] == other[other.size()];
-        // clang-format on
-        return same;
+        return __builtin_memcmp(data(), other.data(), size()) == 0;
     }
 
     constexpr bool is_empty() const { return data() == nullptr || size() == 0; }
 
-    constexpr char const& operator[](u32 index) const
+    char const& operator[](u32 index) const
     {
+        VERIFY(index < size());
         return data()[index];
     }
 

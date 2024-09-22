@@ -1,21 +1,19 @@
 #pragma once
-#include "Base.h"
-#include "Concepts.h"
-#include "ErrorOr.h"
-#include "FormatCounter.h"
-#include "Formatter.h"
-#include "Forward.h"
-#include "Memory.h"
-#include "Traits.h"
-#include "Try.h"
-#include "Vector.h"
+#include "./Base.h"
+#include "./Concepts.h"
+#include "./ErrorOr.h"
+#include "./FormatCounter.h"
+#include "./Forward.h"
+#include "./Memory.h"
+#include "./Try.h"
+#include "./View.h"
 
 namespace Ty {
 
 struct ByteBuffer {
 
     static constexpr ErrorOr<ByteBuffer> create_saturated(
-        u32 capacity)
+        u64 capacity)
     {
         return ByteBuffer {
             (u8*)TRY(allocate_memory(capacity)),
@@ -24,7 +22,7 @@ struct ByteBuffer {
     }
 
     static constexpr ErrorOr<ByteBuffer> create(
-        u32 capacity = inline_capacity)
+        u64 capacity = inline_capacity)
     {
         if (capacity > inline_capacity)
             return create_saturated(capacity);
@@ -139,9 +137,9 @@ struct ByteBuffer {
 
     constexpr u8* mutable_data() { return m_data; }
     constexpr u8 const* data() const { return m_data; }
-    constexpr u32 size() const { return m_size; }
-    constexpr u32 capacity() const { return m_capacity; }
-    constexpr u32 size_left() const { return m_capacity - m_size; }
+    constexpr u64 size() const { return m_size; }
+    constexpr u64 capacity() const { return m_capacity; }
+    constexpr u64 size_left() const { return m_capacity - m_size; }
 
     constexpr u8* begin() { return m_data; }
     constexpr u8* end() { return &m_data[m_size]; }
@@ -151,14 +149,16 @@ struct ByteBuffer {
 
     constexpr View<u8 const> view() const { return { m_data, m_size }; }
 
-    ErrorOr<void> expand_if_needed_for_write(u32 size)
+    constexpr Bytes as_bytes() const { return { m_data, m_size }; }
+
+    ErrorOr<void> expand_if_needed_for_write(u64 size)
     {
         if (m_size + size >= m_capacity)
             TRY(expand_by(size));
         return {};
     }
 
-    ErrorOr<void> expand_by(u32 size)
+    ErrorOr<void> expand_by(u64 size)
     {
         auto new_capacity = m_size + size;
         auto* new_data = (u8*)TRY(allocate_memory(new_capacity));
@@ -174,7 +174,7 @@ private:
     static constexpr auto max_chars_in_u64 = 20;
     static constexpr auto inline_capacity = 1024;
 
-    constexpr ByteBuffer(u8* data, u32 capacity)
+    constexpr ByteBuffer(u8* data, u64 capacity)
         : m_data(data)
         , m_size(0)
         , m_capacity(capacity)
@@ -191,8 +191,8 @@ private:
 
     u8 m_storage[inline_capacity];
     u8* m_data { nullptr };
-    u32 m_size { 0 };
-    u32 m_capacity { 0 };
+    u64 m_size { 0 };
+    u64 m_capacity { 0 };
 };
 
 template <>

@@ -358,7 +358,7 @@ struct Formatter<Optional<StringView>> {
 };
 
 template <>
-struct Ty::Formatter<Bytes> {
+struct Formatter<Bytes> {
     template <typename U>
     requires Ty::Writable<U>
     static constexpr ErrorOr<u32> write(U& to, Bytes value)

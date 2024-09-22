@@ -14,10 +14,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#if __APPLE__
-#include <signal.h>
-#endif
-
 namespace Ty::System {
 
 ErrorOr<void> fsync(int fd)
@@ -278,39 +274,6 @@ ErrorOr<int> fork()
     if (pid < 0)
         return Error::from_errno();
     return pid;
-}
-
-#if __APPLE__
-
-#pragma push_macro("sigemptyset")
-#undef sigemptyset
-ErrorOr<void> sigemptyset(sigset_t* set)
-{
-    *set = { 0 };
-    return {};
-}
-#pragma pop_macro("sigemptyset")
-
-#else
-
-ErrorOr<void> sigemptyset(sigset_t* set)
-{
-    auto rv = ::sigemptyset(set);
-    if (rv < 0)
-        return Error::from_errno();
-    return {};
-}
-
-#endif
-
-ErrorOr<void> sigaction(int sig,
-    const struct sigaction* __restrict action,
-    struct sigaction* __restrict old_action)
-{
-    auto rv = ::sigaction(sig, action, old_action);
-    if (rv < 0)
-        return Error::from_errno();
-    return {};
 }
 
 ErrorOr<int> socket(int domain, int type, int protocol)

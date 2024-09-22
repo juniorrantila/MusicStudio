@@ -284,15 +284,6 @@ void sleep(u32 seconds);
 
 ErrorOr<int> fork();
 
-#pragma push_macro("sigemptyset")
-#undef sigemptyset
-ErrorOr<void> sigemptyset(sigset_t* set);
-#pragma pop_macro("sigemptyset")
-
-ErrorOr<void> sigaction(int sig,
-    const struct sigaction* __restrict action,
-    struct sigaction* __restrict old_action);
-
 ErrorOr<int> socket(int domain, int type, int protocol);
 ErrorOr<void> bind(int fd, struct sockaddr const* addr,
     socklen_t len);

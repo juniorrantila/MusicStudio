@@ -218,6 +218,12 @@ struct StringBuffer {
 
     StringView uppercase();
 
+    char operator[](usize index) const
+    {
+        VERIFY(index < size());
+        return data()[index];
+    }
+
 private:
     static constexpr auto max_chars_in_u64 = 20;
     static constexpr auto inline_capacity = 64;

@@ -56,7 +56,7 @@ ErrorOr<void> File::flush()
 
 ErrorOr<u32> File::write(void const* data, usize size)
 {
-    return TRY(write(StringView::from_parts((char*)data, size)));
+    return TRY(write(StringView::from_parts((char const*)data, size)));
 }
 
 ErrorOr<u32> File::write(StringView string)

@@ -18,10 +18,10 @@ Application::Application(UI::Application&& application, UI::UI&& ui, FileBrowser
 {
 }
 
-ErrorOr<Application> Application::create()
+ErrorOr<Application> Application::create(FS::Bundle& bundle)
 {
     auto application = TRY(UI::Application::create("MusicStudio"sv, 0, 0, 800, 600));
-    auto sr = TRY(UI::SimpleRenderer::create());
+    auto sr = TRY(UI::SimpleRenderer::create(bundle));
     auto titlebar_size = 32.0f; // FIXME: This should not be needed
     sr.set_resolution(vec2f(application.width(), application.height() + titlebar_size));
     sr.set_camera_pos(vec2f(application.width(), application.height() + titlebar_size) / 2.0f);
@@ -32,7 +32,7 @@ ErrorOr<Application> Application::create()
     // const char *const font_file_path = "./Fonts/VictorMono-Regular.ttf";
     // const char *const font_file_path = "./Fonts/iosevka-regular.ttf";
     auto font_path = "./Fonts/OxaniumLight/Oxanium-Light.ttf"sv;
-    auto font = TRY(FS::Bundle::the().open(font_path).or_throw([&]{
+    auto font = TRY(bundle.open(font_path).or_throw([&]{
         return Error::from_string_literal("could not find font");
     }));
 

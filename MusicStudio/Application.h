@@ -5,6 +5,7 @@
 #include "./Toolbar.h"
 #include "./EventLoop.h"
 
+#include <FS/Bundle.h>
 #include <Rexim/LA.h>
 #include <UI/Application.h>
 #include <UI/UI.h>
@@ -13,7 +14,7 @@
 struct Application {
     static constexpr auto titlebar_size  = 32.0f;
 
-    static ErrorOr<Application> create();
+    static ErrorOr<Application> create(FS::Bundle& bundle);
 
     void run();
 

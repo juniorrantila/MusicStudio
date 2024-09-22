@@ -6,13 +6,14 @@
 namespace FS {
 
 struct ResourceView {
-    static ResourceView create_with_resolved_path(StringView path, Bytes bytes)
+    static constexpr ResourceView create_with_resolved_path(StringView path, Bytes bytes)
     {
         return ResourceView(path, bytes);
     }
 
-    StringView resolved_path() const { return m_resolved_path; }
-    Bytes bytes() const { return m_bytes; }
+    constexpr StringView resolved_path() const { return m_resolved_path; }
+    constexpr Bytes bytes() const { return m_bytes; }
+
     StringView view() const { return StringView::from_parts((char const*)m_bytes.data(), m_bytes.size()); }
 
     u8 const* data() const { return m_bytes.data(); }

@@ -1,11 +1,11 @@
-
-font_sources = [
-  './OxaniumLight/Oxanium-Light.ttf',
-  './VictorMono-Regular.ttf',
-  './iosevka-regular.ttf',
-]
-
-bundle_me += resource_header_gen.process(font_sources)
-bundle_libs += static_library('Fonts', [
-  resource_source_gen.process(font_sources)
+fonts_lib = static_library('Fonts', [
+  './Fonts.cpp'
+], dependencies: [
+  ty_dep,
+  fs_dep
 ])
+
+fonts_dep = declare_dependency(
+  link_with: fonts_lib,
+  include_directories: '..'
+)

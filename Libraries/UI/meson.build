@@ -1,5 +1,3 @@
-subdir('Shaders')
-
 ui_target_sources = []
 ui_target_deps = []
 
@@ -18,6 +16,7 @@ ui_lib = library('UI', [
     'UI.cpp',
     'FreeGlyph.cpp',
     'SimpleRenderer.cpp',
+    'Shaders/Shaders.cpp'
   ], dependencies: [
     ui_target_deps,
     freetype2_dep,

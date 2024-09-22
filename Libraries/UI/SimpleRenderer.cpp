@@ -59,10 +59,10 @@ static ErrorOr<GLuint> compile_shader_source(const GLchar *source, GLenum shader
     return shader;
 }
 
-static ErrorOr<GLuint> compile_shader_file(const char *file_path, GLenum shader_type)
+static ErrorOr<GLuint> compile_shader_file(FS::Bundle& bundle, const char *file_path, GLenum shader_type)
 {
     auto resource_path = StringView::from_c_string(file_path);
-    auto resource = FS::Bundle::the().open(resource_path);
+    auto resource = bundle.open(resource_path);
     if (!resource) {
         fprintf(stderr, "unknown resource: %s\n", file_path);
         return Error::from_string_literal("unknown shader");
@@ -129,9 +129,9 @@ static void get_uniform_location(GLuint program, GLint locations[COUNT_UNIFORM_S
     }
 }
 
-ErrorOr<SimpleRenderer> SimpleRenderer::create()
+ErrorOr<SimpleRenderer> SimpleRenderer::create(FS::Bundle& bundle)
 {
-    auto sr = SimpleRenderer();
+    auto sr = SimpleRenderer(bundle);
     sr.m_verticies = (SimpleVertex*)calloc(sr.m_verticies_capacity, sizeof(SimpleVertex));
     if (!sr.m_verticies) {
         return Error::from_errno();
@@ -177,13 +177,13 @@ ErrorOr<SimpleRenderer> SimpleRenderer::create()
     }
 
     GLuint shaders[2] = {0};
-    shaders[0] = TRY(compile_shader_file(vert_shader_file_path, GL_VERTEX_SHADER));
+    shaders[0] = TRY(compile_shader_file(bundle, vert_shader_file_path, GL_VERTEX_SHADER));
     Defer delete_first_shader = [&] {
         glDeleteShader(shaders[0]);
     };
 
     for (int i = 0; i < COUNT_SIMPLE_SHADERS; ++i) {
-        shaders[1] = TRY(compile_shader_file(frag_shader_file_paths[i], GL_FRAGMENT_SHADER));
+        shaders[1] = TRY(compile_shader_file(bundle, frag_shader_file_paths[i], GL_FRAGMENT_SHADER));
         Defer delete_shader = [&] {
             glDeleteShader(shaders[1]);
         };
@@ -199,13 +199,13 @@ ErrorOr<void> SimpleRenderer::reload_shaders()
     GLuint programs[COUNT_SIMPLE_SHADERS];
     GLuint shaders[2] = {0};
 
-    shaders[0] = TRY(compile_shader_file(vert_shader_file_path, GL_VERTEX_SHADER));
+    shaders[0] = TRY(compile_shader_file(m_bundle, vert_shader_file_path, GL_VERTEX_SHADER));
     Defer delete_shader = [&] {
         glDeleteShader(shaders[0]);
     };
 
     for (int i = 0; i < COUNT_SIMPLE_SHADERS; ++i) {
-        shaders[1] = TRY(compile_shader_file(frag_shader_file_paths[i], GL_FRAGMENT_SHADER));
+        shaders[1] = TRY(compile_shader_file(m_bundle, frag_shader_file_paths[i], GL_FRAGMENT_SHADER));
         Defer delete_shader = [&] {
             glDeleteShader(shaders[1]);
         };

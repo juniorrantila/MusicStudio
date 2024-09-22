@@ -15,6 +15,12 @@ struct Bytes {
     {
     }
 
+    constexpr Bytes(u8 const* data, usize size)
+        : m_data(data)
+        , m_size(size)
+    {
+    }
+
     constexpr u8 const* begin() const { return m_data; }
     constexpr u8 const* end() const { return &m_data[m_size]; }
 

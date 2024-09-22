@@ -14,10 +14,9 @@ struct Bundle {
     Bundle& operator=(Bundle const&) = delete;
     Bundle(Bundle const&) = delete;
 
-    Bundle& operator=(Bundle&&) = delete;
-    Bundle(Bundle&&) = delete;
+    Bundle(Bundle&& other) = default;
+    Bundle& operator=(Bundle&&) = default;
 
-    static Bundle& the(); // NOTE: Generated via make-bundle
     static ErrorOr<Bundle> create_from_bytes(Bytes);
     static ErrorOr<Bundle> create_from_path(StringView);
 
@@ -29,6 +28,18 @@ struct Bundle {
 
     View<ResourceView const> resources() const { return m_unsafe_resources.view(); }
     ErrorOr<Bytes> bytes();
+
+    template <typename T>
+    Bundle add_pack(T pack) && {
+        pack.add_to_bundle(*this);
+        return move(*this);
+    }
+
+    template <typename T>
+    Bundle& add_pack(T pack) & {
+        pack.add_to_bundle(*this);
+        return *this;
+    }
 
 private:
     ErrorOr<void> saturate_zip_buffer();

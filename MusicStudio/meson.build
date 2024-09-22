@@ -22,5 +22,6 @@ executable('music-studio', [
     ms_dep,
     fs_dep,
     fs_bundle_dep,
-    zip_dep
+    zip_dep,
+    fonts_dep,
   ])

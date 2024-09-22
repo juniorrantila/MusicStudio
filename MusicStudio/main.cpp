@@ -4,11 +4,17 @@
 #include <CLI/ArgumentParser.h>
 #include <Core/Print.h>
 #include <Main/Main.h>
+#include <Fonts/Fonts.h>
+#include <UI/Shaders/Shaders.h>
 
 ErrorOr<int> Main::main(int argc, c_string argv[])
 {
+    auto bundle = FS::Bundle()
+        .add_pack(Fonts())
+        .add_pack(UI::Shaders());
+
     dbgln("resources:"sv);
-    for (auto resource : FS::Bundle::the().resources()) {
+    for (auto resource : bundle.resources()) {
         dbgln("  "sv, resource.resolved_path());
     }
 
@@ -29,7 +35,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
         return 1;
     }
 
-    auto application = TRY(Application::create());
+    auto application = TRY(Application::create(bundle));
 
     for (auto plugin : plugin_paths) {
         TRY(application.open_plugin(plugin));

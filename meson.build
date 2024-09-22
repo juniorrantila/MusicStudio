@@ -99,30 +99,7 @@ if target_machine.system() != 'darwin'
   endif
 endif
 
-bundle_me = []
-bundle_libs = []
-
 subdir('CoreLibraries')
-subdir('BuildTools')
 subdir('Fonts')
 subdir('Libraries')
-
-bundled_resources_lib = static_library('bundled-resources', [
-    custom_target('bundle',
-      output: 'Bundle.cpp',
-      input: bundle_me,
-      command: [
-        make_bundle_exe,
-        meson.project_build_root() / '@OUTPUT@',
-        '@INPUT@'
-      ]),
-  ], dependencies: [
-    ty_dep,
-    fs_bundle_dep,
-  ], link_with: bundle_libs)
-
-fs_bundle_dep += declare_dependency(
-  link_with: bundled_resources_lib
-)
-
 subdir('MusicStudio')

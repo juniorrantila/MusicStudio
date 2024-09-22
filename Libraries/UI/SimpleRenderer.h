@@ -1,6 +1,8 @@
 #pragma once
-#include <Ty/ErrorOr.h>
 #include "./Graphics/GL.h"
+
+#include <Ty/ErrorOr.h>
+#include <FS/Bundle.h>
 
 #include <Rexim/LA.h>
 
@@ -39,7 +41,7 @@ enum SimpleShader {
 };
 
 struct SimpleRenderer {
-    static ErrorOr<SimpleRenderer> create();
+    static ErrorOr<SimpleRenderer> create(FS::Bundle& bundle);
 
     void set_shader(SimpleShader shader);
 
@@ -83,7 +85,10 @@ struct SimpleRenderer {
     void flush();
 
 private:
-    SimpleRenderer() = default;
+    SimpleRenderer(FS::Bundle& bundle)
+        : m_bundle(bundle)
+    {
+    }
 
     void draw();
     void sync();
@@ -94,6 +99,8 @@ private:
     void quad(Vec2f p0, Vec2f p1, Vec2f p2, Vec2f p3,
               Vec4f c0, Vec4f c1, Vec4f c2, Vec4f c3,
               Vec2f uv0, Vec2f uv1, Vec2f uv2, Vec2f uv3);
+
+    FS::Bundle& m_bundle;
 
     GLuint m_vao { 0 };
     GLuint m_vbo { 0 };

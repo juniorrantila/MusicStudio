@@ -1,3 +1,45 @@
+module Ty {
+    umbrella "Ty"
+    module * {
+        export *
+    }
+}
+
+module Core {
+    umbrella "Core"
+    module * {
+        export *
+    }
+}
+
+module Main {
+    umbrella "Main"
+    module * {
+        export *
+    }
+}
+
+module FS {
+    umbrella "FS"
+    module * {
+        export *
+    }
+}
+
+module CLI {
+    umbrella "CLI"
+    module * {
+        export *
+    }
+}
+
+module Zip {
+    umbrella "Zip"
+    module * {
+        export *
+    }
+}
+
 module Image {
     umbrella "Image"
     module * {

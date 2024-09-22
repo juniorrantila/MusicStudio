@@ -99,7 +99,6 @@ if target_machine.system() != 'darwin'
   endif
 endif
 
-subdir('CoreLibraries')
-subdir('Fonts')
 subdir('Libraries')
+subdir('Fonts')
 subdir('MusicStudio')

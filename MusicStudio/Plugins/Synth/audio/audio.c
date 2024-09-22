@@ -189,6 +189,7 @@ void audio_client_destroy(AudioClient *client) {
 static double g_sinewave_table[0x100000];
 static const unsigned g_sinewave_table_size = sizeof(g_sinewave_table) / sizeof(g_sinewave_table[0]);
 
+void initialize_sinewave_table(void);
 __attribute__((constructor))
 void initialize_sinewave_table(void)
 {

@@ -82,7 +82,7 @@ Optional<Rectangle> Effect::editor_rectangle()
 
 bool Effect::set_editor_rectangle(Rectangle const* rect)
 {
-    return dispatch(PluginOpcode::VendorSpecific, (i32)ExtensionVendor::Prosonus, (iptr)ProsonusPluginOpcode::EditSetRect, (Rectangle*)rect);
+    return dispatch(PluginOpcode::VendorSpecific, (i32)ExtensionVendor::Prosonus, (iptr)ProsonusPluginOpcode::EditSetRect, const_cast<Rectangle*>(rect));
 }
 
 bool Effect::open_editor(void* window)
@@ -349,7 +349,7 @@ iptr Effect::dispatch(PluginOpcode opcode, i32 index,
 iptr Effect::dispatch(PluginOpcode opcode, i32 index,
                   iptr value, void* ptr, f32 opt) const
 {
-    return plugin_callback((Effect*)this, opcode, index, value, ptr, opt);
+    return plugin_callback(const_cast<Effect*>(this), opcode, index, value, ptr, opt);
 }
 
 }

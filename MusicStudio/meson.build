@@ -1,3 +1,9 @@
+subdir('Vst')
+subdir('MS')
+subdir('Midi')
+subdir('Tools')
+subdir('Plugins')
+
 executable('music-studio', [
     'Application.cpp',
     'FileBrowser.cpp',

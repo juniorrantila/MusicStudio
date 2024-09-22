@@ -41,7 +41,7 @@ struct Host {
     bool effect_is_initialized { false };
     Vst::TimeInfo time_info;
 
-    SmallCapture<void(i32, i32)> on_resize;
+    SmallCapture<void(i32, i32)> on_resize { nullptr };
 
     static ErrorOr<Host*> create(Vst::Effect* effect);
     void destroy() const;

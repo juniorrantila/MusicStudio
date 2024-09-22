@@ -4,5 +4,5 @@
 #include "./Widget.h"
 
 struct Toolbar : Widget {
-    void render(UI::UI& ui, EventLoop&, Vec4f box);
+    void render(UI::UI& ui, EventLoop&, Vec4f box) override;
 };

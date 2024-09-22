@@ -31,7 +31,9 @@ ErrorOr<Host*> Host::create(Vst::Effect* effect)
         .output_buffers = new f32*[number_of_outputs],
         .number_of_inputs = effect->number_of_inputs,
         .number_of_outputs = effect->number_of_outputs,
-        .sample_rate = sample_rate
+        .sample_rate = sample_rate,
+        .block_size = 512,
+        .time_info = {},
     };
 
     return host;

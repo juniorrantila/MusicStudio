@@ -17,8 +17,8 @@
 
 static int file_cmp(const void *ap, const void *bp)
 {
-    c_string a = *(c_string*)ap;
-    c_string b = *(c_string*)bp;
+    c_string a = *(c_string const*)ap;
+    c_string b = *(c_string const*)bp;
     return strcmp(a, b);
 }
 
@@ -58,7 +58,7 @@ typedef struct {
     usize capacity;
 } Comps;
 
-void normpath(String_View path, String_Builder *result)
+static void normpath(String_View path, String_Builder *result)
 {
     usize original_sb_size = result->count;
 

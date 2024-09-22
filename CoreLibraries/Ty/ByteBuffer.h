@@ -133,6 +133,14 @@ struct ByteBuffer {
         return bytes.size();
     }
 
+    constexpr ErrorOr<u32> write(Bytes bytes)
+    {
+        TRY(expand_if_needed_for_write(bytes.size()));
+        __builtin_memcpy(m_data, bytes.data(), bytes.size());
+        m_size += bytes.size();
+        return bytes.size();
+    }
+
     constexpr void clear() { m_size = 0; }
 
     constexpr u8* mutable_data() { return m_data; }

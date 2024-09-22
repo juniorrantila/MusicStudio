@@ -1,7 +1,8 @@
 #pragma once
-#include "ErrorOr.h"
-#include "IOVec.h"
-#include "StringBuffer.h"
+#include "./ErrorOr.h"
+#include "./IOVec.h"
+#include "./StringBuffer.h"
+
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <spawn.h>
@@ -283,7 +284,10 @@ void sleep(u32 seconds);
 
 ErrorOr<int> fork();
 
+#pragma push_macro("sigemptyset")
+#undef sigemptyset
 ErrorOr<void> sigemptyset(sigset_t* set);
+#pragma pop_macro("sigemptyset")
 
 ErrorOr<void> sigaction(int sig,
     const struct sigaction* __restrict action,

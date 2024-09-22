@@ -12,22 +12,50 @@ project('MusicStudio', ['cpp', 'c'],
   ])
 
 cpp = meson.get_compiler('cpp')
+if not cpp.compiles('''
+#if __has_embed(__FILE__)
+#else
+#error "no #embed support"
+#endif
+int main(){}
+''')
+  error('compiler needs #embed support')
+endif
 
 add_project_arguments(cpp.get_supported_arguments([
+  '-Werror=return-type',
+  '-Werror=switch',
+  '-Werror',
+  '-Wformat=2',
+  '-Wimplicit-fallthrough',
+  '-Wmissing-declarations',
+  '-Wmissing-prototypes',
   '-Wno-c99-designator',
   '-Wno-c99-extensions',
+  '-Wno-expansion-to-defined',
   '-Wno-format-pedantic',
   '-Wno-gnu-anonymous-struct',
+  '-Wno-gnu-designator',
   '-Wno-gnu-case-range',
   '-Wno-gnu-conditional-omitted-operand',
   '-Wno-gnu-statement-expression',
   '-Wno-gnu-zero-variadic-macro-arguments',
+  '-Wno-implicit-const-int-float-conversion',
+  '-Wno-invalid-offsetof',
   '-Wno-keyword-macro',
-  '-Wno-user-defined-literals',
+  '-Wno-literal-suffix',
   '-Wno-nested-anon-types',
-  '-Werror=return-type',
-  '-Werror=switch',
+  '-Wno-unknown-warning-option',
+  '-Wno-unused-command-line-argument',
+  '-Wno-user-defined-literals',
+  '-Wsuggest-override',
+  '-fstrict-flex-arrays=2',
+  '-Wno-c23-extensions',
 ]), language: ['objcpp', 'cpp', 'c'])
+
+add_project_arguments(cpp.get_supported_arguments([
+  '-Wcast-qual',
+]), language: ['objcpp', 'cpp'])
 
 if target_machine.system() == 'darwin'
   add_languages('objcpp')
@@ -35,11 +63,10 @@ if target_machine.system() == 'darwin'
     '-DGL_SILENCE_DEPRECATION=1',
     '-nostdinc++',
   ], language: ['objcpp', 'cpp', 'c'])
+  add_project_arguments(cpp.get_supported_arguments([
+    '-fobjc-arc',
+  ]), language: ['objcpp', 'objc'])
 endif
-
-add_project_arguments(cpp.get_supported_arguments([
-  '-fobjc-arc',
-]), language: ['objcpp', 'objc'])
 
 freetype2_proj = subproject('freetype2', default_options: [
   'warning_level=0',
@@ -76,10 +103,8 @@ bundle_me = []
 bundle_libs = []
 
 subdir('CoreLibraries')
-
 subdir('BuildTools')
 subdir('Fonts')
-
 subdir('Libraries')
 
 bundled_resources_lib = static_library('bundled-resources', [
@@ -100,6 +125,4 @@ fs_bundle_dep += declare_dependency(
   link_with: bundled_resources_lib
 )
 
-subdir('Tools')
-subdir('Plugins')
-subdir('src')
+subdir('MusicStudio')

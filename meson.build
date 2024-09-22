@@ -1,7 +1,7 @@
 project('MusicStudio', ['cpp', 'c'],
   default_options: [
     'cpp_std=c++20',
-    'c_std=c11',
+    'c_std=c2x',
     'cpp_eh=none',
     'cpp_rtti=false',
     'default_library=static',

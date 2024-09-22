@@ -32,14 +32,14 @@ struct UI {
     void fill_rect(Vec4f box, Vec4f color);
 
     struct OutlineRect {
-        Vec4f box;
-        f32 outline_size;
+        Vec4f box {};
+        f32 outline_size { 0 };
 
-        Vec4f fill_color;
-        Vec4f left_color;
-        Vec4f top_color;
-        Vec4f right_color;
-        Vec4f bottom_color;
+        Vec4f fill_color {};
+        Vec4f left_color {};
+        Vec4f top_color {};
+        Vec4f right_color {};
+        Vec4f bottom_color {};
     };
     void outline_rect(OutlineRect const&);
     void outline_rect(Vec4f box, f32 outline_size, Vec4f fill_color, Vec4f outline_color);

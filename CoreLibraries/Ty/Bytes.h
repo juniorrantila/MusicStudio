@@ -24,8 +24,8 @@ struct Bytes {
         return m_data[index];
     }
 
-    u8 const* data() const { return m_data; }
-    usize size() const { return m_size; }
+    constexpr u8 const* data() const { return m_data; }
+    constexpr usize size() const { return m_size; }
     StringView as_view() const;
 
     ErrorOr<StringBuffer> as_c_source_file(StringView variable_name) const;

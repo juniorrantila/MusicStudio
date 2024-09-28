@@ -103,3 +103,5 @@ endif
 subdir('Libraries')
 subdir('Fonts')
 subdir('MusicStudio')
+
+run_target('run', command: music_studio_bin)

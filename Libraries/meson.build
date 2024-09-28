@@ -1,4 +1,5 @@
 # Core
+subdir('Debug')
 subdir('Ty')
 subdir('Core')
 subdir('CLI')

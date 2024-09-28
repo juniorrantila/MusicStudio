@@ -7,6 +7,8 @@ ty_lib = library('ty', [
     'System.cpp',
     'Bytes.cpp',
     'StringBuffer.cpp',
+  ], dependencies: [
+    debug_dep
   ])
 
 ty_dep = declare_dependency(

@@ -51,6 +51,7 @@ add_project_arguments(cpp.get_supported_arguments([
   '-Wsuggest-override',
   '-fstrict-flex-arrays=2',
   '-Wno-c23-extensions',
+  '-finstrument-functions',
 ]), language: ['objcpp', 'cpp', 'c'])
 
 add_project_arguments(cpp.get_supported_arguments([

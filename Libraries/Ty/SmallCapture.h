@@ -52,18 +52,18 @@ public:
     constexpr static auto AccommodateExcessiveAlignmentRequirements = true;
     constexpr static usize ExcessiveAlignmentThreshold = 16;
 
-    SmallCapture() = default;
-    SmallCapture(nullptr_t)
+    constexpr SmallCapture() = default;
+    constexpr SmallCapture(nullptr_t)
     {
     }
 
-    ~SmallCapture()
+    constexpr ~SmallCapture()
     {
         clear(false);
     }
 
     template<typename CallableType>
-    SmallCapture(CallableType&& callable)
+    constexpr SmallCapture(CallableType&& callable)
     requires((IsFunctionObject<CallableType> && IsCallableWithArguments<CallableType, Out, In...> && !IsSame<RemoveCVReference<CallableType>, SmallCapture>))
     {
         init_with_callable(forward<CallableType>(callable), CallableKind::FunctionObject);

@@ -28,6 +28,9 @@ struct StringView {
     {
     }
 
+    StringView(View<char const> view);
+    StringView(View<char> view);
+
     consteval StringView(c_string data)
         : m_data(data)
         , m_size(data == nullptr ? 0 : __builtin_strlen(data))

@@ -5,6 +5,18 @@
 
 namespace Ty {
 
+StringView::StringView(View<char const> view)
+    : m_data(view.data())
+    , m_size(view.size())
+{
+}
+
+StringView::StringView(View<char> view)
+    : m_data(view.data())
+    , m_size(view.size())
+{
+}
+
 ErrorOr<Vector<u32>> StringView::find_all(char character) const
 {
     auto occurrences = TRY(Vector<u32>::create());

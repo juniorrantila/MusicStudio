@@ -51,6 +51,11 @@ struct Vector {
         other.invalidate();
     }
 
+    constexpr operator View<T>()
+    {
+        return view();
+    }
+
     constexpr operator View<T const>() const
     {
         return view();

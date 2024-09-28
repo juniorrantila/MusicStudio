@@ -7,6 +7,7 @@ ty_lib = library('ty', [
     'System.cpp',
     'Bytes.cpp',
     'StringBuffer.cpp',
+    'ArenaAllocator.cpp',
   ], dependencies: [
     debug_dep
   ])

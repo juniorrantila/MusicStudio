@@ -30,25 +30,28 @@ struct View {
         return m_data[index];
     }
 
+    constexpr bool is_empty() const { return size() == 0; }
+
     constexpr T* begin()
     {
-        VERIFY(m_data);
+        VERIFY(is_empty() || m_data);
         return m_data;
     }
+
     constexpr T* end()
     {
-        VERIFY(m_data);
+        VERIFY(is_empty() || m_data);
         return &m_data[m_size];
     }
 
     constexpr T const* begin() const
     {
-        VERIFY(m_data);
+        VERIFY(is_empty() || m_data);
         return m_data;
     }
     constexpr T const* end() const
     { 
-        VERIFY(m_data);
+        VERIFY(is_empty() || m_data);
         return &m_data[m_size];
     }
 

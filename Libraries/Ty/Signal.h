@@ -16,8 +16,6 @@ struct Signal {
     {
     }
 
-    Signal(Signal&& other) = default;
-
     constexpr ErrorOr<Subscriber> add_observer(SmallCapture<void(T const&)>&& on_update)
     {
         for (usize i = 0; i < m_subscribers.size(); i++) {

@@ -137,6 +137,13 @@ struct [[nodiscard]] Optional {
         return has_value() && value() == other;
     }
 
+    constexpr T or_default(T value)
+    {
+        if (!has_value())
+            return value;
+        return release_value();
+    }
+
 private:
     constexpr void clear_if_needed()
     {
@@ -216,6 +223,13 @@ struct [[nodiscard]] Optional<T*> {
         if (has_value())
             return Return(release_value());
         return Return(error_callback());
+    }
+
+    constexpr T* or_default(T* value)
+    {
+        if (!has_value())
+            return value;
+        return release_value();
     }
 
     template <typename F>

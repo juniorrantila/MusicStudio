@@ -52,6 +52,12 @@ add_project_arguments(cpp.get_supported_arguments([
   '-fstrict-flex-arrays=2',
   '-Wno-c23-extensions',
   '-finstrument-functions',
+  '-g3',
+  '-gdwarf',
+  '-gfull',
+  '-gmodules',
+  '-glldb',
+  '-fno-omit-frame-pointer',
 ]), language: ['objcpp', 'cpp', 'c'])
 
 add_project_arguments(cpp.get_supported_arguments([

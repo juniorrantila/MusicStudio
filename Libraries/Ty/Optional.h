@@ -144,6 +144,16 @@ struct [[nodiscard]] Optional {
         return release_value();
     }
 
+    template <typename F>
+    constexpr auto map(F callback) const {
+        using Return = decltype(callback(value()));
+
+        if (has_value()) {
+            return Optional<Return>(callback(value()));
+        }
+        return Optional<Return>{};
+    }
+
 private:
     constexpr void clear_if_needed()
     {
@@ -239,6 +249,16 @@ struct [[nodiscard]] Optional<T*> {
             return callback();
         using Return = decltype(callback());
         return Return(release_value());
+    }
+
+    template <typename F>
+    constexpr auto map(F callback) const {
+        using Return = decltype(callback(value()));
+
+        if (has_value()) {
+            return Optional<Return>(callback(value()));
+        }
+        return Optional<Return>{};
     }
 
 private:

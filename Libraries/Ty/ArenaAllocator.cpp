@@ -29,4 +29,11 @@ ErrorOr<void*> ArenaAllocator::alloc(usize size, usize align, c_string function,
     return ptr;
 }
 
+void ArenaAllocator::free(void* data, usize size)
+{
+    if (m_head - size == data) {
+        m_head -= size;
+    }
+}
+
 }

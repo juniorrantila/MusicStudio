@@ -1,12 +1,12 @@
 #pragma once
 #include "./Base.h"
 #include "./ErrorOr.h"
-#include "./Try.h"
 #include "./View.h"
+#include "./Allocator.h"
 
 namespace Ty {
 
-struct ArenaAllocator {
+struct ArenaAllocator : public Allocator {
     enum Kind {
         Borrow,
         Own,
@@ -54,29 +54,11 @@ struct ArenaAllocator {
     ErrorOr<void*> alloc(usize size, usize align,
         c_string func = __builtin_FUNCTION(), 
         c_string file = __builtin_FILE(),
-        usize line = __builtin_LINE());
+        usize line = __builtin_LINE()) override;
+
+    void free(void* data, usize size) override;
 
     constexpr void drain() { m_head = m_base; }
-
-    template <typename T>
-    ErrorOr<T*> alloc(
-        c_string function = __builtin_FUNCTION(),
-        c_string file = __builtin_FILE(),
-        usize line = __builtin_LINE()
-    ) {
-        return (T*)TRY(alloc(sizeof(T), alignof(T), function, file, line));
-    }
-
-    template <typename T>
-    ErrorOr<View<T>> alloc(
-        usize size,
-        c_string func = __builtin_FUNCTION(),
-        c_string file = __builtin_FILE(),
-        usize line = __builtin_LINE()
-    ) {
-        auto* data = (T*)TRY(alloc(size * sizeof(T), alignof(T), func, file, line));
-        return View(data, size);
-    }
 
 private:
     constexpr ArenaAllocator(Kind kind, View<u8> view)

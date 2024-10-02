@@ -10,4 +10,5 @@ subdir('FS')
 # Userspace
 subdir('Rexim')
 subdir('UI')
+subdir('UIView')
 subdir('SoundIo')

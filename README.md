@@ -10,15 +10,16 @@
 
 #### macOS
 
-    brew install ccache meson ninja
+    xcode-select install
 
 #### Ubuntu
 
-    sudo apt install ccache meson ninja-build clang freeglut3-dev libglew-dev libjack-jackd2-dev
+    sudo apt install freeglut3-dev libglew-dev libjack-jackd2-dev
 
 ### Setup:
 
-    meson setup build
+    ./bootstrap
+    source Toolchain/env
 
 ### Build:
 
@@ -26,4 +27,4 @@
 
 ### Run:
 
-    ./build/src/music-studio
+    ./build/<system-architecture>/music-studio

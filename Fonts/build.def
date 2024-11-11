@@ -1,0 +1,17 @@
+#pragma once
+#include "../bs.h"
+#include "../Libraries/build.def"
+
+static auto const fonts = cpp_library("Fonts", {
+    .srcs = glob("*.cpp"),
+    .exported_headers = glob("*.h"),
+    .header_namespace = "Fonts",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = system_target_triple(),
+    .link_style = "static",
+    .deps = {
+        libraries.ty,
+        libraries.fs,
+    },
+});

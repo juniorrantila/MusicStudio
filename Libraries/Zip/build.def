@@ -1,0 +1,13 @@
+#pragma once
+#include "../../bs.h"
+
+static auto const zip = c_library("Zip", {
+    .srcs = glob("*.c"),
+    .exported_headers = glob("*.h"),
+    .header_namespace = "Zip",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = system_target_triple(),
+    .link_style = "static",
+    .deps = {},
+});

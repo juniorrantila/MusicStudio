@@ -1,0 +1,13 @@
+#pragma once
+#include "../../bs.h"
+
+static auto const ty = cpp_library("Ty", {
+    .srcs = glob("*.cpp"),
+    .exported_headers = glob("*.h"),
+    .header_namespace = "Ty",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = system_target_triple(),
+    .link_style = "static",
+    .deps = {},
+});

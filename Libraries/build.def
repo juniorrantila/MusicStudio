@@ -1,0 +1,48 @@
+#pragma once
+#include "../bs.h"
+#include "./Debug/build.def"
+#include "./Ty/build.def"
+#include "./Core/build.def"
+#include "./Main/build.def"
+#include "./CLI/build.def"
+#include "./Zip/build.def"
+#include "./FS/build.def"
+#include "./Rexim/build.def"
+
+typedef struct {
+    // Core
+    Target debug;
+    Target ty;
+    Target core;
+    Target main;
+    Target cli;
+    Target zip;
+    Target fs;
+
+    // Userspace
+    Target rexim;
+
+    // Target wasm;
+    // Target ui;
+    // Target uiview;
+    // Target soundio;
+} LibrariesTargets;
+
+
+static auto const libraries = target([] {
+    return (LibrariesTargets){
+        .debug = debug,
+        .ty = ty,
+        .core = core,
+        .main = main_,
+        .cli = cli,
+        .zip = zip,
+        .fs = fs,
+        .rexim = rexim,
+    };
+
+    // Target wasm;
+    // Target ui;
+    // Target uiview;
+    // Target soundio;
+});

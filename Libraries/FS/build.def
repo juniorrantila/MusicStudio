@@ -1,0 +1,20 @@
+#pragma once
+#include "../../bs.h"
+#include "../Ty/build.def"
+#include "../Core/build.def"
+#include "../Zip/build.def"
+
+static auto const fs = cpp_library("FS", {
+    .srcs = glob("*.cpp"),
+    .exported_headers = glob("*.h"),
+    .header_namespace = "FS",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = system_target_triple(),
+    .link_style = "static",
+    .deps = {
+        ty,
+        core,
+        zip,
+    },
+});

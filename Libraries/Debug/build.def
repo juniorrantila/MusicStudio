@@ -1,0 +1,15 @@
+#pragma once
+#include "../../bs.h"
+
+static auto const debug = cpp_library("Debug", {
+    .srcs = glob("*.cpp"),
+    .exported_headers = glob("*.h"),
+    .header_namespace = "Debug",
+    .compile_flags = {
+        "-ibuiltininc",
+    },
+    .linker_flags = {},
+    .target_triple = system_target_triple(),
+    .link_style = "static",
+    .deps = {},
+});

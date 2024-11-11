@@ -1,0 +1,2 @@
+BASE_PATH=`realpath $(dirname $0)`
+export PATH="$BASE_PATH/Tools/bin:$PATH"

@@ -379,7 +379,7 @@ static inline c_string language_from_filename(c_string name)
 
 static inline TargetRule merge_object_rule = ninja_rule({
     .name = "merge-object",
-    .command = "$ld -r -o $out $in",
+    .command = "$ld -r $link_args -o $out $in",
     .description = "Linking static target $out",
     .variables = {
         (Variable){
@@ -388,6 +388,10 @@ static inline TargetRule merge_object_rule = ninja_rule({
         },
         (Variable){
             .name = "in",
+            .default_value = nullptr,
+        },
+        (Variable){
+            .name = "link_args",
             .default_value = nullptr,
         },
     },
@@ -488,7 +492,14 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
     }
     fprintf(output, "\n");
     fprintf(output, "    target = %s\n", triple);
-    // fprintf(output, "    link_args = %s\n", triple);
+    usize link_args_len = len(binary->linker_flags.entries);
+    if (link_args_len > 0) {
+        fprintf(output, "    link_args =");
+        for (usize i = 0; i < link_args_len; i++) {
+            fprintf(output, " %s", binary->linker_flags.entries[i]);
+        }
+        fprintf(output, "\n");
+    }
     fprintf(output, "\n");
 
     Strings const* args = &binary->compile_flags;
@@ -560,6 +571,14 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
         }
     }
     fprintf(output, "\n");
+    usize link_args_len = len(library->linker_flags.entries);
+    if (link_args_len > 0) {
+        fprintf(output, "    link_args =");
+        for (usize i = 0; i < link_args_len; i++) {
+            fprintf(output, " %s", library->linker_flags.entries[i]);
+        }
+        fprintf(output, "\n");
+    }
     fprintf(output, "    ld = ld\n");
     fprintf(output, "\n");
 

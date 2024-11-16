@@ -792,7 +792,7 @@ static inline Strings default_objcpp_args(void)
 static inline c_string system_os(void)
 {
 #if __APPLE__
-    return "macos";
+    return "darwin";
 #elif __linux__
     return "linux";
 #elif _WIN32
@@ -805,7 +805,7 @@ static inline c_string system_os(void)
 static inline c_string system_arch(void)
 {
 #if __aarch64__
-    return "aarch64";
+    return "arm64";
 #elif __x86_64__
     return "x86_64";
 #elif __i386__
@@ -819,7 +819,7 @@ static inline c_string system_arch(void)
 static inline c_string system_abi(void)
 {
 #ifdef __APPLE__
-    return "none";
+    return "apple";
 #elif __linux__
     return "gnu";
 #elif _WIN32

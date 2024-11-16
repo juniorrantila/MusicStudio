@@ -162,7 +162,7 @@ static inline void dyn_targets_add(DynTargets* targets, Target target);
 static inline void dyn_targets_add_g(void* targets, Target target);
 
 template <typename T, usize Count>
-usize len(T const (& items)[Count])
+static inline usize len(T const (& items)[Count])
 {
     usize i = 0;
     for (; i < Count; i++) {
@@ -176,7 +176,7 @@ usize len(T const (& items)[Count])
 }
 
 template <typename T, usize Count>
-usize capacity(T const (& items)[Count])
+static inline usize capacity(T const (& items)[Count])
 {
     (void)items;
     return Count;
@@ -186,8 +186,8 @@ template <typename T, usize Count, usize Count2>
 static inline void cat(T (&items)[Count], T const (& other)[Count2])
 {
     static_assert(Count >= Count2);
-    auto c = len(items);
-    auto c2 = len(other);
+    usize c = len(items);
+    usize c2 = len(other);
     assert(Count - c > c2);
     memcpy(items + c, &other, sizeof(T) * c2);
 }
@@ -204,7 +204,7 @@ static inline Target all_targets = {
 static inline Target cpp_binary(c_string name, BinaryArgs args, c_string file)
 {
     c_string base_dir = strdup(dirname(strdup(file)));
-    auto* res = (decltype(args)*)malloc(sizeof(args));
+    BinaryArgs* res = (BinaryArgs*)malloc(sizeof(args));
     *res = args;
     res->compile_flags = default_cpp_args();
     res->target_triple = system_target_triple();
@@ -223,7 +223,7 @@ static inline Target cpp_binary(c_string name, BinaryArgs args, c_string file)
 static inline Target cpp_library(c_string name, LibraryArgs args, c_string file)
 {
     c_string base_dir = strdup(dirname(strdup(file)));
-    auto* res = (decltype(args)*)malloc(sizeof(args));
+    LibraryArgs* res = (LibraryArgs*)malloc(sizeof(args));
     *res = args;
     res->compile_flags = default_cpp_args();
     cat(res->compile_flags.entries, args.compile_flags.entries);
@@ -241,7 +241,7 @@ static inline Target cpp_library(c_string name, LibraryArgs args, c_string file)
 static inline Target c_library(c_string name, LibraryArgs args, c_string file)
 {
     c_string base_dir = strdup(dirname(strdup(file)));
-    auto* res = (decltype(args)*)malloc(sizeof(args));
+    LibraryArgs* res = (LibraryArgs*)malloc(sizeof(args));
     *res = args;
     res->compile_flags = default_c_args();
     cat(res->compile_flags.entries, args.compile_flags.entries);
@@ -259,7 +259,7 @@ static inline Target c_library(c_string name, LibraryArgs args, c_string file)
 static inline Target objc_library(c_string name, LibraryArgs args, c_string file)
 {
     c_string base_dir = strdup(dirname(strdup(file)));
-    auto* res = (decltype(args)*)malloc(sizeof(args));
+    LibraryArgs* res = (LibraryArgs*)malloc(sizeof(args));
     *res = args;
     res->compile_flags = default_objc_args();
     cat(res->compile_flags.entries, args.compile_flags.entries);
@@ -277,7 +277,7 @@ static inline Target objc_library(c_string name, LibraryArgs args, c_string file
 static inline Target objcpp_library(c_string name, LibraryArgs args, c_string file)
 {
     c_string base_dir = strdup(dirname(strdup(file)));
-    auto* res = (decltype(args)*)malloc(sizeof(args));
+    LibraryArgs* res = (LibraryArgs*)malloc(sizeof(args));
     *res = args;
     res->compile_flags = default_objcpp_args();
     cat(res->compile_flags.entries, args.compile_flags.entries);
@@ -349,23 +349,23 @@ static inline TargetRule cxx_rule = ninja_rule({
     },
 });
 
-typedef struct LanguageSuffix {
+typedef struct Language {
     c_string name;
     c_string extension;
-} LanguageExtension;
+} Language;
 
 static inline c_string language_from_filename(c_string name)
 {
-    LanguageExtension languages[] = {
+    Language languages[] = {
         { .name = "C++", .extension = ".cpp" },
         { .name = "C", .extension = ".c" },
         { .name = "Objective-C++", .extension = ".mm" },
         { .name = "Objective-C", .extension = ".m" },
     };
-    auto name_len = strlen(name);
+    usize name_len = strlen(name);
     for (usize i = 0; i < capacity(languages); i++) {
-        auto language = languages[i];
-        auto extension_len = strlen(language.extension);
+        Language language = languages[i];
+        usize extension_len = strlen(language.extension);
         if (name_len < extension_len) {
             continue;
         }
@@ -452,7 +452,7 @@ static inline void emit_ninja_rule(FILE* output, TargetRule const* rule)
     fprintf(output, "    description = %s\n", rule->description);
     usize variable_count = len(rule->variables);
     for (usize i = 0; i < variable_count; i++) {
-        auto variable = rule->variables[i];
+        Variable variable = rule->variables[i];
         if (variable.default_value) {
             fprintf(output, "    %s = %s\n", variable.name, variable.default_value);
         }
@@ -462,28 +462,28 @@ static inline void emit_ninja_rule(FILE* output, TargetRule const* rule)
 
 static inline void emit_ninja_build_binary(FILE* output, Target const* target)
 {
-    auto binary = target->binary;
-    auto triple = target_triple_string(binary->target_triple);
-    auto base_dir = target->base_dir;
+    BinaryArgs* binary = target->binary;
+    c_string triple = target_triple_string(binary->target_triple);
+    c_string base_dir = target->base_dir;
     usize srcs_len = len(binary->srcs.entries);
-    auto name = target->name;
+    c_string name = target->name;
 
-    auto deps = flatten_targets({
+    Targets deps = flatten_targets({
         .name = "__deps__",
         .file = "",
         .base_dir = "",
         .targets = &binary->deps,
         .kind = TargetKind_Targets,
     });
-    auto deps_len = len(deps.entries);
+    usize deps_len = len(deps.entries);
 
     fprintf(output, "build %s/%s: link-binary", triple, name);
     for (usize i = 0; i < srcs_len; i++) {
-        auto src = binary->srcs.entries[i];
+        c_string src = binary->srcs.entries[i];
         fprintf(output, " %s/%s/%s.o", triple, base_dir, src);
     }
     for (usize i = 1; i < deps_len; i++) {
-        auto const* dep = &deps.entries[i];
+        Target const* dep = &deps.entries[i];
         fprintf(output, " %s/%s.o", triple, dep->name);
     }
     fprintf(output, "\n");
@@ -491,16 +491,16 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
     // fprintf(output, "    link_args = %s\n", triple);
     fprintf(output, "\n");
 
-    auto const* args = &binary->compile_flags;
-    auto args_len = len(args->entries);
+    Strings const* args = &binary->compile_flags;
+    usize args_len = len(args->entries);
     for (usize i = 0; i < srcs_len; i++) {
-        auto src = binary->srcs.entries[i];
+        c_string src = binary->srcs.entries[i];
         fprintf(output, "build %s/%s/%s.o: cxx ../%s/%s", triple, base_dir, src, base_dir, src);
         if (deps_len > 1) {
             fprintf(output, " |");
         }
         for (usize dep_index = 1; dep_index < deps_len; dep_index++) {
-            auto const* dep = &deps.entries[dep_index];
+            Target const* dep = &deps.entries[dep_index];
             if (dep->kind == TargetKind_Library) {
                 fprintf(output, " ns/%s/_", dep->library->header_namespace);
             }
@@ -515,9 +515,9 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
             fprintf(output, " %s", args->entries[arg]);
         }
         for (usize dep_index = 1; dep_index < deps_len; dep_index++) {
-            auto const* dep = &deps.entries[dep_index];
+            Target const* dep = &deps.entries[dep_index];
             if (dep->kind == TargetKind_Library) {
-                auto const* library = dep->library;
+                LibraryArgs const* library = dep->library;
                 c_string ns = library->header_namespace;
                 fprintf(output, " -Ins/%s/h", ns);
             }
@@ -529,16 +529,16 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
 
 static inline void emit_ninja_build_library(FILE* output, Target const* target)
 {
-    auto library = target->library;
-    auto triple = target_triple_string(library->target_triple);
-    auto base_dir = target->base_dir;
+    LibraryArgs* library = target->library;
+    c_string triple = target_triple_string(library->target_triple);
+    c_string base_dir = target->base_dir;
     usize srcs_len = len(library->srcs.entries);
     usize headers_len = len(library->exported_headers.entries);
-    auto name = target->name;
+    c_string name = target->name;
 
     for (usize i = 0; i < headers_len; i++) {
-        auto header = library->exported_headers.entries[i];
-        char* out = nullptr;
+        c_string header = library->exported_headers.entries[i];
+        char* out = 0;
         asprintf(&out, "%s/%s", base_dir, header);
         c_string header_path = realpath(out, 0);
         fprintf(output, "build ns/%s/h/%s/%s: namespace-header %s\n", name, name, header, header_path);
@@ -546,14 +546,14 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
     fprintf(output, "\n");
     fprintf(output, "build ns/%s/_: phony", library->header_namespace);
     for (usize i = 0; i < headers_len; i++) {
-        auto header = library->exported_headers.entries[i];
+        c_string header = library->exported_headers.entries[i];
         fprintf(output, " ns/%s/h/%s/%s", name, name, header);
     }
     fprintf(output, "\n\n");
     
     fprintf(output, "build %s/%s.o: merge-object ", triple, name);
     for (usize i = 0; i < srcs_len; i++) {
-        auto src = library->srcs.entries[i];
+        c_string src = library->srcs.entries[i];
         fprintf(output, "%s/%s/%s.o", triple, base_dir, src);
         if (i != srcs_len - 1) {
             fprintf(output, " ");
@@ -563,25 +563,25 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
     fprintf(output, "    ld = ld\n");
     fprintf(output, "\n");
 
-    auto deps = flatten_targets({
+    Targets deps = flatten_targets({
         .name = "__deps__",
         .file = "",
         .base_dir = "",
         .targets = &library->deps,
         .kind = TargetKind_Targets,
     });
-    auto deps_len = len(deps.entries);
+    usize deps_len = len(deps.entries);
 
-    auto const* args = &library->compile_flags;
-    auto args_len = len(args->entries);
+    Strings const* args = &library->compile_flags;
+    usize args_len = len(args->entries);
     for (usize i = 0; i < srcs_len; i++) {
-        auto src = library->srcs.entries[i];
+        c_string src = library->srcs.entries[i];
         fprintf(output, "build %s/%s/%s.o: cxx ../%s/%s", triple, base_dir, src, base_dir, src);
         if (deps_len > 1) {
             fprintf(output, " |");
         }
         for (usize dep_index = 1; dep_index < deps_len; dep_index++) {
-            auto const* dep = &deps.entries[dep_index];
+            Target const* dep = &deps.entries[dep_index];
             if (dep->kind == TargetKind_Library) {
                 fprintf(output, " ns/%s/_", dep->library->header_namespace);
             }
@@ -596,9 +596,9 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
             fprintf(output, " %s", args->entries[arg]);
         }
         for (usize dep_index = 1; dep_index < deps_len; dep_index++) {
-            auto const* dep = &deps.entries[dep_index];
+            Target const* dep = &deps.entries[dep_index];
             if (dep->kind == TargetKind_Library) {
-                auto const* library = dep->library;
+                LibraryArgs const* library = dep->library;
                 c_string ns = library->header_namespace;
                 fprintf(output, " -Ins/%s/h", ns);
             }
@@ -621,7 +621,7 @@ static inline void emit_ninja(FILE* output, Target target)
     Targets targets = flatten_targets(target);
     usize targets_len = len(targets.entries);
     for (usize i = 0; i < targets_len; i++) {
-        auto const* target = &targets.entries[i];
+        Target const* target = &targets.entries[i];
         switch (target->kind) {
         case TargetKind_Binary:
             emit_ninja_build_binary(output, target);
@@ -648,7 +648,7 @@ static inline Strings glob(c_string name, c_string file)
         return result;
     }
     assert(g.gl_pathc < capacity(result.entries));
-    auto dir_len = strlen(dir);
+    usize dir_len = strlen(dir);
     for (usize i = 0; i < g.gl_pathc; i++) {
         c_string p = g.gl_pathv[i];
         p += dir_len + 1;
@@ -658,7 +658,8 @@ static inline Strings glob(c_string name, c_string file)
 }
 
 template <typename F>
-static inline auto target(F callback) {
+static inline auto target(F callback)
+{
     return callback();
 }
 
@@ -742,14 +743,14 @@ static inline Strings default_cxx_args(void)
 
 static inline Strings default_cpp_args(void)
 {
-    auto args = default_cxx_args();
+    Strings args = default_cxx_args();
     args.entries[len(args.entries)] = "-std=c++20";
     return args;
 }
 
 static inline Strings default_c_args(void)
 {
-    auto args = default_cxx_args();
+    Strings args = default_cxx_args();
     args.entries[len(args.entries)] = "-std=c23";
     args.entries[len(args.entries)] = "-xc";
     return args;
@@ -757,14 +758,14 @@ static inline Strings default_c_args(void)
 
 static inline Strings default_objc_args(void)
 {
-    auto args = default_c_args();
+    Strings args = default_c_args();
     args.entries[len(args.entries)] = "-xobjc";
     return args;
 }
 
 static inline Strings default_objcpp_args(void)
 {
-    auto args = default_cpp_args();
+    Strings args = default_cpp_args();
     args.entries[len(args.entries)] = "-xobjc++";
     return args;
 }

@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
+#define MAX_ENTRIES 128
+
 typedef signed char i8;
 typedef signed short i16;
 typedef signed int i32;
@@ -40,67 +42,20 @@ typedef double f64;
 
 typedef char const* c_string;
 
-struct StringView {
-    StringView() = default;
+typedef struct StringView {
+    char const* characters { nullptr };
+    usize size { 0 };
+} StringView;
 
-    static StringView from_c_string(c_string s)
-    {
-        return StringView(s, strlen(s));
-    }
+typedef struct {
+    usize size;
+    StringView items[MAX_ENTRIES];
+} StringSet;
 
-    bool operator==(StringView other) const
-    {
-        if (m_size != other.m_size) {
-            return false;
-        }
-        if (m_size == 0) {
-            return true;
-        }
-        if (m_data == other.m_data) {
-            return true;
-        }
-        return *m_data == *other.m_data && memcmp(m_data + 1, other.m_data + 1, m_size - 1) == 0;
-    }
-
-private:
-    StringView(char const* data, usize size)
-        : m_data(data)
-        , m_size(size)
-    {
-    }
-
-    char const* m_data { nullptr };
-    usize m_size { 0 };
-};
-
-template <typename Key, typename Value, u32 capacity>
-struct SmallMap {
-    SmallMap() = default;
-
-    void append(Key key, Value value)
-    {
-        usize id = m_size++;
-        assert(id <= capacity);
-        m_keys[id] = key;
-        m_values[id] = value;
-    }
-
-    bool has(Key key) const
-    {
-        for (u32 i = 0; i < m_size; i++) {
-            if (m_keys[i] == key)
-                return true;
-        }
-        return false;
-    }
-
-private:
-    Key m_keys[capacity] {};
-    Value m_values[capacity] {};
-    usize m_size { 0 };
-};
-
-#define MAX_ENTRIES 128
+static inline StringView string_view(c_string string);
+static inline bool string_view_equal(StringView a, StringView b);
+static inline bool string_set_has(StringSet const* set, StringView item);
+static inline void string_set_add(StringSet* set, StringView item);
 
 typedef enum {
     TargetKind_Binary,
@@ -130,6 +85,11 @@ typedef struct {
 typedef struct Targets {
     Target entries[MAX_ENTRIES];
 } Targets;
+
+typedef struct DynTargets {
+    usize size;
+    Targets targets;
+} DynTargets;
 
 typedef struct TargetTripple {
     c_string arch;
@@ -197,6 +157,9 @@ static inline TargetTriple dynamic_target_tripple(void);
 static inline c_string target_triple_string(TargetTriple triple);
 
 static inline void setup(void);
+
+static inline void dyn_targets_add(DynTargets* targets, Target target);
+static inline void dyn_targets_add_g(void* targets, Target target);
 
 template <typename T, usize Count>
 usize len(T const (& items)[Count])
@@ -708,37 +671,32 @@ static inline Targets const* target_deps(Target const* target)
     }
 }
 
+static inline void recurse_targets_r(StringSet* seen, Target target, void* user, void(*callback)(void* user, Target target))
+{
+    StringView name = string_view(target.name);
+    if (string_set_has(seen, name)) {
+        return;
+    }
+    string_set_add(seen, name);
+    callback(user, target);
+    Targets const* deps = target_deps(&target);
+    usize deps_len = len(deps->entries);
+    for (usize i = 0; i < deps_len; i++) {
+        recurse_targets_r(seen, deps->entries[i], user, callback);
+    }
+}
+
 static inline void recurse_targets(Target target, void* user, void(*callback)(void* user, Target target))
 {
-    auto seen = SmallMap<StringView, Target, 128>();
-    auto rec = [&](auto rec_cb, Target target) {
-        auto name = StringView::from_c_string(target.name);
-        if (seen.has(name)) {
-            return;
-        }
-        seen.append(name, target);
-        callback(user, target);
-        auto* deps = target_deps(&target);
-        auto deps_len = len(deps->entries);
-        for (usize i = 0; i < deps_len; i++) {
-            rec_cb(rec_cb, deps->entries[i]);
-        }
-    };
-    rec(rec, target);
+    StringSet seen = (StringSet){ 0 };
+    recurse_targets_r(&seen, target, user, callback);
 }
 
 static inline Targets flatten_targets(Target target)
 {
-    struct Context {
-        usize i = 0;
-        Targets result = {};
-    } context {};
-    recurse_targets(target, &context, [](void* context, Target target) {
-        auto* self = ((Context*)context);
-        self->result.entries[self->i++] = target;
-    });
-
-    return context.result;
+    DynTargets dyn = (DynTargets){ 0 };
+    recurse_targets(target, &dyn, dyn_targets_add_g);
+    return dyn.targets;
 }
 
 static inline Strings default_cxx_args(void)
@@ -884,3 +842,54 @@ static inline c_string target_triple_string(TargetTriple triple)
     return dest;
 }
 
+static inline StringView string_view(c_string string)
+{
+    return (StringView) {
+        .characters = string,
+        .size = strlen(string),
+    };
+}
+
+static inline bool string_view_equal(StringView a, StringView b)
+{
+    if (a.size != b.size) {
+        return 0;
+    }
+    if (a.size == 0) {
+        return 1;
+    }
+    if (a.characters == b.characters) {
+        return 1;
+    }
+    return *a.characters == *b.characters && memcmp(a.characters + 1, b.characters + 1, a.size - 1) == 0;
+}
+
+static inline bool string_set_has(StringSet const* set, StringView item) {
+    usize size = set->size;
+    for (usize i = 0; i < size; i++) {
+        if (string_view_equal(item, set->items[i])) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static inline void string_set_add(StringSet* set, StringView item) {
+    if (string_set_has(set, item))
+        return;
+    usize id = set->size++;
+    assert(id < capacity(set->items));
+    set->items[id] = item;
+}
+
+static inline void dyn_targets_add(DynTargets* dyn, Target target)
+{
+    usize i = dyn->size++;
+    assert(i < capacity(dyn->targets.entries));
+    dyn->targets.entries[i] = target;
+}
+
+static inline void dyn_targets_add_g(void* targets, Target target)
+{
+    dyn_targets_add(((DynTargets*)targets), target);
+}

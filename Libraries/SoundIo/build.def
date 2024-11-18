@@ -18,6 +18,7 @@ static auto const soundio = c_library("SoundIo", {
     },
     .header_namespace = "SoundIo",
     .compile_flags = {
+        "-Wno-unused-parameter",
 #ifdef __APPLE__
         "-DSOUNDIO_HAVE_COREAUDIO=1",
 #endif

@@ -518,7 +518,7 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
             if (dep->kind == TargetKind_Library) {
                 LibraryArgs const* library = dep->library;
                 c_string ns = library->header_namespace;
-                fprintf(output, " -Ins/%s/h", ns);
+                fprintf(output, " -Ins/%s", ns);
             }
         }
         fprintf(output, "\n");
@@ -549,7 +549,7 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
     c_string name = target->name;
 
     char* dir = 0;
-    asprintf(&dir, "%s/ns/%s/h/%s", g_build_dir, name, name);
+    asprintf(&dir, "%s/ns/%s/%s", g_build_dir, name, name);
     mkdir_p(dir, 0777);
     for (usize i = 0; i < headers_len; i++) {
         c_string header = library->exported_headers.entries[i];
@@ -606,7 +606,7 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
             if (dep->kind == TargetKind_Library) {
                 LibraryArgs const* library = dep->library;
                 c_string ns = library->header_namespace;
-                fprintf(output, " -Ins/%s/h", ns);
+                fprintf(output, " -Ins/%s", ns);
             }
         }
         fprintf(output, "\n");

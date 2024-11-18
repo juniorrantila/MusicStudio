@@ -1,5 +1,5 @@
 #include <CLI/ArgumentParser.h>
-#include <MS/Plugin.h>
+#include <MS/VstPlugin.h>
 #include <Ty/Defer.h>
 #include <Ty/ErrorOr.h>
 #include <UI/Application.h>
@@ -9,6 +9,7 @@
 #include <Main/Main.h>
 
 #include <stdio.h>
+#include <libgen.h>
 
 namespace Main {
 
@@ -31,7 +32,7 @@ ErrorOr<int> main(int argc, char const* argv[])
         plugin.destroy();
     };
 
-    auto plugin_name = plugin.name().or_else("<none>"sv);
+    auto plugin_name = plugin.name().or_else(StringView::from_c_string(basename((char*)plugin_path)));
     auto plugin_author = plugin.author().or_else("<none>"sv);
 
     auto plugin_product_version = plugin.product_version();
@@ -59,15 +60,33 @@ ErrorOr<int> main(int argc, char const* argv[])
     printf("  Silent stopped: %s\n", plugin.is_silent_when_stopped() ? "yes" : "no");
     printf("----------------------------------\n\n");
 
+    auto plugin_name_c_string = TRY(StringBuffer::create_fill(plugin_name, "\0"sv));
+
     auto rect = plugin.editor_rectangle().or_else(Vst::Rectangle{ 0, 0, 800, 600 });
-    auto app = TRY(UI::Application::create(plugin_name, rect.x, rect.y, rect.width, rect.height));
-    auto window = TRY(UI::Window::create(plugin_name, rect.x, rect.y, rect.width, rect.height));
-    if (!plugin.open_editor(window->native_handle())) {
+
+    auto* app = ui_application_create(UIApplicationHint_NativeLike);
+    Defer destroy_app = [&] {
+        ui_application_destroy(app);
+    };
+
+    auto* window = ui_window_create(app, {
+        .parent = nullptr,
+        .title = plugin_name_c_string.data(),
+        .x = rect.x,
+        .y = rect.y,
+        .width = rect.width,
+        .height = rect.height,
+    });
+
+    void* window_handle = ui_window_native_handle(window);
+    if (!plugin.open_editor(window_handle)) {
         return Error::from_string_literal("could not open editor");
     }
-    app.add_child_window(window);
 
-    app.run();
+    while (!ui_window_should_close(window)) {
+        ui_application_poll_events(app);
+    }
+
     return 0;
 }
 

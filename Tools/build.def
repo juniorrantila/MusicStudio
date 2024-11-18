@@ -66,21 +66,30 @@ auto const list_devices = target([] {
     });
 });
 
-#if 0
 auto const vst_run_gui = target([] {
     return cpp_binary("vst-run-gui", {
         .srcs = {
             "./vst-run-gui.cpp",
         },
         .compile_flags = {},
-        .linker_flags = {},
+        .linker_flags = {
+#ifdef __APPLE__
+        "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
+        "-framework", "AppKit",
+        "-framework", "OpenGL",
+        "-framework", "CoreFoundation",
+        "-framework", "CoreAudio",
+        "-framework", "AudioUnit",
+#endif
+        },
         .target_triple = system_target_triple(),
         .deps = {
             libraries.main,
+            libraries.ms,
             libraries.soundio,
             libraries.ty,
             libraries.cli,
+            libraries.ui
         }
     });
 });
-#endif

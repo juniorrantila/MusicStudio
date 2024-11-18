@@ -9,10 +9,14 @@ namespace UI {
 ErrorOr<Application> Application::create(StringView title, i32 x, i32 y, i32 width, i32 height)
 {
     [NSApplication sharedApplication];
-    [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+    // [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
     UIApp* app = [[UIApp alloc]
         initWithContentRect:NSMakeRect(x, y, width, height)
-                  styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
+                  styleMask:0
+                            | NSWindowStyleMaskTitled
+                            | NSWindowStyleMaskClosable
+                            | NSWindowStyleMaskMiniaturizable
+                            | NSWindowStyleMaskResizable
                     backing:NSBackingStoreBuffered
                       defer:YES];
     app.title = [NSString stringWithFormat:@"%.*s", title.size(), title.data()];

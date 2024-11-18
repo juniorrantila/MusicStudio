@@ -122,6 +122,12 @@ struct View {
         return *this;
     }
 
+    View zero()
+    {
+        __builtin_memset(m_data, 0, sizeof(T) * m_size);
+        return *this;
+    }
+
 private:
     T* m_data { 0 };
     usize m_size { 0 };

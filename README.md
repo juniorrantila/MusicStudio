@@ -18,8 +18,7 @@
 
 ### Setup:
 
-    ./bootstrap
-    source Toolchain/env
+    eval $(./bootstrap)
 
 ### Build:
 

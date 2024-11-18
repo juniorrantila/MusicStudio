@@ -1,14 +1,14 @@
 #if 0
 set -e
-./Toolchain/bootstrap.sh
+./Toolchain/bootstrap.sh > /dev/stderr
 source Toolchain/env
 
 ccache clang -fcolor-diagnostics -std=c++17 -c -emit-llvm -xc++ $0 -o /tmp/bootstrap
 lli /tmp/bootstrap
 rm -f build/compile_commands.json
 if [ "$1" != "--no-echo" ]; then
-    echo bootstrap: created build/build.ninja
-    echo bootstrap: please run the command below:
+    echo '#' bootstrap: created build/build.ninja
+    echo '#' bootstrap: please run the command below:
     echo
     echo source Toolchain/env
     echo

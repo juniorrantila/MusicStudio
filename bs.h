@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <libgen.h>
 #include <string.h>
-#include <glob.h>
 #include <assert.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -141,7 +140,6 @@ static inline Target c_library(c_string name, LibraryArgs args, c_string file = 
 static inline Target objc_library(c_string name, LibraryArgs args, c_string file = __builtin_FILE());
 static inline Target objcpp_library(c_string name, LibraryArgs args, c_string file = __builtin_FILE());
 static inline Target cpp_bundle_library(c_string name, LibraryArgs args, c_string file = __builtin_FILE());
-static inline Strings glob(c_string name, c_string file = __builtin_FILE());
 
 static inline void emit_ninja(FILE* output, Target target);
 
@@ -158,7 +156,7 @@ static inline TargetTriple wasm_target_triple(void);
 static inline TargetTriple dynamic_target_tripple(void);
 static inline c_string target_triple_string(TargetTriple triple);
 
-static inline void setup(c_string);
+static inline void setup(c_string, c_string file = __builtin_FILE());
 
 static inline void dyn_targets_add(DynTargets* targets, Target target);
 static inline void dyn_targets_add_g(void* targets, Target target);
@@ -430,9 +428,23 @@ static inline TargetRule compdb_rule = ninja_rule({
     .variables = {},
 });
 
+static inline TargetRule reconfigure_rule = ninja_rule({
+    .name = "reconfigure",
+    .command = "cd .. && $configure --no-echo",
+    .description = "Reconfiguring",
+    .variables = {
+        (Variable) {
+            .name = "configure",
+            .default_value = 0,
+        }
+    }
+});
+
+static inline c_string g_root_file;
 static inline c_string g_build_dir;
-static inline void setup(c_string build_dir)
+static inline void setup(c_string build_dir, c_string file)
 {
+    g_root_file = file;
     g_build_dir = build_dir;
     mkdir(build_dir, 0777);
 }
@@ -614,6 +626,15 @@ static inline void emit_ninja(FILE* output, Target target)
 
     Targets targets = flatten_targets(target);
     usize targets_len = len(targets.entries);
+    fprintf(output, "build build.ninja: reconfigure ../%s", g_root_file);
+    for (usize i = 0; i < targets_len; i++) {
+        Target const* target = &targets.entries[i];
+        if (target->file[0] == '\0')
+            continue;
+        fprintf(output, " ../%s ../%s", __FILE__, target->file);
+    }
+    fprintf(output, "\n    configure = %s\n\n", g_root_file);
+
     for (usize i = 0; i < targets_len; i++) {
         Target const* target = &targets.entries[i];
         switch (target->kind) {
@@ -627,28 +648,6 @@ static inline void emit_ninja(FILE* output, Target target)
             break;
         }
     }
-}
-
-static inline Strings glob(c_string name, c_string file)
-{
-    c_string dir = realpath(dirname(strdup(file)), 0);
-    char* glob_str;
-    assert(asprintf(&glob_str, "%s/%s", dir, name) >= 0);
-    Strings result = {};
-    glob_t g = {};
-    int res = ::glob(glob_str, 0, 0, &g);
-    if (res != 0) {
-        fprintf(stderr, "WARNING: could not match glob: '%s'\n", name);
-        return result;
-    }
-    assert(g.gl_pathc < capacity(result.entries));
-    usize dir_len = strlen(dir);
-    for (usize i = 0; i < g.gl_pathc; i++) {
-        c_string p = g.gl_pathv[i];
-        p += dir_len + 1;
-        result.entries[i] = p;
-    }
-    return result;
 }
 
 template <typename F>

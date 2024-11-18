@@ -4,8 +4,14 @@
 #include "../Core/build.def"
 
 static auto const cli = cpp_library("CLI", {
-    .srcs = glob("*.cpp"),
-    .exported_headers = glob("*.h"),
+    .srcs = {
+        "./ArgumentParser.cpp",
+        "./ArgumentParserError.cpp",
+    },
+    .exported_headers = {
+        "./ArgumentParser.h",
+        "./ArgumentParserError.h",
+    },
     .header_namespace = "CLI",
     .compile_flags = {},
     .linker_flags = {},

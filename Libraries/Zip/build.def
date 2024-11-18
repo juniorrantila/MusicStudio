@@ -2,8 +2,12 @@
 #include "../../bs.h"
 
 static auto const zip = c_library("Zip", {
-    .srcs = glob("*.c"),
-    .exported_headers = glob("*.h"),
+    .srcs = {
+        "./Zip.c",
+    },
+    .exported_headers = {
+        "./Zip.h",
+    },
     .header_namespace = "Zip",
     .compile_flags = {},
     .linker_flags = {},

@@ -3,8 +3,19 @@
 #include "../Ty/build.def"
 
 static auto const core = cpp_library("Core", {
-    .srcs = glob("*.cpp"),
-    .exported_headers = glob("*.h"),
+    .srcs = {
+        "./File.cpp",
+        "./Library.cpp",
+        "./MappedFile.cpp",
+    },
+    .exported_headers = {
+        "./Bench.h",
+        "./File.h",
+        "./Forward.h",
+        "./Library.h",
+        "./MappedFile.h",
+        "./Print.h",
+    },
     .header_namespace = "Core",
     .compile_flags = {},
     .linker_flags = {},

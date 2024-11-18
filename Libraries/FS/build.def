@@ -5,8 +5,14 @@
 #include "../Zip/build.def"
 
 static auto const fs = cpp_library("FS", {
-    .srcs = glob("*.cpp"),
-    .exported_headers = glob("*.h"),
+    .srcs = {
+        "./Bundle.cpp"
+    },
+    .exported_headers = {
+        "./Bundle.h",
+        "./Forward.h",
+        "./Resource.h",
+    },
     .header_namespace = "FS",
     .compile_flags = {},
     .linker_flags = {},

@@ -3,8 +3,12 @@
 #include "../Libraries/build.def"
 
 static auto const fonts = cpp_library("Fonts", {
-    .srcs = glob("*.cpp"),
-    .exported_headers = glob("*.h"),
+    .srcs = {
+        "./Fonts.cpp"
+    },
+    .exported_headers = {
+        "./Fonts.h"
+    },
     .header_namespace = "Fonts",
     .compile_flags = {},
     .linker_flags = {},

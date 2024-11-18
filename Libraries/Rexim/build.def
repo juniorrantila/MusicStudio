@@ -4,8 +4,22 @@
 #include "../Core/build.def"
 
 static auto const rexim = cpp_library("Rexim", {
-    .srcs = glob("*.cpp"),
-    .exported_headers = glob("*.h"),
+    .srcs = {
+        "./Arena.cpp",
+        "./File.cpp",
+        "./StringView.cpp",
+        "./Util.cpp",
+        "./minirent.cpp",
+    },
+    .exported_headers = {
+        "./Arena.h",
+        "./File.h",
+        "./LA.h",
+        "./StringBuilder.h",
+        "./StringView.h",
+        "./Util.h",
+        "./minirent.h",
+    },
     .header_namespace = "Rexim",
     .compile_flags = {},
     .linker_flags = {},

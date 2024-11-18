@@ -4,8 +4,12 @@
 #include "../Core/build.def"
 
 static auto const main_ = cpp_library("Main", {
-    .srcs = glob("*.cpp"),
-    .exported_headers = glob("*.h"),
+    .srcs = {
+        "./Main.cpp",
+    },
+    .exported_headers = {
+        "./Main.h",
+    },
     .header_namespace = "Main",
     .compile_flags = {},
     .linker_flags = {

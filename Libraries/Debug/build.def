@@ -2,8 +2,12 @@
 #include "../../bs.h"
 
 static auto const debug = cpp_library("Debug", {
-    .srcs = glob("*.cpp"),
-    .exported_headers = glob("*.h"),
+    .srcs = {
+        "./Instrumentation.cpp"
+    },
+    .exported_headers = {
+        "./Instrumentation.h"
+    },
     .header_namespace = "Debug",
     .compile_flags = {
         "-ibuiltininc",

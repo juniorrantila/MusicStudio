@@ -8,6 +8,7 @@
 #include "./Zip/build.def"
 #include "./FS/build.def"
 #include "./Rexim/build.def"
+#include "./SoundIo/build.def"
 
 typedef struct {
     // Core
@@ -21,11 +22,11 @@ typedef struct {
 
     // Userspace
     Target rexim;
+    Target soundio;
 
     // Target wasm;
     // Target ui;
     // Target uiview;
-    // Target soundio;
 } LibrariesTargets;
 
 
@@ -39,10 +40,10 @@ static auto const libraries = target([] {
         .zip = zip,
         .fs = fs,
         .rexim = rexim,
+        .soundio = soundio,
     };
 
     // Target wasm;
     // Target ui;
     // Target uiview;
-    // Target soundio;
 });

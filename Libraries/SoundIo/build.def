@@ -1,0 +1,29 @@
+#pragma once
+#include "../../bs.h"
+
+static auto const soundio = c_library("SoundIo", {
+    .srcs = {
+        "channel_layout.c",
+        "dummy.c",
+        "os.c",
+        "ring_buffer.c",
+        "SoundIo.c",
+        "util.c",
+#ifdef __APPLE__
+        "coreaudio.c",
+#endif
+    },
+    .exported_headers = {
+        "./SoundIo.h"
+    },
+    .header_namespace = "SoundIo",
+    .compile_flags = {
+#ifdef __APPLE__
+        "-DSOUNDIO_HAVE_COREAUDIO=1",
+#endif
+    },
+    .linker_flags = {},
+    .target_triple = system_target_triple(),
+    .link_style = "static",
+    .deps = {},
+});

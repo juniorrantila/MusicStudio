@@ -113,6 +113,15 @@ struct View {
         };
     }
 
+    View<T>& assign_from(View<T> other)
+    {
+        VERIFY(other.size() >= size());
+        for (usize i = 0; i < size(); i++) {
+            m_data[i] = other[i];
+        }
+        return *this;
+    }
+
 private:
     T* m_data { 0 };
     usize m_size { 0 };

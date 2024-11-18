@@ -1,2 +1,3 @@
 bootstrap linguist-language=C++
 */**/build.def linguist-language=C++
+Libraries/SoundIo/* linguist-vendored=true

@@ -753,14 +753,14 @@ static inline Strings default_c_args(void)
 static inline Strings default_objc_args(void)
 {
     Strings args = default_c_args();
-    args.entries[len(args.entries)] = "-xobjc";
+    args.entries[len(args.entries)] = "-xobjective-c";
     return args;
 }
 
 static inline Strings default_objcpp_args(void)
 {
     Strings args = default_cpp_args();
-    args.entries[len(args.entries)] = "-xobjc++";
+    args.entries[len(args.entries)] = "-xobjective-c++";
     return args;
 }
 

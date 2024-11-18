@@ -1,0 +1,6 @@
+LIBRARY_ERROR(could_not_open, "could not open file")
+LIBRARY_ERROR(could_not_stat, "could not stat")
+LIBRARY_ERROR(could_not_map, "could not map")
+LIBRARY_ERROR(could_not_link, "could not link")
+LIBRARY_ERROR(could_not_create_object, "could not create object")
+LIBRARY_ERROR(could_not_find_symbol, "could not find symbol")

@@ -1,0 +1,23 @@
+#pragma once
+#include "../../bs.h"
+#include "../Ty/build.def"
+
+static auto const library = c_library("Library", {
+    .srcs = {
+        "./Library.c",
+    },
+    .exported_headers = {
+        "./Error.def",
+        "./Library.h",
+    },
+    .header_namespace = "Library",
+    .compile_flags = {
+        "-Wno-deprecated-declarations",
+    },
+    .linker_flags = {},
+    .target_triple = system_target_triple(),
+    .link_style = "static",
+    .deps = {
+        ty,
+    },
+});

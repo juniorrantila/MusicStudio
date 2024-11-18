@@ -1,0 +1,21 @@
+#pragma once
+#include "../../bs.h"
+#include "../Ty/build.def"
+
+static auto const native_plugin = cpp_library("NativePlugin", {
+    .srcs = {
+        "./Dummy.cpp",
+    },
+    .exported_headers = {
+        "./Plugin.h",
+        "./Host.h",
+    },
+    .header_namespace = "NativePlugin",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = system_target_triple(),
+    .link_style = "static",
+    .deps = {
+        ty,
+    },
+});

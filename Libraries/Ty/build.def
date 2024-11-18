@@ -21,7 +21,6 @@ static auto const ty = cpp_library("Ty", {
         "./BitCast.h",
         "./ByteBuffer.h",
         "./Bytes.h",
-        "./CObject.h",
         "./CircularQueue.h",
         "./Concepts.h",
         "./Defer.h",

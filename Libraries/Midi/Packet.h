@@ -1,6 +1,6 @@
 #pragma once
 #include <Ty/Base.h>
-#include <Midi/Note.h>
+#include "./Note.h"
 
 namespace Midi {
 

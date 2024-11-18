@@ -1,0 +1,21 @@
+#pragma once
+#include "../../bs.h"
+#include "../Ty/build.def"
+
+static auto const midi = cpp_library("Midi", {
+    .srcs = {
+        "./Dummy.cpp"
+    },
+    .exported_headers = {
+        "./Note.h",
+        "./Packet.h",
+    },
+    .header_namespace = "Midi",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = system_target_triple(),
+    .link_style = "static",
+    .deps = {
+        ty,
+    },
+});

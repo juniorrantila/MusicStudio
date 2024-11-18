@@ -8,7 +8,7 @@
 #pragma push_macro ("stdout")
 #define stdout stdout
 #endif
-#include <Core/File.h>
+#include "./File.h"
 
 namespace Core {
 

@@ -317,7 +317,7 @@ static TargetRule ninja_rule(TargetRule rule)
 
 static inline TargetRule cxx_rule = ninja_rule({
     .name = "cxx",
-    .command = "ccache clang++ -target $target $args -MD -MQ $out -MF $depfile -o $out -c $in",
+    .command = "ccache clang++ -target $target $args -MD -MQ $out -MF $out.d -o $out -c $in",
     .description = "Compiling $language object $out",
     .variables = {
         (Variable){
@@ -342,7 +342,7 @@ static inline TargetRule cxx_rule = ninja_rule({
         },
         (Variable){
             .name = "depfile",
-            .default_value = nullptr,
+            .default_value = "$out.d",
         },
         (Variable){
             .name = "language",
@@ -497,7 +497,6 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
         fprintf(output, "build %s/%s/%s.o: cxx ../%s/%s\n", triple, base_dir, src, base_dir, src);
         fprintf(output, "    language = %s\n", language_from_filename(src));
         fprintf(output, "    target = %s\n", triple);
-        fprintf(output, "    depfile = %s.%s.d\n", src, triple);
         fprintf(output, "    args =");
         for (usize arg = 0; arg < args_len; arg++) {
             fprintf(output, " %s", args->entries[arg]);
@@ -515,6 +514,19 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
     }
 }
 
+static inline void mkdir_p(char* path, mode_t mode)
+{
+    usize len = strlen(path);
+    for (usize i = 0; i < len; i++) {
+        if (path[i] == '/') {
+            path[i] = '\0';
+            mkdir(path, mode);
+            path[i] = '/';
+        }
+    }
+    mkdir(path, mode);
+}
+
 static inline void emit_ninja_build_library(FILE* output, Target const* target)
 {
     LibraryArgs* library = target->library;
@@ -525,15 +537,8 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
     c_string name = target->name;
 
     char* dir = 0;
-    mkdir(g_build_dir, 0777);
-    asprintf(&dir, "%s/ns", g_build_dir);
-    mkdir(dir, 0777);
-    asprintf(&dir, "%s/ns/%s", g_build_dir, name);
-    mkdir(dir, 0777);
-    asprintf(&dir, "%s/ns/%s/h", g_build_dir, name);
-    mkdir(dir, 0777);
     asprintf(&dir, "%s/ns/%s/h/%s", g_build_dir, name, name);
-    mkdir(dir, 0777);
+    mkdir_p(dir, 0777);
     for (usize i = 0; i < headers_len; i++) {
         c_string header = library->exported_headers.entries[i];
         char* out = 0;
@@ -580,7 +585,6 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
         fprintf(output, "build %s/%s/%s.o: cxx ../%s/%s\n", triple, base_dir, src, base_dir, src);
         fprintf(output, "    language = %s\n", language_from_filename(src));
         fprintf(output, "    target = %s\n", triple);
-        fprintf(output, "    depfile = %s.%s.d\n", src, triple);
         fprintf(output, "    args =");
         for (usize arg = 0; arg < args_len; arg++) {
             fprintf(output, " %s", args->entries[arg]);

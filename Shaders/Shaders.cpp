@@ -13,45 +13,43 @@ static u8 const simple_vert_bytes[] = {
 #embed "./simple.vert"
 };
 static constexpr auto simple_vert = BUNDLE(
-    "Libraries/UI/Shaders/simple.vert"sv,
+    "Shaders/simple.vert"sv,
     simple_vert_bytes
 );
 
 static u8 const simple_color_frag_bytes[] = {
-#embed "./simple_color.frag"
+#embed "./color.frag"
 };
 static constexpr auto simple_color_frag = BUNDLE(
-    "Libraries/UI/Shaders/simple_color.frag"sv,
+    "Shaders/color.frag"sv,
     simple_color_frag_bytes
 );
 
 static u8 const simple_image_frag_bytes[] = {
-#embed "./simple_image.frag"
+#embed "./image.frag"
 };
 static constexpr auto simple_image_frag = BUNDLE(
-    "Libraries/UI/Shaders/simple_image.frag"sv,
+    "Shaders/image.frag"sv,
     simple_image_frag_bytes
 );
 
 static u8 const simple_text_frag_bytes[] = {
-#embed "./simple_text.frag"
+#embed "./text.frag"
 };
 static constexpr auto simple_text_frag = BUNDLE(
-    "Libraries/UI/Shaders/simple_text.frag"sv,
+    "Shaders/text.frag"sv,
     simple_text_frag_bytes
 );
 
 static u8 const simple_epic_frag_bytes[] = {
-#embed "./simple_epic.frag"
+#embed "./epic.frag"
 };
 static constexpr auto simple_epic_frag = BUNDLE(
-    "Libraries/UI/Shaders/simple_epic.frag"sv,
+    "Shaders/epic.frag"sv,
     simple_epic_frag_bytes
 );
 
 #undef BUNDLE
-
-namespace UI {
 
 void Shaders::add_to_bundle(FS::Bundle& bundle)
 {
@@ -60,6 +58,4 @@ void Shaders::add_to_bundle(FS::Bundle& bundle)
     bundle.unsafe_add_resource(simple_image_frag);
     bundle.unsafe_add_resource(simple_text_frag);
     bundle.unsafe_add_resource(simple_epic_frag);
-}
-
 }

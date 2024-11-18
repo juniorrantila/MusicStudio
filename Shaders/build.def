@@ -1,0 +1,21 @@
+#pragma once
+#include "../bs.h"
+#include "../Libraries/build.def"
+
+static auto const shaders = cpp_library("Shaders", {
+    .srcs = {
+        "./Shaders.cpp"
+    },
+    .exported_headers = {
+        "./Shaders.h"
+    },
+    .header_namespace = "Shaders",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = system_target_triple(),
+    .link_style = "static",
+    .deps = {
+        libraries.ty,
+        libraries.fs,
+    },
+});

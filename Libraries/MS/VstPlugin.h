@@ -1,5 +1,5 @@
 #pragma once
-#include "Host.h"
+#include "./Host.h"
 
 #include <Ty/ErrorOr.h>
 #include <Vst/Rectangle.h>

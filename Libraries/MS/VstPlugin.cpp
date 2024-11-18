@@ -1,4 +1,4 @@
-#include "Plugin.h"
+#include "VstPlugin.h"
 
 #include <Ty/ScopeGuard.h>
 

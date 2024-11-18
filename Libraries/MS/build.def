@@ -1,0 +1,39 @@
+#pragma once
+#include "../../bs.h"
+#include "../Ty/build.def"
+#include "../Core/build.def"
+#include "../Midi/build.def"
+#include "../Vst/build.def"
+#include "../Library/build.def"
+#include "../NativePlugin/build.def"
+
+static auto const ms = cpp_library("MS", {
+    .srcs = {
+        "./Host.cpp",
+        "./Plugin.cpp",
+        "./VstPlugin.cpp",
+        "./Project.cpp",
+        "./PluginManager.cpp",
+    },
+    .exported_headers = {
+        "./Forward.h",
+        "./Host.h",
+        "./Plugin.h",
+        "./VstPlugin.h",
+        "./Project.h",
+        "./PluginManager.h",
+    },
+    .header_namespace = "MS",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = system_target_triple(),
+    .link_style = "static",
+    .deps = {
+        ty,
+        core,
+        midi,
+        library,
+        vst_host,
+        native_plugin,
+    },
+});

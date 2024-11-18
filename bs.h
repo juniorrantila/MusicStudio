@@ -132,7 +132,7 @@ template <typename T, usize Count, usize Count2>
 static inline void cat(T (&items)[Count], T const (& other)[Count2]);
 
 template <typename F>
-static inline auto target(F callback);
+static inline auto target(F callback, c_string file = __builtin_FILE());
 
 static inline Target cpp_binary(c_string name, BinaryArgs args, c_string file = __builtin_FILE());
 static inline Target cpp_library(c_string name, LibraryArgs args, c_string file = __builtin_FILE());
@@ -614,6 +614,8 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
     }
 }
 
+static inline c_string extra_target_files[MAX_ENTRIES];
+
 static inline void emit_ninja(FILE* output, Target target)
 {
     fprintf(output, "ninja_required_version = 1.8.2\n\n");
@@ -627,11 +629,16 @@ static inline void emit_ninja(FILE* output, Target target)
     Targets targets = flatten_targets(target);
     usize targets_len = len(targets.entries);
     fprintf(output, "build build.ninja: reconfigure ../%s", g_root_file);
+    fprintf(output, " ../%s", __FILE__);
+    usize extra_target_files_len = len(extra_target_files);
+    for (usize i = 0; i < extra_target_files_len; i++) {
+        fprintf(output, " ../%s", extra_target_files[i]);
+    }
     for (usize i = 0; i < targets_len; i++) {
         Target const* target = &targets.entries[i];
         if (target->file[0] == '\0')
             continue;
-        fprintf(output, " ../%s ../%s", __FILE__, target->file);
+        fprintf(output, " ../%s", target->file);
     }
     fprintf(output, "\n    configure = %s\n\n", g_root_file);
 
@@ -651,8 +658,9 @@ static inline void emit_ninja(FILE* output, Target target)
 }
 
 template <typename F>
-static inline auto target(F callback)
+static inline auto target(F callback, c_string file)
 {
+    extra_target_files[len(extra_target_files)] = file;
     return callback();
 }
 

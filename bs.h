@@ -704,6 +704,8 @@ static inline Targets flatten_targets(Target target)
 static inline Strings default_cxx_args(void)
 {
     return (Strings){
+        "-Wall",
+        "-Wextra",
         "-Werror=return-type",
         "-Werror=switch",
         "-Werror",

@@ -1,70 +1,43 @@
 #pragma once
 
-namespace Ty {
+typedef signed char i8;
+typedef signed short i16;
+typedef signed int i32;
+typedef signed long i64;
 
-using i8 = signed char;
-using i16 = signed short;
-using i32 = signed int;
-using i64 = signed long;
+typedef unsigned char u8;
+typedef unsigned short u16;
+typedef unsigned int u32;
+typedef unsigned long u64;
 
-using u8 = unsigned char;
-using u16 = unsigned short;
-using u32 = unsigned int;
-using u64 = unsigned long;
+typedef signed __int128 i128;
+typedef unsigned __int128 u128;
 
-using u128 = unsigned __int128;
-using i128 = signed __int128;
+_Static_assert(sizeof(i8) == 1, "");
+_Static_assert(sizeof(i16) == 2, "");
+_Static_assert(sizeof(i32) == 4, "");
+_Static_assert(sizeof(i64) == 8, "");
 
-static_assert(sizeof(i8) == 1);
-static_assert(sizeof(i16) == 2);
-static_assert(sizeof(i32) == 4);
-static_assert(sizeof(i64) == 8);
+_Static_assert(sizeof(u8) == 1, "");
+_Static_assert(sizeof(u16) == 2, "");
+_Static_assert(sizeof(u32) == 4, "");
+_Static_assert(sizeof(u64) == 8, "");
 
-static_assert(sizeof(u8) == 1);
-static_assert(sizeof(u16) == 2);
-static_assert(sizeof(u32) == 4);
-static_assert(sizeof(u64) == 8);
+typedef __SIZE_TYPE__ usize;
+#define unsigned signed
+typedef __SIZE_TYPE__ isize;
+#undef unsigned
 
-using usize = u64;
-using isize = i64;
+typedef usize uptr;
+typedef isize iptr;
 
-template <u8 bytes>
-struct TypeFromSize;
+typedef float f32;
+typedef double f64;
 
-template <>
-struct TypeFromSize<1> {
-    using Signed = i8;
-    using Unsigned = u8;
-};
+typedef char const* c_string;
 
-template <>
-struct TypeFromSize<2> {
-    using Signed = i16;
-    using Unsigned = u16;
-};
-
-template <>
-struct TypeFromSize<4> {
-    using Signed = i32;
-    using Unsigned = u32;
-};
-
-template <>
-struct TypeFromSize<8> {
-    using Signed = i64;
-    using Unsigned = u64;
-};
-
-using iptr = typename TypeFromSize<sizeof(void*)>::Signed;
-using uptr = typename TypeFromSize<sizeof(void*)>::Unsigned;
-
-using f32 = float;
-using f64 = double;
-
-using c_string = char const*;
-
+#ifdef __cplusplus
 using nullptr_t = decltype(nullptr);
-
-}
-
-using namespace Ty;
+#else
+#include <stdbool.h>
+#endif

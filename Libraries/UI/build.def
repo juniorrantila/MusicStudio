@@ -11,6 +11,7 @@ static auto const ui = objcpp_library("UI", {
         "./Application.h",
         "./Forward.h",
         "./Window.h",
+        "./KeyCode.h",
     },
     .header_namespace = "UI",
     .compile_flags = {},

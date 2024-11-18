@@ -1,4 +1,5 @@
 #include "./minirent.h"
+#ifdef _WIN32
 
 struct DIR {
     HANDLE hFind;
@@ -79,3 +80,4 @@ int closedir(DIR *dirp)
 
     return 0;
 }
+#endif

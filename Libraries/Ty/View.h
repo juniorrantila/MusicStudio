@@ -1,8 +1,9 @@
 #pragma once
-#include "Base.h"
-#include "Traits.h"
-#include "Verify.h"
-#include "Formatter.h"
+#include "./Base.h"
+#include "./Traits.h"
+#include "./Verify.h"
+#include "./Formatter.h"
+#include "./ReverseIterator.h"
 
 namespace Ty {
 
@@ -54,6 +55,13 @@ struct View {
         VERIFY(is_empty() || m_data);
         return &m_data[m_size];
     }
+
+    constexpr ReverseIterator<T const> in_reverse() const
+    {
+        return { begin(), end() };
+    }
+
+    constexpr ReverseIterator<T> in_reverse() { return { begin(), end() }; }
 
     constexpr usize size() const { return m_size; }
     constexpr T* data()

@@ -20,6 +20,7 @@ exit 0
 #include "./Libraries/build.def"
 #include "./Fonts/build.def"
 #include "./Shaders/build.def"
+#include "./Tools/build.def"
 #include "./MusicStudio/build.def"
 
 int main(void)

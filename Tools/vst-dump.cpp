@@ -1,5 +1,5 @@
 #include <CLI/ArgumentParser.h>
-#include <MS/Plugin.h>
+#include <MS/VstPlugin.h>
 #include <Ty/Defer.h>
 #include <Ty/Defer.h>
 #include <Ty/ErrorOr.h>

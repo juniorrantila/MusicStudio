@@ -1,5 +1,5 @@
 #pragma once
-#include <Vst/AEffect.h>
+#include "./AEffect.h"
 
 namespace Vst {
 

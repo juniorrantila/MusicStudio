@@ -18,5 +18,7 @@ void render_set_camera_velocity(Render*, Vec2f);
 int render_reload_shaders(Render*);
 void render_flush(Render*);
 
+void render_clear(Render*, Vec4f color);
+
 void render_solid_rect(Render*, Vec2f point, Vec2f size, Vec4f color);
 void render_outline_rect(Render*, Vec2f point, Vec2f size, f32 outline_size, Vec4f fill_color, Vec4f outline_color);

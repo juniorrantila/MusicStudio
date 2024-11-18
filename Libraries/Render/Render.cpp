@@ -77,7 +77,7 @@ Render* render_create(FS::Bundle const* bundle, Ty::Allocator* gpa)
     render->bundle = bundle;
     render->current_shader = (Shader)-1;
     {
-        auto result = gpa->alloc<Vertex>(3 * 640 * 1000);
+        auto result = gpa->alloc<Vertex>(4096);
         if (result.is_error()) {
             gpa->free(render);
             return nullptr;
@@ -126,6 +126,13 @@ int render_reload_shaders(Render*)
 
 void render_flush(Render*)
 {
+}
+
+void render_clear(Render* render, Vec4f color)
+{
+    glViewport(0, 0, render->resolution.x, render->resolution.y);
+    glClearColor(color.r, color.g, color.b, color.a);
+    glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void render_solid_rect(Render*, Vec2f point, Vec2f size, Vec4f color)

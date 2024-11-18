@@ -410,7 +410,7 @@ int soundio_channel_layout_builtin_count(void) {
 
 const struct SoundIoChannelLayout *soundio_channel_layout_get_builtin(int index) {
     assert(index >= 0);
-    assert(index <= ARRAY_LENGTH(builtin_channel_layouts));
+    assert(index <= (int)ARRAY_LENGTH(builtin_channel_layouts));
     return &builtin_channel_layouts[index];
 }
 
@@ -425,7 +425,7 @@ int soundio_channel_layout_find_channel(
 }
 
 bool soundio_channel_layout_detect_builtin(struct SoundIoChannelLayout *layout) {
-    for (int i = 0; i < ARRAY_LENGTH(builtin_channel_layouts); i += 1) {
+    for (size_t i = 0; i < ARRAY_LENGTH(builtin_channel_layouts); i += 1) {
         const struct SoundIoChannelLayout *builtin_layout = &builtin_channel_layouts[i];
         if (soundio_channel_layout_equal(builtin_layout, layout)) {
             layout->name = builtin_layout->name;
@@ -451,7 +451,7 @@ const struct SoundIoChannelLayout *soundio_channel_layout_get_default(int channe
 }
 
 enum SoundIoChannelId soundio_parse_channel_id(const char *str, int str_len) {
-    for (int id = 0; id < ARRAY_LENGTH(channel_names); id += 1) {
+    for (size_t id = 0; id < ARRAY_LENGTH(channel_names); id += 1) {
         for (int i = 0; i < CHANNEL_NAME_ALIAS_COUNT; i += 1) {
             const char *alias = channel_names[id][i];
             if (!alias)

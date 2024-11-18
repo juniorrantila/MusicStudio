@@ -132,7 +132,7 @@ static void unsubscribe_device_listeners(struct SoundIoPrivate *si) {
 
     for (int device_index = 0; device_index < sica->registered_listeners.length; device_index += 1) {
         AudioDeviceID device_id = SoundIoListAudioDeviceID_val_at(&sica->registered_listeners, device_index);
-        for (int i = 0; i < ARRAY_LENGTH(device_listen_props); i += 1) {
+        for (size_t i = 0; i < ARRAY_LENGTH(device_listen_props); i += 1) {
             AudioObjectRemovePropertyListener(device_id, &device_listen_props[i],
                 on_devices_changed, si);
         }
@@ -491,7 +491,7 @@ static int refresh_devices(struct SoundIoPrivate *si) {
     for (int device_i = 0; device_i < device_count; device_i += 1) {
         AudioObjectID device_id = rd.devices[device_i];
 
-        for (int i = 0; i < ARRAY_LENGTH(device_listen_props); i += 1) {
+        for (size_t i = 0; i < ARRAY_LENGTH(device_listen_props); i += 1) {
             if ((err = SoundIoListAudioDeviceID_add_one(&sica->registered_listeners))) {
                 deinit_refresh_devices(&rd);
                 return SoundIoErrorOpeningDevice;
@@ -551,7 +551,7 @@ static int refresh_devices(struct SoundIoPrivate *si) {
         }
 
 
-        for (int aim_i = 0; aim_i < ARRAY_LENGTH(aims); aim_i += 1) {
+        for (size_t aim_i = 0; aim_i < ARRAY_LENGTH(aims); aim_i += 1) {
             enum SoundIoDeviceAim aim = aims[aim_i];
 
             io_size = 0;
@@ -578,7 +578,7 @@ static int refresh_devices(struct SoundIoPrivate *si) {
             }
 
             int channel_count = 0;
-            for (int i = 0; i < rd.buffer_list->mNumberBuffers; i += 1) {
+            for (size_t i = 0; i < rd.buffer_list->mNumberBuffers; i += 1) {
                 channel_count += rd.buffer_list->mBuffers[i].mNumberChannels;
             }
 
@@ -1086,14 +1086,14 @@ static int outstream_begin_write_ca(struct SoundIoPrivate *si, struct SoundIoOut
     struct SoundIoOutStream *outstream = &os->pub;
     struct SoundIoOutStreamCoreAudio *osca = &os->backend_data.coreaudio;
 
-    if (osca->buffer_index >= osca->io_data->mNumberBuffers)
+    if ((uint32_t)osca->buffer_index >= osca->io_data->mNumberBuffers)
         return SoundIoErrorInvalid;
 
     if (*frame_count != osca->frames_left)
         return SoundIoErrorInvalid;
 
     AudioBuffer *audio_buffer = &osca->io_data->mBuffers[osca->buffer_index];
-    assert(audio_buffer->mNumberChannels == outstream->layout.channel_count);
+    assert(audio_buffer->mNumberChannels == (size_t)outstream->layout.channel_count);
     osca->write_frame_count = audio_buffer->mDataByteSize / outstream->bytes_per_frame;
     *frame_count = osca->write_frame_count;
     assert((audio_buffer->mDataByteSize % outstream->bytes_per_frame) == 0);
@@ -1178,7 +1178,7 @@ static OSStatus read_callback_ca(void *userdata, AudioUnitRenderActionFlags *io_
     struct SoundIoInStream *instream = &is->pub;
     struct SoundIoInStreamCoreAudio *isca = &is->backend_data.coreaudio;
 
-    for (int i = 0; i < isca->buffer_list->mNumberBuffers; i += 1) {
+    for (size_t i = 0; i < isca->buffer_list->mNumberBuffers; i += 1) {
         isca->buffer_list->mBuffers[i].mData = NULL;
     }
 
@@ -1192,14 +1192,14 @@ static OSStatus read_callback_ca(void *userdata, AudioUnitRenderActionFlags *io_
 
     if (isca->buffer_list->mNumberBuffers == 1) {
         AudioBuffer *audio_buffer = &isca->buffer_list->mBuffers[0];
-        assert(audio_buffer->mNumberChannels == instream->layout.channel_count);
+        assert(audio_buffer->mNumberChannels == (size_t)instream->layout.channel_count);
         assert(audio_buffer->mDataByteSize == in_number_frames * instream->bytes_per_frame);
         for (int ch = 0; ch < instream->layout.channel_count; ch += 1) {
             isca->areas[ch].ptr = ((char*)audio_buffer->mData) + (instream->bytes_per_sample * ch);
             isca->areas[ch].step = instream->bytes_per_frame;
         }
     } else {
-        assert(isca->buffer_list->mNumberBuffers == instream->layout.channel_count);
+        assert(isca->buffer_list->mNumberBuffers == (size_t)instream->layout.channel_count);
         for (int ch = 0; ch < instream->layout.channel_count; ch += 1) {
             AudioBuffer *audio_buffer = &isca->buffer_list->mBuffers[ch];
             assert(audio_buffer->mDataByteSize == in_number_frames * instream->bytes_per_sample);

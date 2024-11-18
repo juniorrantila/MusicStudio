@@ -144,6 +144,11 @@ struct LinearMap {
     View<Value const> values() const { return m_values; }
     usize size() const { return m_keys.size(); }
 
+    constexpr bool has(Key const& key) const
+    {
+        return find(key).has_value();
+    }
+
 private:
     constexpr LinearMap(Vector<Key>&& keys, Vector<Value>&& values)
         : m_keys(move(keys))

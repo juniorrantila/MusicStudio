@@ -6,3 +6,4 @@ perf.data.old
 subprojects/*
 !subprojects/*.wrap
 .cache
+Playground

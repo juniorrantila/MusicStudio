@@ -1,0 +1,2 @@
+bootstrap linguist-language=C++
+*/**/build.def linguist-language=C++

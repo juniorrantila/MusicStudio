@@ -16,7 +16,6 @@ static auto const ty = cpp_library("Ty", {
     .exported_headers = {
         "./Allocator.h",
         "./ArenaAllocator.h",
-        "./Array.h",
         "./Assert.h",
         "./Base.h",
         "./BitCast.h",

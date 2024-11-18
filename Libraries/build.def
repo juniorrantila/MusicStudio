@@ -9,6 +9,7 @@
 #include "./FS/build.def"
 #include "./Rexim/build.def"
 #include "./SoundIo/build.def"
+#include "./WASM/build.def"
 
 typedef struct {
     // Core
@@ -23,8 +24,8 @@ typedef struct {
     // Userspace
     Target rexim;
     Target soundio;
+    Target wasm;
 
-    // Target wasm;
     // Target ui;
     // Target uiview;
 } LibrariesTargets;
@@ -41,6 +42,7 @@ static auto const libraries = target([] {
         .fs = fs,
         .rexim = rexim,
         .soundio = soundio,
+        .wasm = wasm,
     };
 
     // Target wasm;

@@ -1,0 +1,26 @@
+#pragma once
+#include "../../bs.h"
+#include "../Ty/build.def"
+
+static auto const wasm = c_library("WASM", {
+    .srcs = {
+        "./Allocator.c",
+        "./Function.c",
+        "./VirtualMachine.c",
+    },
+    .exported_headers = {
+        "Allocator.h",
+        "Forward.h",
+        "Function.h",
+        "VirtualMachine.h",
+        "util.h",
+    },
+    .header_namespace = "WASM",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = system_target_triple(),
+    .link_style = "static",
+    .deps = {
+        ty,
+    },
+});

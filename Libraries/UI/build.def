@@ -1,0 +1,23 @@
+#pragma once
+#include "../../bs.h"
+#include "../Ty/build.def"
+
+static auto const ui = objcpp_library("UI", {
+    .srcs = {
+        "./AppKit/Application.mm",
+        "./AppKit/Window.mm",
+    },
+    .exported_headers = {
+        "./Application.h",
+        "./Forward.h",
+        "./Window.h",
+    },
+    .header_namespace = "UI",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = system_target_triple(),
+    .link_style = "static",
+    .deps = {
+        ty
+    },
+});

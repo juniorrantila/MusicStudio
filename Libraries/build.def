@@ -15,6 +15,7 @@
 #include "./Vst/build.def"
 #include "./Library/build.def"
 #include "./NativePlugin/build.def"
+#include "./UI/build.def"
 
 typedef struct {
     // Core
@@ -29,6 +30,7 @@ typedef struct {
     // Userspace
     Target rexim;
     Target soundio;
+    Target window_system;
     Target wasm;
     Target ms;
 
@@ -39,7 +41,7 @@ typedef struct {
     Target library;
     Target native_plugin;
 
-    // Target ui;
+    Target ui;
     // Target uiview;
 } LibrariesTargets;
 
@@ -62,9 +64,9 @@ static auto const libraries = target([] {
         .midi = midi,
         .library = library,
         .native_plugin = native_plugin,
+        .ui = ui,
     };
 
     // Target wasm;
-    // Target ui;
     // Target uiview;
 });

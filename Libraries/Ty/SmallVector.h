@@ -1,10 +1,10 @@
 #pragma once
-#include "Base.h"
-#include "ErrorOr.h"
-#include "Id.h"
-#include "Move.h"
-#include "ReverseIterator.h"
-#include "View.h"
+#include "./Base.h"
+#include "./ErrorOr.h"
+#include "./Id.h"
+#include "./Move.h"
+#include "./ReverseIterator.h"
+#include "./View.h"
 
 namespace Ty {
 
@@ -61,6 +61,18 @@ struct SmallVector {
                 "capacity");
         new (current_slot()) T(value);
         return Id<T>(m_size++);
+    }
+
+    constexpr Id<T> must_append(T&& value) requires(
+        !is_trivially_copyable<T>)
+    {
+        return MUST(append(move(value)));
+    }
+
+    constexpr Id<T> must_append(T value) requires(
+        is_trivially_copyable<T>)
+    {
+        return MUST(append(value));
     }
 
     constexpr View<T> view() { return { data(), size()}; }

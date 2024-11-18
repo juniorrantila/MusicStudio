@@ -6,6 +6,8 @@
 #include <assert.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 #define MAX_ENTRIES 128
 
@@ -156,7 +158,7 @@ static inline TargetTriple wasm_target_triple(void);
 static inline TargetTriple dynamic_target_tripple(void);
 static inline c_string target_triple_string(TargetTriple triple);
 
-static inline void setup(void);
+static inline void setup(c_string);
 
 static inline void dyn_targets_add(DynTargets* targets, Target target);
 static inline void dyn_targets_add_g(void* targets, Target target);
@@ -421,22 +423,6 @@ static inline TargetRule binary_link_rule = ninja_rule({
     },
 });
 
-static inline TargetRule header_link_rule = ninja_rule({
-    .name = "namespace-header",
-    .command = "ln -sf $in $out",
-    .description = "Namespacing header $out",
-    .variables = {
-        (Variable){
-            .name = "out",
-            .default_value = nullptr,
-        },
-        (Variable){
-            .name = "in",
-            .default_value = nullptr,
-        },
-    },
-});
-
 static inline TargetRule compdb_rule = ninja_rule({
     .name = "compdb",
     .command = "ninja -t compdb > compile_commands.json",
@@ -444,8 +430,10 @@ static inline TargetRule compdb_rule = ninja_rule({
     .variables = {},
 });
 
+static inline c_string g_build_dir;
 static inline void setup(c_string build_dir)
 {
+    g_build_dir = build_dir;
     mkdir(build_dir, 0777);
 }
 
@@ -506,18 +494,7 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
     usize args_len = len(args->entries);
     for (usize i = 0; i < srcs_len; i++) {
         c_string src = binary->srcs.entries[i];
-        fprintf(output, "build %s/%s/%s.o: cxx ../%s/%s", triple, base_dir, src, base_dir, src);
-        if (deps_len > 1) {
-            fprintf(output, " |");
-        }
-        for (usize dep_index = 1; dep_index < deps_len; dep_index++) {
-            Target const* dep = &deps.entries[dep_index];
-            if (dep->kind == TargetKind_Library) {
-                fprintf(output, " ns/%s/_", dep->library->header_namespace);
-            }
-        }
-        fprintf(output, "\n");
-
+        fprintf(output, "build %s/%s/%s.o: cxx ../%s/%s\n", triple, base_dir, src, base_dir, src);
         fprintf(output, "    language = %s\n", language_from_filename(src));
         fprintf(output, "    target = %s\n", triple);
         fprintf(output, "    depfile = %s.%s.d\n", src, triple);
@@ -547,20 +524,25 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
     usize headers_len = len(library->exported_headers.entries);
     c_string name = target->name;
 
+    char* dir = 0;
+    mkdir(g_build_dir, 0777);
+    asprintf(&dir, "%s/ns", g_build_dir);
+    mkdir(dir, 0777);
+    asprintf(&dir, "%s/ns/%s", g_build_dir, name);
+    mkdir(dir, 0777);
+    asprintf(&dir, "%s/ns/%s/h", g_build_dir, name);
+    mkdir(dir, 0777);
+    asprintf(&dir, "%s/ns/%s/h/%s", g_build_dir, name, name);
+    mkdir(dir, 0777);
     for (usize i = 0; i < headers_len; i++) {
         c_string header = library->exported_headers.entries[i];
         char* out = 0;
         asprintf(&out, "%s/%s", base_dir, header);
         c_string header_path = realpath(out, 0);
-        fprintf(output, "build ns/%s/h/%s/%s: namespace-header %s\n", name, name, header, header_path);
+        char* output_path = 0;
+        asprintf(&output_path, "%s/%s", dir, header);
+        symlink(header_path, output_path);
     }
-    fprintf(output, "\n");
-    fprintf(output, "build ns/%s/_: phony", library->header_namespace);
-    for (usize i = 0; i < headers_len; i++) {
-        c_string header = library->exported_headers.entries[i];
-        fprintf(output, " ns/%s/h/%s/%s", name, name, header);
-    }
-    fprintf(output, "\n\n");
     
     fprintf(output, "build %s/%s.o: merge-object ", triple, name);
     for (usize i = 0; i < srcs_len; i++) {
@@ -595,18 +577,7 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
     usize args_len = len(args->entries);
     for (usize i = 0; i < srcs_len; i++) {
         c_string src = library->srcs.entries[i];
-        fprintf(output, "build %s/%s/%s.o: cxx ../%s/%s", triple, base_dir, src, base_dir, src);
-        if (deps_len > 1) {
-            fprintf(output, " |");
-        }
-        for (usize dep_index = 1; dep_index < deps_len; dep_index++) {
-            Target const* dep = &deps.entries[dep_index];
-            if (dep->kind == TargetKind_Library) {
-                fprintf(output, " ns/%s/_", dep->library->header_namespace);
-            }
-        }
-        fprintf(output, "\n");
-
+        fprintf(output, "build %s/%s/%s.o: cxx ../%s/%s\n", triple, base_dir, src, base_dir, src);
         fprintf(output, "    language = %s\n", language_from_filename(src));
         fprintf(output, "    target = %s\n", triple);
         fprintf(output, "    depfile = %s.%s.d\n", src, triple);

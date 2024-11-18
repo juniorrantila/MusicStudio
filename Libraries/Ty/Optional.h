@@ -268,6 +268,12 @@ private:
     T* m_value { nullptr };
 };
 
+template <typename F>
+auto optional(F callback)
+{
+    return Optional<decltype(callback())>(callback());
 }
 
-using namespace Ty;
+}
+
+using Ty::Optional;

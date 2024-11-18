@@ -16,6 +16,7 @@
 #include "./Library/build.def"
 #include "./NativePlugin/build.def"
 #include "./UI/build.def"
+#include "./Render/build.def"
 
 typedef struct {
     // Core
@@ -42,6 +43,7 @@ typedef struct {
     Target native_plugin;
 
     Target ui;
+    Target render;
     // Target uiview;
 } LibrariesTargets;
 
@@ -65,8 +67,8 @@ static auto const libraries = target([] {
         .library = library,
         .native_plugin = native_plugin,
         .ui = ui,
+        .render = render,
     };
 
-    // Target wasm;
     // Target uiview;
 });

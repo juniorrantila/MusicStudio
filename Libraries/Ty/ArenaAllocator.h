@@ -51,14 +51,24 @@ struct ArenaAllocator : public Allocator {
         }
     }
 
-    ErrorOr<void*> alloc(usize size, usize align,
+    ErrorOr<void*> raw_alloc(usize size, usize align,
         c_string func = __builtin_FUNCTION(), 
         c_string file = __builtin_FILE(),
         usize line = __builtin_LINE()) override;
 
-    void free(void* data, usize size) override;
+    void raw_free(void* data, usize size) override;
 
     constexpr void drain() { m_head = m_base; }
+
+    View<u8> pool() const
+    {
+        return View(m_base, m_end - m_base);
+    }
+
+    usize size_used() const
+    {
+        return m_head - m_base;
+    }
 
 private:
     constexpr ArenaAllocator(Kind kind, View<u8> view)

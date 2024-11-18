@@ -17,7 +17,7 @@ void ArenaAllocator::destroy()
 }
 
 
-ErrorOr<void*> ArenaAllocator::alloc(usize size, usize align, c_string function, c_string file, usize line)
+ErrorOr<void*> ArenaAllocator::raw_alloc(usize size, usize align, c_string function, c_string file, usize line)
 {
     auto align_diff = ((uptr)m_head) % align;
     if ((m_head + align_diff + size) > m_end) {
@@ -29,7 +29,7 @@ ErrorOr<void*> ArenaAllocator::alloc(usize size, usize align, c_string function,
     return ptr;
 }
 
-void ArenaAllocator::free(void* data, usize size)
+void ArenaAllocator::raw_free(void* data, usize size)
 {
     if (m_head - size == data) {
         m_head -= size;

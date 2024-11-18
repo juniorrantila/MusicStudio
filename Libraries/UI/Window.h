@@ -34,6 +34,8 @@ u8 const* ui_window_keymap(UIWindow*);
 void ui_window_mouse_pos(UIWindow*, i32* x, i32* y);
 UIMouseState ui_window_mouse_state(UIWindow*);
 
+void ui_window_gl_make_current_context(UIWindow*);
+void ui_window_gl_flush(UIWindow*);
 
 #ifdef __cplusplus
 }

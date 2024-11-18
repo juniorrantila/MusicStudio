@@ -122,6 +122,18 @@ c_string ui_window_strerror(int error)
     return "no error";
 }
 
+void ui_window_gl_make_current_context(UIWindow* win)
+{
+    auto* window = (__bridge UIAppKitWindow*)win;
+    [window.glView.openGLContext makeCurrentContext];
+}
+
+void ui_window_gl_flush(UIWindow* win)
+{
+    auto* window = (__bridge UIAppKitWindow*)win;
+    [window.glView.openGLContext flushBuffer];
+}
+
 @implementation UIAppKitWindow
 
 - (instancetype)initWithContentRect:(NSRect)contentRect

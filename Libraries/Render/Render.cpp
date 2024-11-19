@@ -1,6 +1,6 @@
 #include "./Render.h"
-#include "./GL.h"
 
+#include <GL/GL.h>
 #include <FS/Bundle.h>
 #include <Ty/Allocator.h>
 #include <Ty/View.h>

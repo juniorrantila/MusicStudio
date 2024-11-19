@@ -17,6 +17,7 @@
 #include "./NativePlugin/build.def"
 #include "./UI/build.def"
 #include "./Render/build.def"
+#include "./GL/build.def"
 
 typedef struct {
     // Core
@@ -44,6 +45,7 @@ typedef struct {
 
     Target ui;
     Target render;
+    Target gl;
     // Target uiview;
 } LibrariesTargets;
 
@@ -68,6 +70,7 @@ static auto const libraries = target([] {
         .native_plugin = native_plugin,
         .ui = ui,
         .render = render,
+        .gl = gl,
     };
 
     // Target uiview;

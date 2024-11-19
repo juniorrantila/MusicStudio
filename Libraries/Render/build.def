@@ -3,6 +3,7 @@
 #include "../Ty/build.def"
 #include "../Rexim/build.def"
 #include "../FS/build.def"
+#include "../GL/build.def"
 
 static auto const render = objcpp_library("Render", {
     .srcs = {
@@ -21,5 +22,6 @@ static auto const render = objcpp_library("Render", {
         ty,
         rexim,
         fs,
+        gl,
     },
 });

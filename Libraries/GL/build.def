@@ -1,0 +1,17 @@
+#pragma once
+#include "../../bs.h"
+
+static auto const gl = cpp_library("GL", {
+    .srcs = {
+        "./Dummy.cpp",
+    },
+    .exported_headers = {
+        "./GL.h",
+    },
+    .header_namespace = "GL",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = system_target_triple(),
+    .link_style = "static",
+    .deps = {},
+});

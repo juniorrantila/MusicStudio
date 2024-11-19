@@ -1,10 +1,8 @@
-#define GL_SILENCE_DEPRECATION 1
 #include "../Window.h"
 
+#include <GL/GL.h>
 #include <Foundation/Foundation.h>
 #include <AppKit/AppKit.h>
-#include <OpenGL/gl3.h>
-#include <pthread.h>
 
 @interface UIAppKitWindow : NSWindow<NSWindowDelegate> {
     @public u8 keymap[1024];

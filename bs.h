@@ -379,7 +379,7 @@ static inline c_string language_from_filename(c_string name)
 
 static inline TargetRule merge_object_rule = ninja_rule({
     .name = "merge-object",
-    .command = "$ld -r $link_args -o $out $in",
+    .command = "$ld $extra_flags $link_args -o $out $in",
     .description = "Linking static target $out",
     .variables = {
         (Variable){
@@ -392,6 +392,10 @@ static inline TargetRule merge_object_rule = ninja_rule({
         },
         (Variable){
             .name = "link_args",
+            .default_value = nullptr,
+        },
+        (Variable){
+            .name = "extra_flags",
             .default_value = nullptr,
         },
     },
@@ -578,7 +582,13 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
         }
         fprintf(output, "\n");
     }
-    fprintf(output, "    ld = ld\n");
+    if (strcmp(target_triple_string(library->target_triple), target_triple_string(wasm_target_triple())) == 0) {
+        fprintf(output, "    ld = wasm-ld\n");
+        fprintf(output, "    extra_flags = --strip-all\n");
+    } else {
+        fprintf(output, "    ld = ld\n");
+        fprintf(output, "    extra_flags = -r\n");
+    }
     fprintf(output, "\n");
 
     Targets deps = flatten_targets({

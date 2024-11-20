@@ -11,7 +11,7 @@
 
 namespace FS {
 
-Optional<ResourceView> Bundle::open(StringView path)
+Optional<ResourceView> Bundle::open(StringView path) const
 {
     auto mount_path = MUST(path.resolve_path());
     for (auto const& resource : resources()) {
@@ -29,7 +29,7 @@ Optional<ResourceView> Bundle::open(StringView path)
     return {};
 }
 
-ErrorOr<ResourceView> Bundle::saturate_resource_file(StringView fs_path, StringView mount_path)
+ErrorOr<ResourceView> Bundle::saturate_resource_file(StringView fs_path, StringView mount_path) const
 {
     auto file = TRY(Core::MappedFile::open(fs_path, Core::MappedFile::ModeRead));
     auto id = TRY(m_cached_resources.set(

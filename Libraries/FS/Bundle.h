@@ -23,7 +23,7 @@ struct Bundle {
     ErrorOr<void> mount_bytes(Bytes, StringView mount_point);
     ErrorOr<void> mount(StringView path, StringView mount_point);
 
-    Optional<ResourceView> open(StringView path);
+    Optional<ResourceView> open(StringView path) const;
     void unsafe_add_resource(ResourceView resource);
 
     View<ResourceView const> resources() const { return m_unsafe_resources.view(); }
@@ -43,12 +43,12 @@ struct Bundle {
 
 private:
     ErrorOr<void> saturate_zip_buffer();
-    ErrorOr<ResourceView> saturate_resource_file(StringView fs_path, StringView mount_point);
+    ErrorOr<ResourceView> saturate_resource_file(StringView fs_path, StringView mount_point) const;
 
-    Vector<ResourceView> m_unsafe_resources {};
+    mutable Vector<ResourceView> m_unsafe_resources {};
 
     using MountPoint = StringBuffer;
-    LinearMap<MountPoint, Resource> m_cached_resources {};
+    mutable LinearMap<MountPoint, Resource> m_cached_resources {};
     LinearMap<MountPoint, StringBuffer> m_file_mounts {};
     LinearMap<MountPoint, StringBuffer> m_directory_mounts {};
     LinearMap<MountPoint, StringBuffer> m_zip_mounts {};

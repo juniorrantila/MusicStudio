@@ -98,12 +98,17 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
 
     auto* render = render_create(&bundle, &arena);
     if (!render) {
-        return Error::from_string_literal("could not create renderer: out of memory");
+        return Error::from_string_literal("could not create renderer");
     }
     Defer destroy_render = [&] {
         render_destroy(render);
     };
 
+    Vec2f zero  = { 0.0, 0.0 };
+    Vec4f cyan = { .r = 0.0f, .g = 1.0f, .b = 1.0f, .a = 1.0f };
+    Vec4f magenta = { .r = 1.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f };
+    Vec4f yellow = { .r = 1.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f };
+    Vec4f white = { .r = 1.0f, .g = 1.0f, .b = 1.0f, .a = 1.0f };
     while (!ui_window_should_close(window)) {
         ui_application_poll_events(app);
         ui_window_gl_make_current_context(window);
@@ -111,13 +116,18 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
         i32 width = 0;
         i32 height = 0;
         ui_window_size(window, &width, &height);
-        render_set_resolution(render, vec2f(width, height));
-        render_clear(render, {
-            .r = 0.1f,
-            .g = 0.2f,
-            .b = 0.2f,
-            .a = 1.0f,
-        });
+        render_set_resolution(render, vec2f(width, height) * 2.0);
+
+        render_use_simple(render);
+
+        render_transact(render, 6);
+            render_vertex(render, { 0.0, 0.0 }, cyan, zero);
+            render_vertex(render, { 1.0, 0.0 }, yellow, zero);
+            render_vertex(render, { 1.0, 1.0 }, magenta, zero);
+
+            render_vertex(render, { 0.0, 0.0 }, cyan, zero);
+            render_vertex(render, { 0.0, 1.0 }, white, zero);
+            render_vertex(render, { 1.0, 1.0 }, magenta, zero);
         render_flush(render);
 
         ui_window_gl_flush(window);

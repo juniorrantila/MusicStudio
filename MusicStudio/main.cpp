@@ -158,23 +158,19 @@ static void render_frame(UIWindow* window, Render* render)
     ui_window_size(window, 0, &height);
     f32 titlebar_height = 28.0f / height;
 
-    render_transact(render, 3);
-    render_vertex(render, { 0.0, 0.0 }, cyan, zero);
-    render_vertex(render, { 1.0, 0.0 }, yellow, zero);
-    render_vertex(render, { 1.0, 1.0 }, magenta, zero);
-    render_transact(render, 3);
-    render_vertex(render, { 0.0, 0.0 }, cyan, zero);
-    render_vertex(render, { 0.0, 1.0 }, white, zero);
-    render_vertex(render, { 1.0, 1.0 }, magenta, zero);
+    render_quad(render,
+        vec2f(0.0f, 0.0f), cyan,    zero,
+        vec2f(1.0f, 0.0f), yellow,  zero,
+        vec2f(0.0f, 1.0f), white,   zero,
+        vec2f(1.0f, 1.0f), magenta, zero
+    );
 
     render_cursor(render, red);
 
-    render_transact(render, 3);
-    render_vertex(render, { 0.0, 0.0 }, cyan / 2, zero);
-    render_vertex(render, { 1.0, 0.0 }, cyan / 2, zero);
-    render_vertex(render, { 1.0, titlebar_height }, cyan / 2, zero);
-    render_transact(render, 3);
-    render_vertex(render, { 0.0, 0.0 }, cyan / 2, zero);
-    render_vertex(render, { 0.0, titlebar_height }, cyan / 2, zero);
-    render_vertex(render, { 1.0, titlebar_height }, cyan / 2, zero);
+    render_quad(render,
+        vec2f(0.0, 0.0),             cyan / 2, zero,
+        vec2f(1.0, 0.0),             cyan / 2, zero,
+        vec2f(0.0, titlebar_height), cyan / 2, zero,
+        vec2f(1.0, titlebar_height), cyan / 2, zero
+    );
 }

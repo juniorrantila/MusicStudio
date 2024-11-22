@@ -8,6 +8,10 @@
     @public u8 keymap[1024];
     @public UIMouseState mouse_state;
     @public bool should_close;
+    @public NSSize size;
+
+    @public void* resize_user;
+    @public void(*resize_callback)(UIWindow*, void* user);
 }
 @property (nonatomic, retain) NSOpenGLView* glView;
 
@@ -32,6 +36,7 @@ static UIAppKitWindow* create_window(UIWindowSpec spec)
     if (spec.title) {
         window.title = [NSString stringWithUTF8String:spec.title];
     }
+    window->size = NSMakeSize(spec.width, spec.height);
     return window;
 }
 
@@ -81,12 +86,11 @@ int ui_window_show(UIWindow* win)
 int ui_window_size(UIWindow* win, i32* x, i32* y)
 {
     auto* window = (__bridge UIAppKitWindow*)win;
-    auto size = window.contentView.frame.size;
     if (x) {
-        *x = size.width;
+        *x = window->size.width;
     }
     if (y) {
-        *y = size.height;
+        *y = window->size.height;
     }
     return 0;
 }
@@ -134,6 +138,14 @@ void ui_window_gl_flush(UIWindow* win)
 {
     auto* window = (__bridge UIAppKitWindow*)win;
     [window.glView.openGLContext flushBuffer];
+}
+
+int ui_window_set_resize_callback(UIWindow* win, void* user, void(*callback)(UIWindow* window, void* user))
+{
+    auto* window = (__bridge UIAppKitWindow*)win;
+    window->resize_user = user;
+    window->resize_callback = callback;
+    return 0;
 }
 
 @implementation UIAppKitWindow
@@ -203,6 +215,15 @@ void ui_window_gl_flush(UIWindow* win)
 -(void)mouseUp:(NSEvent *)event
 {
     self->mouse_state.left_down = false;
+}
+
+-(NSSize)windowWillResize:(NSWindow *)window toSize:(NSSize)proposedFrameSize
+{
+    self->size = proposedFrameSize;
+    if (self->resize_callback) {
+        self->resize_callback((UIWindow*)self, self->resize_user);
+    }
+    return proposedFrameSize;
 }
 
 -(BOOL)windowShouldClose:(NSNotification *)notification

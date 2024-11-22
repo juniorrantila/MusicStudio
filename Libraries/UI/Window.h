@@ -29,6 +29,7 @@ bool ui_window_should_close(UIWindow*);
 int ui_window_show(UIWindow*);
 
 int ui_window_size(UIWindow*, i32* x, i32* y);
+int ui_window_set_resize_callback(UIWindow*, void* user, void(*)(UIWindow* window, void*));
 
 u8 const* ui_window_keymap(UIWindow*);
 void ui_window_mouse_pos(UIWindow*, i32* x, i32* y);

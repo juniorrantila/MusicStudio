@@ -81,11 +81,12 @@ int ui_window_show(UIWindow* win)
 int ui_window_size(UIWindow* win, i32* x, i32* y)
 {
     auto* window = (__bridge UIAppKitWindow*)win;
+    auto size = window.contentView.frame.size;
     if (x) {
-        *x = window.frame.size.width;
+        *x = size.width;
     }
     if (y) {
-        *y = window.frame.size.height;
+        *y = size.height;
     }
     return 0;
 }

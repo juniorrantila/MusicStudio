@@ -60,6 +60,24 @@ static int compile_shader_source(StringView, GLenum type);
 static int link_program(GLuint program);
 static void uniform_location(GLuint program, GLuint locations[UniformSlot__Count]);
 
+static void transact(Render* render, usize verticies);
+static void vertex(Render* render, Vec2f position, Vec4f color, Vec2f uv, u32 flags);
+static void triangle(Render* render,
+    Vec2f p0, Vec4f c0, Vec2f uv0, u32 f0,
+    Vec2f p1, Vec4f c1, Vec2f uv1, u32 f1,
+    Vec2f p2, Vec4f c2, Vec2f uv2, u32 f2
+);
+
+// 0-1
+// |/|
+// 2-3
+static void quad(Render* render,
+    Vec2f p0, Vec4f c0, Vec2f uv0, u32 f0,
+    Vec2f p1, Vec4f c1, Vec2f uv1, u32 f1,
+    Vec2f p2, Vec4f c2, Vec2f uv2, u32 f2,
+    Vec2f p3, Vec4f c3, Vec2f uv3, u32 f3
+);
+
 c_string render_strerror(int error)
 {
     if (error == 0) return "no error";
@@ -243,16 +261,16 @@ void render_clear(Render* render, Vec4f color)
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void render_transact(Render* render, usize vertices)
+static void transact(Render* render, usize vertices)
 {
     if (render->vertices.size() <= render->vertex_index + vertices) {
         render_flush(render);
     }
 }
 
-static void render_vertex_with_flags(Render* render, Vec2f position, Vec4f color, Vec2f uv, u32 flags)
+static void vertex(Render* render, Vec2f position, Vec4f color, Vec2f uv, u32 flags)
 {
-    render_transact(render, 1);
+    transact(render, 1);
     render->vertices[render->vertex_index++] = {
         .position = position,
         .color = color,
@@ -261,9 +279,36 @@ static void render_vertex_with_flags(Render* render, Vec2f position, Vec4f color
     };
 }
 
-void render_vertex(Render* render, Vec2f position, Vec4f color, Vec2f uv)
+static void triangle(Render* render,
+    Vec2f p0, Vec4f c0, Vec2f uv0, u32 f0,
+    Vec2f p1, Vec4f c1, Vec2f uv1, u32 f1,
+    Vec2f p2, Vec4f c2, Vec2f uv2, u32 f2)
 {
-    render_vertex_with_flags(render, position, color, uv, Shader_Color);
+    transact(render, 3);
+    vertex(render, p0, c0, uv0, f0);
+    vertex(render, p1, c1, uv1, f1);
+    vertex(render, p2, c2, uv2, f2);
+}
+
+// 0-1
+// |/|
+// 2-3
+static void quad(Render* render,
+    Vec2f p0, Vec4f c0, Vec2f uv0, u32 f0,
+    Vec2f p1, Vec4f c1, Vec2f uv1, u32 f1,
+    Vec2f p2, Vec4f c2, Vec2f uv2, u32 f2,
+    Vec2f p3, Vec4f c3, Vec2f uv3, u32 f3)
+{
+    triangle(render,
+        p0, c0, uv0, f0,
+        p1, c1, uv1, f1,
+        p2, c2, uv2, f2
+    );
+    triangle(render,
+        p1, c1, uv1, f1,
+        p2, c2, uv2, f2,
+        p3, c3, uv3, f3
+    );
 }
 
 void render_triangle(Render* render,
@@ -271,10 +316,11 @@ void render_triangle(Render* render,
     Vec2f p1, Vec4f c1, Vec2f uv1,
     Vec2f p2, Vec4f c2, Vec2f uv2)
 {
-    render_transact(render, 3);
-    render_vertex(render, p0, c0, uv0);
-    render_vertex(render, p1, c1, uv1);
-    render_vertex(render, p2, c2, uv2);
+    triangle(render,
+        p0, c0, uv0, Shader_Color,
+        p1, c1, uv1, Shader_Color,
+        p2, c2, uv2, Shader_Color
+    );
 }
 
 // 0-1
@@ -300,15 +346,12 @@ void render_quad(Render* render,
 
 void render_cursor(Render* render, Vec4f color)
 {
-    render_transact(render, 3);
-    render_vertex_with_flags(render, { 0.0, 0.0 }, color, vec2fs(0), Shader_Cursor);
-    render_vertex_with_flags(render, { 1.0, 0.0 }, color, vec2fs(0), Shader_Cursor);
-    render_vertex_with_flags(render, { 1.0, 1.0 }, color, vec2fs(0), Shader_Cursor);
-
-    render_transact(render, 3);
-    render_vertex_with_flags(render, { 0.0, 0.0 }, color, vec2fs(0), Shader_Cursor);
-    render_vertex_with_flags(render, { 0.0, 1.0 }, color, vec2fs(0), Shader_Cursor);
-    render_vertex_with_flags(render, { 1.0, 1.0 }, color, vec2fs(0), Shader_Cursor);
+    quad(render,
+        vec2f(0.0f, 0.0f), color, vec2fs(0), Shader_Cursor,
+        vec2f(1.0f, 0.0f), color, vec2fs(0), Shader_Cursor,
+        vec2f(0.0f, 1.0f), color, vec2fs(0), Shader_Cursor,
+        vec2f(1.0f, 1.0f), color, vec2fs(0), Shader_Cursor
+    );
 }
 
 static const char *shader_type_as_cstr(GLuint shader)

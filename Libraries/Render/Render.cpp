@@ -266,6 +266,17 @@ void render_vertex(Render* render, Vec2f position, Vec4f color, Vec2f uv)
     render_vertex_with_flags(render, position, color, uv, Shader_Color);
 }
 
+void render_triangle(Render* render,
+    Vec2f p0, Vec4f c0, Vec2f uv0,
+    Vec2f p1, Vec4f c1, Vec2f uv1,
+    Vec2f p2, Vec4f c2, Vec2f uv2)
+{
+    render_transact(render, 3);
+    render_vertex(render, p0, c0, uv0);
+    render_vertex(render, p1, c1, uv1);
+    render_vertex(render, p2, c2, uv2);
+}
+
 void render_cursor(Render* render, Vec4f color)
 {
     render_transact(render, 3);

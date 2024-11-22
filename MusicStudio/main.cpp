@@ -29,9 +29,9 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
         .add_pack(Fonts())
         .add_pack(Shaders());
 
-    dbgln("resources:"sv);
+    dprintln("resources:");
     for (auto resource : bundle.resources()) {
-        dbgln("  "sv, resource.resolved_path());
+        dprintln("  {}", resource.resolved_path());
     }
 
     auto argument_parser = CLI::ArgumentParser();
@@ -94,7 +94,7 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
         swap(&out_frames, &in_frames);
     }
     swap(&out_frames, &in_frames);
-    dbgln(out_frames[0]);
+    dprintln("{}", out_frames[0]);
 
     auto* render = render_create(&bundle, &arena);
     if (!render) {

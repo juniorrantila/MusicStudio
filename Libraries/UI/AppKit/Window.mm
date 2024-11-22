@@ -100,12 +100,15 @@ u8 const* ui_window_keymap(UIWindow* win)
 void ui_window_mouse_pos(UIWindow* win, i32* x, i32* y)
 {
     auto* window = (__bridge UIAppKitWindow*)win;
+    i32 height = 0;
+    ui_window_size(win, 0, &height);
+
     auto mousePosition = [window convertPointFromScreen:[NSEvent mouseLocation]];
     if (x) {
         *x = mousePosition.x;
     }
     if (y) {
-        *y = mousePosition.y;
+        *y = height - mousePosition.y;
     }
 }
 

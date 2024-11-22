@@ -9,14 +9,9 @@
 #define stdout stdout
 #endif
 #include "./File.h"
+#include <assert.h>
 
 namespace Core {
-
-template <typename... Args>
-constexpr u32 writeln(Args const&... args)
-{
-    return MUST(Core::File::stdout().writeln(forward<Args const&>(args)...));
-}
 
 template <typename... Args>
 constexpr u32 dbgln(Args const&... args)
@@ -25,23 +20,32 @@ constexpr u32 dbgln(Args const&... args)
 }
 
 template <typename... Args>
-constexpr u32 outwrite(Args const&... args) requires(sizeof...(Args) > 0)
-{
-    return MUST(Core::File::stdout().write(forward<Args const&>(args)...));
-}
-
-template <typename... Args>
 constexpr u32 dbgwrite(Args const&... args) requires(sizeof...(Args) > 0)
 {
     return MUST(Core::File::stderr().write(forward<Args const&>(args)...));
+}
+
+template <typename... Args>
+constexpr u32 dprintln(StringView format, Args const&... args)
+{
+    auto parts = MUST(format.split_on("{}"));
+    assert(sizeof...(Args) == parts.size() - 1);
+
+    u32 size = 0;
+    u32 i = 0;
+    u32 results[] = {
+        (size += dbgwrite(parts[i++], args))...,
+        (size += dbgln(parts.last())),
+    };
+    (void)results;
+    return size;
 }
 
 }
 
 using Core::dbgln;
 using Core::dbgwrite;
-using Core::outwrite;
-using Core::writeln;
+using Core::dprintln;
 
 #ifdef stdout
 #pragma pop_macro("stdout")

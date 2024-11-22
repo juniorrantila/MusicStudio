@@ -123,7 +123,6 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
         ui_window_mouse_pos(window, &mouse_x, &mouse_y);
         render_set_mouse_position(render, vec2f(mouse_x, mouse_y));
 
-        render_use_simple(render);
 
         render_transact(render, 6);
             render_vertex(render, { 0.0, 0.0 }, cyan, zero);

@@ -25,37 +25,10 @@ static constexpr auto simple_color_frag = BUNDLE(
     simple_color_frag_bytes
 );
 
-static u8 const simple_image_frag_bytes[] = {
-#embed "./image.frag"
-};
-static constexpr auto simple_image_frag = BUNDLE(
-    "Shaders/image.frag"sv,
-    simple_image_frag_bytes
-);
-
-static u8 const simple_text_frag_bytes[] = {
-#embed "./text.frag"
-};
-static constexpr auto simple_text_frag = BUNDLE(
-    "Shaders/text.frag"sv,
-    simple_text_frag_bytes
-);
-
-static u8 const simple_epic_frag_bytes[] = {
-#embed "./epic.frag"
-};
-static constexpr auto simple_epic_frag = BUNDLE(
-    "Shaders/epic.frag"sv,
-    simple_epic_frag_bytes
-);
-
 #undef BUNDLE
 
 void Shaders::add_to_bundle(FS::Bundle& bundle)
 {
     bundle.unsafe_add_resource(simple_vert);
     bundle.unsafe_add_resource(simple_color_frag);
-    bundle.unsafe_add_resource(simple_image_frag);
-    bundle.unsafe_add_resource(simple_text_frag);
-    bundle.unsafe_add_resource(simple_epic_frag);
 }

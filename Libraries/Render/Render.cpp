@@ -13,6 +13,7 @@ struct Vertex {
     Vec2f position;
     Vec4f color;
     Vec2f uv;
+    u32 flags;
 };
 
 enum UniformSlot {
@@ -26,13 +27,14 @@ enum VertexAttr {
     VertexAttr_Position,
     VertexAttr_Color,
     VertexAttr_UV,
+    VertexAttr_Flags,
 };
 
 enum Shader {
-    Shader_Color,
-    Shader_Image,
-    Shader_Text,
-    Shader_Epic,
+    Shader_Color  = 0,
+    Shader_Image  = 1,
+    Shader_Text   = 2,
+    Shader_Cursor = 3,
     Shader__COUNT,
 };
 
@@ -40,11 +42,11 @@ struct Render {
     Ty::Allocator* gpa;
     FS::Bundle const* bundle;
 
+    GLuint texture;
     GLuint vao;
     GLuint vbo;
-    GLuint programs[Shader__COUNT];
+    GLuint shader_program;
     GLuint uniforms[UniformSlot__Count];
-    Shader current_shader;
 
     usize vertex_index;
     View<Vertex> vertices;
@@ -77,7 +79,6 @@ Render* render_create(FS::Bundle const* bundle, Ty::Allocator* gpa)
     memset(render, 0, sizeof(*render));
     render->gpa = gpa;
     render->bundle = bundle;
-    render->current_shader = (Shader)-1;
     {
         auto result = gpa->alloc<Vertex>(4096);
         if (result.is_error()) {
@@ -124,8 +125,46 @@ Render* render_create(FS::Bundle const* bundle, Ty::Allocator* gpa)
             GL_FALSE,
             sizeof(Vertex),
             (GLvoid *) offsetof(Vertex, uv));
+
+        // uv
+        glEnableVertexAttribArray(VertexAttr_Flags);
+        glVertexAttribPointer(
+            VertexAttr_Flags,
+            1,
+            GL_UNSIGNED_INT,
+            GL_FALSE,
+            sizeof(Vertex),
+            (GLvoid *) offsetof(Vertex, flags));
+
+              glActiveTexture(GL_TEXTURE0);
+
+        glGenTextures(1, &render->texture);
+        glBindTexture(GL_TEXTURE_2D, render->texture);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RED,
+            (GLsizei) 1,
+            (GLsizei) 1,
+            0,
+            GL_RED,
+            GL_UNSIGNED_BYTE,
+            NULL);
     }
     if (render_reload_shaders(render) < 0) return 0;
+
+    glUseProgram(render->shader_program);
+    uniform_location(render->shader_program, render->uniforms);
+    glUniform1f(render->uniforms[UniformSlot_Time], render->time);
+    glUniform2f(render->uniforms[UniformSlot_Resolution], render->resolution.x, render->resolution.y);
+    glUniform2f(render->uniforms[UniformSlot_MousePosition], render->mouse_position.x, render->mouse_position.y);
 
     return render;
 }
@@ -180,22 +219,9 @@ int render_reload_shaders(Render* render)
     glAttachShader(program, fs);
     if (link_program(program) < 0) return -1;
 
-    render->programs[Shader_Color] = program;
+    render->shader_program = program;
 
     return 0;
-}
-
-void render_use_simple(Render* render)
-{
-    if (render->current_shader == Shader_Color)
-        return;
-    render_flush(render);
-    render->current_shader = Shader_Color;
-    glUseProgram(render->programs[Shader_Color]);
-    uniform_location(render->programs[Shader_Color], render->uniforms);
-    glUniform2f(render->uniforms[UniformSlot_Resolution], render->resolution.x, render->resolution.y);
-    glUniform2f(render->uniforms[UniformSlot_MousePosition], render->mouse_position.x, render->mouse_position.y);
-    glUniform1f(render->uniforms[UniformSlot_Time], render->time);
 }
 
 void render_flush(Render* render)
@@ -224,14 +250,33 @@ void render_transact(Render* render, usize vertices)
     }
 }
 
-void render_vertex(Render* render, Vec2f position, Vec4f color, Vec2f uv)
+static void render_vertex_with_flags(Render* render, Vec2f position, Vec4f color, Vec2f uv, u32 flags)
 {
     render_transact(render, 1);
     render->vertices[render->vertex_index++] = {
         .position = position,
         .color = color,
         .uv = uv,
+        .flags = flags,
     };
+}
+
+void render_vertex(Render* render, Vec2f position, Vec4f color, Vec2f uv)
+{
+    render_vertex_with_flags(render, position, color, uv, Shader_Color);
+}
+
+void render_cursor(Render* render, Vec4f color)
+{
+    render_transact(render, 3);
+    render_vertex_with_flags(render, { 0.0, 0.0 }, color, vec2fs(0), Shader_Cursor);
+    render_vertex_with_flags(render, { 1.0, 0.0 }, color, vec2fs(0), Shader_Cursor);
+    render_vertex_with_flags(render, { 1.0, 1.0 }, color, vec2fs(0), Shader_Cursor);
+
+    render_transact(render, 3);
+    render_vertex_with_flags(render, { 0.0, 0.0 }, color, vec2fs(0), Shader_Cursor);
+    render_vertex_with_flags(render, { 0.0, 1.0 }, color, vec2fs(0), Shader_Cursor);
+    render_vertex_with_flags(render, { 1.0, 1.0 }, color, vec2fs(0), Shader_Cursor);
 }
 
 static const char *shader_type_as_cstr(GLuint shader)

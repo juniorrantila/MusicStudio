@@ -18,7 +18,6 @@ void render_flush(Render*);
 
 void render_clear(Render*, Vec4f color);
 
-void render_use_simple(Render*);
-
 void render_transact(Render* render, usize vertices);
 void render_vertex(Render*, Vec2f position, Vec4f color, Vec2f uv);
+void render_cursor(Render* render, Vec4f color);

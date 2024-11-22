@@ -18,6 +18,7 @@ struct Vertex {
 enum UniformSlot {
     UniformSlot_Time,
     UniformSlot_Resolution,
+    UniformSlot_MousePosition,
     UniformSlot__Count,
 };
 
@@ -50,6 +51,7 @@ struct Render {
 
     f32 time;
     Vec2f resolution;
+    Vec2f mouse_position;
 };
 
 static int compile_shader_source(StringView, GLenum type);
@@ -149,6 +151,12 @@ void render_set_resolution(Render* render, Vec2f resolution)
     }
 }
 
+void render_set_mouse_position(Render* render, Vec2f position)
+{
+    render->mouse_position = position;
+    glUniform2f(render->uniforms[UniformSlot_MousePosition], position.x, position.y);
+}
+
 int render_reload_shaders(Render* render)
 {
     auto vert = render->bundle->open("Shaders/simple.vert");
@@ -186,6 +194,7 @@ void render_use_simple(Render* render)
     glUseProgram(render->programs[Shader_Color]);
     uniform_location(render->programs[Shader_Color], render->uniforms);
     glUniform2f(render->uniforms[UniformSlot_Resolution], render->resolution.x, render->resolution.y);
+    glUniform2f(render->uniforms[UniformSlot_MousePosition], render->mouse_position.x, render->mouse_position.y);
     glUniform1f(render->uniforms[UniformSlot_Time], render->time);
 }
 
@@ -283,7 +292,7 @@ struct UniformDef {
     const char *name;
 };
 
-static_assert(UniformSlot__Count == 2, "The amount of the shader uniforms have change. Please update the definition table accordingly");
+static_assert(UniformSlot__Count == 3, "The amount of the shader uniforms have change. Please update the definition table accordingly");
 static const UniformDef uniform_defs[UniformSlot__Count] = {
     [UniformSlot_Time] = {
         .slot = UniformSlot_Time,
@@ -292,6 +301,10 @@ static const UniformDef uniform_defs[UniformSlot__Count] = {
     [UniformSlot_Resolution] = {
         .slot = UniformSlot_Resolution,
         .name = "resolution",
+    },
+    [UniformSlot_MousePosition] = {
+        .slot = UniformSlot_MousePosition,
+        .name = "mouse_position",
     },
 };
 

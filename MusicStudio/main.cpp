@@ -118,6 +118,11 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
         ui_window_size(window, &width, &height);
         render_set_resolution(render, vec2f(width, height) * 2.0);
 
+        i32 mouse_x = 0;
+        i32 mouse_y = 0;
+        ui_window_mouse_pos(window, &mouse_x, &mouse_y);
+        render_set_mouse_position(render, vec2f(mouse_x, mouse_y));
+
         render_use_simple(render);
 
         render_transact(render, 6);

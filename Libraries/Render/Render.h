@@ -12,6 +12,7 @@ void render_destroy(Render*);
 
 void render_set_time(Render*, f32 time);
 void render_set_resolution(Render*, Vec2f);
+void render_set_mouse_position(Render*, Vec2f);
 int render_reload_shaders(Render*);
 void render_flush(Render*);
 

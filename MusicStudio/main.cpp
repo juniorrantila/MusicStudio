@@ -109,6 +109,7 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
     Vec4f magenta = { .r = 1.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f };
     Vec4f yellow = { .r = 1.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f };
     Vec4f white = { .r = 1.0f, .g = 1.0f, .b = 1.0f, .a = 1.0f };
+    Vec4f red = { .r = 1.0f, .g = 0.0f, .b = 0.0f, .a = 1.0f };
     while (!ui_window_should_close(window)) {
         ui_application_poll_events(app);
         ui_window_gl_make_current_context(window);
@@ -124,15 +125,18 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
         render_set_mouse_position(render, vec2f(mouse_x, mouse_y));
 
 
-        render_transact(render, 6);
-            render_vertex(render, { 0.0, 0.0 }, cyan, zero);
-            render_vertex(render, { 1.0, 0.0 }, yellow, zero);
-            render_vertex(render, { 1.0, 1.0 }, magenta, zero);
+        render_transact(render, 3);
+        render_vertex(render, { 0.0, 0.0 }, cyan, zero);
+        render_vertex(render, { 1.0, 0.0 }, yellow, zero);
+        render_vertex(render, { 1.0, 1.0 }, magenta, zero);
+        render_transact(render, 3);
+        render_vertex(render, { 0.0, 0.0 }, cyan, zero);
+        render_vertex(render, { 0.0, 1.0 }, white, zero);
+        render_vertex(render, { 1.0, 1.0 }, magenta, zero);
 
-            render_vertex(render, { 0.0, 0.0 }, cyan, zero);
-            render_vertex(render, { 0.0, 1.0 }, white, zero);
-            render_vertex(render, { 1.0, 1.0 }, magenta, zero);
+        render_cursor(render, red);
         render_flush(render);
+
 
         ui_window_gl_flush(window);
     }

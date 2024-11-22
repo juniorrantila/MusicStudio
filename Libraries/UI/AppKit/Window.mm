@@ -27,12 +27,15 @@ static UIAppKitWindow* create_window(UIWindowSpec spec)
     auto* window = [[UIAppKitWindow alloc]
         initWithContentRect:NSMakeRect(spec.x, spec.y, spec.width, spec.height)
                   styleMask:0
+                           | NSWindowStyleMaskFullSizeContentView
+                           | NSWindowStyleMaskUnifiedTitleAndToolbar
                            | NSWindowStyleMaskTitled
                            | NSWindowStyleMaskClosable
                            | NSWindowStyleMaskMiniaturizable
                            | NSWindowStyleMaskResizable
                     backing:NSBackingStoreBuffered
                       defer:YES];
+    window.titlebarAppearsTransparent = true;
     if (spec.title) {
         window.title = [NSString stringWithUTF8String:spec.title];
     }

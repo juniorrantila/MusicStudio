@@ -277,6 +277,27 @@ void render_triangle(Render* render,
     render_vertex(render, p2, c2, uv2);
 }
 
+// 0-1
+// |/|
+// 2-3
+void render_quad(Render* render,
+    Vec2f p0, Vec4f c0, Vec2f uv0,
+    Vec2f p1, Vec4f c1, Vec2f uv1,
+    Vec2f p2, Vec4f c2, Vec2f uv2,
+    Vec2f p3, Vec4f c3, Vec2f uv3)
+{
+    render_triangle(render,
+        p0, c0, uv0,
+        p1, c1, uv1,
+        p2, c2, uv2
+    );
+    render_triangle(render,
+        p1, c1, uv1,
+        p2, c2, uv2,
+        p3, c3, uv3
+    );
+}
+
 void render_cursor(Render* render, Vec4f color)
 {
     render_transact(render, 3);

@@ -23,6 +23,15 @@ void swap(T* a, T* b)
     *b = c;
 }
 
+static Vec2f zero  = { 0.0, 0.0 };
+static Vec4f cyan = { .r = 0.0f, .g = 1.0f, .b = 1.0f, .a = 1.0f };
+static Vec4f magenta = { .r = 1.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f };
+static Vec4f yellow = { .r = 1.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f };
+static Vec4f white = { .r = 1.0f, .g = 1.0f, .b = 1.0f, .a = 1.0f };
+static Vec4f red = { .r = 1.0f, .g = 0.0f, .b = 0.0f, .a = 1.0f };
+
+static void render_frame(UIWindow* window, Render* render);
+
 ErrorOr<int> Main::main(int argc, c_string *argv)
 {
     auto bundle = FS::Bundle()
@@ -104,42 +113,68 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
         render_destroy(render);
     };
 
-    Vec2f zero  = { 0.0, 0.0 };
-    Vec4f cyan = { .r = 0.0f, .g = 1.0f, .b = 1.0f, .a = 1.0f };
-    Vec4f magenta = { .r = 1.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f };
-    Vec4f yellow = { .r = 1.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f };
-    Vec4f white = { .r = 1.0f, .g = 1.0f, .b = 1.0f, .a = 1.0f };
-    Vec4f red = { .r = 1.0f, .g = 0.0f, .b = 0.0f, .a = 1.0f };
-    while (!ui_window_should_close(window)) {
-        ui_application_poll_events(app);
+    ui_window_set_resize_callback(window, render, [](UIWindow* window, void* user) {
+        auto* render = (Render*)user;
         ui_window_gl_make_current_context(window);
 
         i32 width = 0;
-        i32 height = 0;
+        i32 height = 1;
         ui_window_size(window, &width, &height);
         render_set_resolution(render, vec2f(width, height) * 2.0);
+
+        render_frame(window, render);
+
+        render_flush(render);
+        ui_window_gl_flush(window);
+    });
+
+    {
+        i32 width = 0;
+        i32 height = 1;
+        ui_window_size(window, &width, &height);
+        render_set_resolution(render, vec2f(width, height) * 2.0);
+    }
+
+    while (!ui_window_should_close(window)) {
+        ui_application_poll_events(app);
+        ui_window_gl_make_current_context(window);
 
         i32 mouse_x = 0;
         i32 mouse_y = 0;
         ui_window_mouse_pos(window, &mouse_x, &mouse_y);
         render_set_mouse_position(render, vec2f(mouse_x, mouse_y));
 
-
-        render_transact(render, 3);
-        render_vertex(render, { 0.0, 0.0 }, cyan, zero);
-        render_vertex(render, { 1.0, 0.0 }, yellow, zero);
-        render_vertex(render, { 1.0, 1.0 }, magenta, zero);
-        render_transact(render, 3);
-        render_vertex(render, { 0.0, 0.0 }, cyan, zero);
-        render_vertex(render, { 0.0, 1.0 }, white, zero);
-        render_vertex(render, { 1.0, 1.0 }, magenta, zero);
-
-        render_cursor(render, red);
+        render_frame(window, render);
         render_flush(render);
-
-
         ui_window_gl_flush(window);
     }
 
     return 0;
+}
+
+static void render_frame(UIWindow* window, Render* render)
+{
+    i32 height = 1;
+    ui_window_size(window, 0, &height);
+    f32 titlebar_height = 28.0f / height;
+
+    render_transact(render, 3);
+    render_vertex(render, { 0.0, 0.0 }, cyan, zero);
+    render_vertex(render, { 1.0, 0.0 }, yellow, zero);
+    render_vertex(render, { 1.0, 1.0 }, magenta, zero);
+    render_transact(render, 3);
+    render_vertex(render, { 0.0, 0.0 }, cyan, zero);
+    render_vertex(render, { 0.0, 1.0 }, white, zero);
+    render_vertex(render, { 1.0, 1.0 }, magenta, zero);
+
+    render_cursor(render, red);
+
+    render_transact(render, 3);
+    render_vertex(render, { 0.0, 0.0 }, cyan / 2, zero);
+    render_vertex(render, { 1.0, 0.0 }, cyan / 2, zero);
+    render_vertex(render, { 1.0, titlebar_height }, cyan / 2, zero);
+    render_transact(render, 3);
+    render_vertex(render, { 0.0, 0.0 }, cyan / 2, zero);
+    render_vertex(render, { 0.0, titlebar_height }, cyan / 2, zero);
+    render_vertex(render, { 1.0, titlebar_height }, cyan / 2, zero);
 }

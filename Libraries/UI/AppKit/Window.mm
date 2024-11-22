@@ -105,7 +105,7 @@ void ui_window_mouse_pos(UIWindow* win, i32* x, i32* y)
         *x = mousePosition.x;
     }
     if (y) {
-        *y = mousePosition.x;
+        *y = mousePosition.y;
     }
 }
 

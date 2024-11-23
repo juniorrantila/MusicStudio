@@ -16,8 +16,8 @@ typedef struct WSWindowSpec {
 } UIWindowSpec;
 
 typedef struct UIMouseState {
-    bool left_down;
-    bool right_down;
+    i32 left_down;
+    i32 right_down;
 } UIMouseState;
 
 c_string ui_window_strerror(int);

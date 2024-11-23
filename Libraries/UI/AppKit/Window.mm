@@ -220,7 +220,7 @@ bool ui_window_is_fullscreen(UIWindow const* window)
 
 -(void)mouseDown:(NSEvent *)event
 {
-    self->mouse_state.left_down = true;
+    self->mouse_state.left_down = event.clickCount;
 }
 
 -(void)mouseUp:(NSEvent *)event

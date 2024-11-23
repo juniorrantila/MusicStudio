@@ -9,6 +9,7 @@
     @public UIMouseState mouse_state;
     @public bool should_close;
     @public NSSize size;
+    @public bool is_fullscreen;
 
     @public void* resize_user;
     @public void(*resize_callback)(UIWindow*, void* user);
@@ -36,6 +37,7 @@ static UIAppKitWindow* create_window(UIWindowSpec spec)
                     backing:NSBackingStoreBuffered
                       defer:YES];
     window.titlebarAppearsTransparent = true;
+    window.delegate = window;
     if (spec.title) {
         window.title = [NSString stringWithUTF8String:spec.title];
     }
@@ -151,6 +153,12 @@ int ui_window_set_resize_callback(UIWindow* win, void* user, void(*callback)(UIW
     return 0;
 }
 
+bool ui_window_is_fullscreen(UIWindow const* window)
+{
+    auto* win = (__bridge UIAppKitWindow const*)window;
+    return win->is_fullscreen;
+}
+
 @implementation UIAppKitWindow
 
 - (instancetype)initWithContentRect:(NSRect)contentRect
@@ -233,6 +241,16 @@ int ui_window_set_resize_callback(UIWindow* win, void* user, void(*callback)(UIW
 {
     self->should_close = true;
     return true;
+}
+
+-(void)windowWillEnterFullScreen:(NSNotification *)notification
+{
+    self->is_fullscreen = true;
+}
+
+-(void)windowWillExitFullScreen:(NSNotification *)notification
+{
+    self->is_fullscreen = false;
 }
 
 @end

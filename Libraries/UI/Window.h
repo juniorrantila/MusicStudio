@@ -28,6 +28,8 @@ void ui_window_close(UIWindow*);
 bool ui_window_should_close(UIWindow*);
 int ui_window_show(UIWindow*);
 
+bool ui_window_is_fullscreen(UIWindow const* window);
+
 int ui_window_size(UIWindow*, i32* x, i32* y);
 int ui_window_set_resize_callback(UIWindow*, void* user, void(*)(UIWindow* window, void*));
 

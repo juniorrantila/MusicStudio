@@ -178,8 +178,9 @@ bool ui_window_is_fullscreen(UIWindow const* window)
     NSOpenGLPixelFormatAttribute pixelFormatAttributes[] = {
         NSOpenGLPFAOpenGLProfile,
         NSOpenGLProfileVersion3_2Core,
-        NSOpenGLPFAColorSize, 24,
-        NSOpenGLPFAAlphaSize, 8,
+        NSOpenGLPFAColorFloat,
+        NSOpenGLPFAColorSize, 64,
+        NSOpenGLPFAAlphaSize, 16,
         NSOpenGLPFADoubleBuffer,
         NSOpenGLPFAAccelerated,
         NSOpenGLPFANoRecovery,
@@ -193,6 +194,7 @@ bool ui_window_is_fullscreen(UIWindow const* window)
     // Set context and attach it to the window
     [[_glView openGLContext] makeCurrentContext];
     [_glView setWantsBestResolutionOpenGLSurface:YES];
+    [_glView setWantsExtendedDynamicRangeOpenGLSurface:YES];
 
     [self setContentView:_glView];
     [_glView prepareOpenGL];

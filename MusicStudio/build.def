@@ -34,7 +34,6 @@ auto const music_studio = target([] {
             libraries.cli,
             libraries.main,
             libraries.soundio,
-            libraries.window_system,
         }
     });
 });

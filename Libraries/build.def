@@ -32,7 +32,6 @@ typedef struct {
     // Userspace
     Target rexim;
     Target soundio;
-    Target window_system;
     Target wasm;
     Target ms;
 

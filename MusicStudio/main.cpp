@@ -154,23 +154,41 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
 
 static void render_frame(UIWindow* window, Render* render)
 {
-    i32 height = 1;
-    ui_window_size(window, 0, &height);
-    f32 titlebar_height = 28.0f / height;
+    render_clear(render, vec4f(0, 0, 0, 1));
 
-    render_quad(render,
-        vec2f(0.0f, 0.0f), cyan,    zero,
-        vec2f(1.0f, 0.0f), yellow,  zero,
-        vec2f(0.0f, 1.0f), white,   zero,
-        vec2f(1.0f, 1.0f), magenta, zero
-    );
+    if (ui_window_is_fullscreen(window)) {
+        render_quad(render,
+            vec2f(0.0f, 0.0f), cyan,    zero,
+            vec2f(1.0f, 0.0f), yellow,  zero,
+            vec2f(0.0f, 1.0f), white,   zero,
+            vec2f(1.0f, 1.0f), magenta, zero
+        );
+    } else {
+        f32 titlebar_height = 0;
+        i32 height = 1;
+        ui_window_size(window, 0, &height);
+        titlebar_height = 28.0f / height;
 
-    render_cursor(render, red);
+        Vec4f color = cyan / 2;
+        i32 mouse_y = 0;
+        ui_window_mouse_pos(window, 0, &mouse_y);
+        if (ui_window_mouse_state(window).left_down >= 2) {
+            color = red;
+        }
 
-    render_quad(render,
-        vec2f(0.0, 0.0),             cyan / 2, zero,
-        vec2f(1.0, 0.0),             cyan / 2, zero,
-        vec2f(0.0, titlebar_height), cyan / 2, zero,
-        vec2f(1.0, titlebar_height), cyan / 2, zero
-    );
+        render_quad(render,
+            vec2f(0.0f, titlebar_height), cyan,    zero,
+            vec2f(1.0f, titlebar_height), yellow,  zero,
+            vec2f(0.0f, 1.0f), white,   zero,
+            vec2f(1.0f, 1.0f), magenta, zero
+        );
+        render_quad(render,
+            vec2f(0.0, 0.0),             color, zero,
+            vec2f(1.0, 0.0),             color, zero,
+            vec2f(0.0, titlebar_height), color, zero,
+            vec2f(1.0, titlebar_height), color, zero
+        );
+    }
+}
+
 }

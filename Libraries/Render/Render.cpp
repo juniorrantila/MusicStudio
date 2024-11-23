@@ -203,7 +203,7 @@ void render_set_resolution(Render* render, Vec2f resolution)
 {
     if (render->resolution != resolution) {
         render->resolution = resolution;
-        glViewport(0, 0, render->resolution.x, render->resolution.y);
+        glViewport(0, 0, resolution.x, resolution.y);
         glUniform2f(render->uniforms[UniformSlot_Resolution], resolution.x, resolution.y);
     }
 }

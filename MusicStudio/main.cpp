@@ -13,6 +13,7 @@
 #include <UI/Application.h>
 #include <UI/Window.h>
 #include <Render/Render.h>
+#include <UI/UI.h>
 
 template <typename T>
 void swap(T* a, T* b)
@@ -29,6 +30,8 @@ static Vec4f magenta = { .r = 1.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f };
 static Vec4f yellow = { .r = 1.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f };
 static Vec4f white = { .r = 1.0f, .g = 1.0f, .b = 1.0f, .a = 1.0f };
 static Vec4f red = { .r = 1.0f, .g = 0.0f, .b = 0.0f, .a = 1.0f };
+static Vec4f green = { .r = 0.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f };
+static Vec4f blue = { .r = 0.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f };
 
 static void render_frame(UIWindow* window, Render* render);
 
@@ -112,83 +115,73 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
     Defer destroy_render = [&] {
         render_destroy(render);
     };
+    auto ui = ui_create(window, render);
 
-    ui_window_set_resize_callback(window, render, [](UIWindow* window, void* user) {
-        auto* render = (Render*)user;
-        ui_window_gl_make_current_context(window);
-
-        i32 width = 0;
-        i32 height = 1;
-        ui_window_size(window, &width, &height);
-        render_set_resolution(render, vec2f(width, height) * 2.0);
-
-        render_frame(window, render);
-
-        render_flush(render);
-        ui_window_gl_flush(window);
+    ui_window_set_resize_callback(window, &ui, [](UIWindow*, void* user) {
+        auto* ui = (UI*)user;
+        ui_begin_frame(ui);
+        render_frame(ui);
+        ui_end_frame(ui);
     });
-
-    {
-        i32 width = 0;
-        i32 height = 1;
-        ui_window_size(window, &width, &height);
-        render_set_resolution(render, vec2f(width, height) * 2.0);
-    }
 
     while (!ui_window_should_close(window)) {
         ui_application_poll_events(app);
-        ui_window_gl_make_current_context(window);
 
-        i32 mouse_x = 0;
-        i32 mouse_y = 0;
-        ui_window_mouse_pos(window, &mouse_x, &mouse_y);
-        render_set_mouse_position(render, vec2f(mouse_x, mouse_y));
-
-        render_frame(window, render);
-        render_flush(render);
-        ui_window_gl_flush(window);
+        ui_begin_frame(&ui);
+        render_frame(&ui);
+        ui_end_frame(&ui);
     }
 
     return 0;
 }
 
-static void render_frame(UIWindow* window, Render* render)
+static void buttons(UI* ui);
+
+static void render_frame(UI* ui)
 {
-    render_clear(render, vec4f(0, 0, 0, 1));
+    render_clear(ui->render, vec4f(0, 0, 0, 1));
+    i32 height = 1;
+    i32 width = 1;
+    ui_window_size(ui->window, &width, &height);
 
-    if (ui_window_is_fullscreen(window)) {
-        render_quad(render,
-            vec2f(0.0f, 0.0f), cyan,    zero,
-            vec2f(1.0f, 0.0f), yellow,  zero,
-            vec2f(0.0f, 1.0f), white,   zero,
-            vec2f(1.0f, 1.0f), magenta, zero
-        );
-    } else {
-        f32 titlebar_height = 0;
-        i32 height = 1;
-        ui_window_size(window, 0, &height);
-        titlebar_height = 28.0f / height;
-
-        Vec4f color = cyan / 2;
-        i32 mouse_y = 0;
-        ui_window_mouse_pos(window, 0, &mouse_y);
-        if (ui_window_mouse_state(window).left_down >= 2) {
-            color = red;
-        }
-
-        render_quad(render,
-            vec2f(0.0f, titlebar_height), cyan,    zero,
-            vec2f(1.0f, titlebar_height), yellow,  zero,
-            vec2f(0.0f, 1.0f), white,   zero,
-            vec2f(1.0f, 1.0f), magenta, zero
-        );
-        render_quad(render,
-            vec2f(0.0, 0.0),             color, zero,
-            vec2f(1.0, 0.0),             color, zero,
-            vec2f(0.0, titlebar_height), color, zero,
-            vec2f(1.0, titlebar_height), color, zero
-        );
+    Vec4f color = cyan / 2;
+    i32 mouse_x = 0;
+    i32 mouse_y = 0;
+    ui_window_mouse_pos(ui->window, &mouse_x, &mouse_y);
+    if (ui_window_mouse_state(ui->window).left_down >= 2) {
+        color = red;
     }
+
+    f32 titlebar_height = 28.0f / height;
+    render_quad(ui->render,
+        vec2f(0.0f, titlebar_height), cyan,    zero,
+        vec2f(1.0f, titlebar_height), yellow,  zero,
+        vec2f(0.0f, 1.0f), white,   zero,
+        vec2f(1.0f, 1.0f), magenta, zero
+    );
+    ui_spacer(ui, vec2f(0, 28.0f));
+    buttons(ui);
+
+    render_quad(ui->render,
+        vec2f(0.0, 0.0),             color, zero,
+        vec2f(1.0, 0.0),             color, zero,
+        vec2f(0.0, titlebar_height), color, zero,
+        vec2f(1.0, titlebar_height), color, zero
+    );
 }
 
+static void buttons(UI* ui)
+{
+    ui_spacer(ui, vec2f(8, 8));
+    if (ui_button(ui, "Button 1", red)) {
+        dprintln("Button 1");
+    }
+    ui_spacer(ui, vec2f(0, 8));
+    if (ui_button(ui, "Button 2", green)) {
+        dprintln("Button 2");
+    }
+    ui_spacer(ui, vec2f(0, 8));
+    if (ui_button(ui, "Button 3", blue)) {
+        dprintln("Button 3");
+    }
 }

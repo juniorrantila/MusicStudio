@@ -143,6 +143,7 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
 
 static void file_browser(UI* ui);
 static void toolbar(UI* ui);
+static void status_bar(UI* ui);
 
 static void render_frame(UI* ui)
 {
@@ -163,6 +164,7 @@ static void render_frame(UI* ui)
 
     toolbar(ui);
     file_browser(ui);
+    status_bar(ui);
 
     ui_move_point(ui, point);
     ui_rect(ui, vec2f(window_size.x, titlebar_height), color);
@@ -171,6 +173,14 @@ static void render_frame(UI* ui)
 static void toolbar(UI* ui)
 {
     auto window_size = ui_window_size(ui->window);
+    ui_rect(ui, vec2f(window_size.x, 28), toolbar_color);
+}
+
+static void status_bar(UI* ui)
+{
+    auto window_size = ui_window_size(ui->window);
+    ui_move_point(ui, vec2f(0, window_size.y - 30));
+    ui_rect(ui, vec2f(window_size.x, 2), outline_color);
     ui_rect(ui, vec2f(window_size.x, 28), toolbar_color);
 }
 

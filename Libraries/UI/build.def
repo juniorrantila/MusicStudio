@@ -2,17 +2,21 @@
 #include "../../bs.h"
 #include "../Ty/build.def"
 #include "../GL/build.def"
+#include "../Rexim/build.def"
+#include "../Render/build.def"
 
 static auto const ui = objcpp_library("UI", {
     .srcs = {
         "./AppKit/Application.mm",
         "./AppKit/Window.mm",
+        "./UI.cpp",
     },
     .exported_headers = {
         "./Application.h",
         "./Forward.h",
-        "./Window.h",
         "./KeyCode.h",
+        "./UI.h",
+        "./Window.h",
     },
     .header_namespace = "UI",
     .compile_flags = {},
@@ -22,5 +26,7 @@ static auto const ui = objcpp_library("UI", {
     .deps = {
         ty,
         gl,
+        rexim,
+        render,
     },
 });

@@ -90,16 +90,10 @@ int ui_window_show(UIWindow* win)
     return 0;
 }
 
-int ui_window_size(UIWindow* win, i32* x, i32* y)
+Vec2f ui_window_size(UIWindow* win)
 {
     auto* window = (__bridge UIAppKitWindow*)win;
-    if (x) {
-        *x = window->size.width;
-    }
-    if (y) {
-        *y = window->size.height;
-    }
-    return 0;
+    return vec2f(window->size.width, window->size.height);
 }
 
 u8 const* ui_window_keymap(UIWindow* win)
@@ -108,19 +102,13 @@ u8 const* ui_window_keymap(UIWindow* win)
     return window->keymap;
 }
 
-void ui_window_mouse_pos(UIWindow* win, i32* x, i32* y)
+Vec2f ui_window_mouse_pos(UIWindow* win)
 {
     auto* window = (__bridge UIAppKitWindow*)win;
-    i32 height = 0;
-    ui_window_size(win, 0, &height);
+    Vec2f window_size = ui_window_size(win);
 
     auto mousePosition = [window convertPointFromScreen:[NSEvent mouseLocation]];
-    if (x) {
-        *x = mousePosition.x;
-    }
-    if (y) {
-        *y = height - mousePosition.y;
-    }
+    return vec2f(mousePosition.x, window_size.y - mousePosition.y);
 }
 
 UIMouseState ui_window_mouse_state(UIWindow* win)

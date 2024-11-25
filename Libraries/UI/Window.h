@@ -1,6 +1,7 @@
 #pragma once
 #include "./Forward.h"
 #include <Ty/Base.h>
+#include <Rexim/LA.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,11 +31,11 @@ int ui_window_show(UIWindow*);
 
 bool ui_window_is_fullscreen(UIWindow const* window);
 
-int ui_window_size(UIWindow*, i32* x, i32* y);
+Vec2f ui_window_size(UIWindow*);
 int ui_window_set_resize_callback(UIWindow*, void* user, void(*)(UIWindow* window, void*));
 
 u8 const* ui_window_keymap(UIWindow*);
-void ui_window_mouse_pos(UIWindow*, i32* x, i32* y);
+Vec2f ui_window_mouse_pos(UIWindow*);
 UIMouseState ui_window_mouse_state(UIWindow*);
 
 void ui_window_gl_make_current_context(UIWindow*);

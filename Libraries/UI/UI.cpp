@@ -79,6 +79,19 @@ void ui_spacer(UI* ui, Vec2f pad)
     ui->state.current_point = end;
 }
 
+void ui_rect(UI* ui, Vec2f size, Vec4f color)
+{
+    auto start = ui->state.current_point;
+    auto end = start + normalized(ui, size);
+    ui->state.current_point.y = end.y;
+    render_quad(ui->render,
+        vec2f(start.x, start.y), color, vec2fs(0),
+        vec2f(end.x,   start.y), color, vec2fs(0),
+        vec2f(start.x, end.y),   color, vec2fs(0),
+        vec2f(end.x,   end.y),   color, vec2fs(0)
+    );
+}
+
 Vec2f ui_current_point(UI* ui)
 {
     return to_screen(ui, ui->state.current_point);

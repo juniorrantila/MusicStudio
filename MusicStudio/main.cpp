@@ -174,6 +174,7 @@ static void toolbar(UI* ui)
 {
     auto window_size = ui_window_size(ui->window);
     ui_rect(ui, vec2f(window_size.x, 28), toolbar_color);
+    ui_rect(ui, vec2f(window_size.x, 2), outline_color);
 }
 
 static void status_bar(UI* ui)
@@ -188,7 +189,6 @@ static void file_browser(UI* ui)
 {
     auto window_size = ui_window_size(ui->window);
 
-    ui_rect(ui, vec2f(200, 2), outline_color);
     auto pos = ui_current_point(ui);
     ui_spacer(ui, vec2f(200, -2));
     ui_rect(ui, vec2f(2, window_size.y), outline_color);

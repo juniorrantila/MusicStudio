@@ -160,14 +160,18 @@ static void render_frame(UI* ui)
     ui_move_point(ui, point);
 
     auto titlebar_height = 28.0f;
-    ui_spacer(ui, vec2f(0, titlebar_height));
+    if (!ui_window_is_fullscreen(ui->window)) {
+        ui_spacer(ui, vec2f(0, titlebar_height));
+    }
 
     toolbar(ui);
     file_browser(ui);
     status_bar(ui);
 
-    ui_move_point(ui, point);
-    ui_rect(ui, vec2f(window_size.x, titlebar_height), color);
+    if (!ui_window_is_fullscreen(ui->window)) {
+        ui_move_point(ui, point);
+        ui_rect(ui, vec2f(window_size.x, titlebar_height), color);
+    }
 }
 
 static void toolbar(UI* ui)

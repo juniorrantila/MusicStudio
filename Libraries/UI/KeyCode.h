@@ -73,7 +73,7 @@ enum UIKeyCode {
   UIKeyCode_SPACE = 0x31,
   UIKeyCode_DELETE = 0x33,
   UIKeyCode_ESCAPE = 0x35,
-  UIKeyCode_COMAND = 0x37,
+  UIKeyCode_COMMAND = 0x37,
   UIKeyCode_SHIFT = 0x38,
   UIKeyCode_CAPS_LOCK= 0x39,
   UIKeyCode_OPTION = 0x3A,

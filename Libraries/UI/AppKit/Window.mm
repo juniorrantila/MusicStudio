@@ -1,5 +1,7 @@
 #include "../Window.h"
 
+#include "../KeyCode.h"
+
 #include <GL/GL.h>
 #include <Foundation/Foundation.h>
 #include <AppKit/AppKit.h>
@@ -204,6 +206,15 @@ bool ui_window_is_fullscreen(UIWindow const* window)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     return self;
+}
+
+-(void)flagsChanged:(NSEvent *)event
+{
+    auto flags = event.modifierFlags;
+    self->keymap[UIKeyCode_COMMAND] = (flags & NSEventModifierFlagCommand) > 0;
+    self->keymap[UIKeyCode_CONTROL] = (flags & NSEventModifierFlagControl) > 0;
+    self->keymap[UIKeyCode_OPTION] = (flags & NSEventModifierFlagOption) > 0;
+    self->keymap[UIKeyCode_SHIFT] = (flags & NSEventModifierFlagShift) > 0;
 }
 
 -(void)keyDown:(NSEvent *)event

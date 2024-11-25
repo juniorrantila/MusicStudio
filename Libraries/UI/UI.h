@@ -29,6 +29,9 @@ void ui_end_frame(UI* ui);
 bool ui_button(UI* ui, c_string label, Vec4f color);
 void ui_spacer(UI* ui, Vec2f pad);
 
+Vec2f ui_current_point(UI* ui);
+void ui_move_point(UI* ui, Vec2f);
+
 #ifdef __cplusplus
 }
 #endif

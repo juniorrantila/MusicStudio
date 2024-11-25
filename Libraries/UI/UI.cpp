@@ -4,6 +4,7 @@
 #include <string.h>
 
 static Vec2f normalized(UI* ui, Vec2f point);
+static Vec2f to_screen(UI* ui, Vec2f point);
 
 UI ui_create(UIWindow* window, Render* render)
 {
@@ -78,8 +79,22 @@ void ui_spacer(UI* ui, Vec2f pad)
     ui->state.current_point = end;
 }
 
+Vec2f ui_current_point(UI* ui)
+{
+    return to_screen(ui, ui->state.current_point);
+}
+
+void ui_move_point(UI* ui, Vec2f point)
+{
+    ui->state.current_point = normalized(ui, point);
+}
+
 static Vec2f normalized(UI* ui, Vec2f point)
 {
     return point / ui_window_size(ui->window);
 }
 
+static Vec2f to_screen(UI* ui, Vec2f point)
+{
+    return point * ui_window_size(ui->window);
+}

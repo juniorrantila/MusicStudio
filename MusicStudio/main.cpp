@@ -24,16 +24,22 @@ void swap(T* a, T* b)
     *b = c;
 }
 
-static Vec2f zero  = { 0.0, 0.0 };
-static Vec4f cyan = { .r = 0.0f, .g = 1.0f, .b = 1.0f, .a = 1.0f };
-static Vec4f magenta = { .r = 1.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f };
-static Vec4f yellow = { .r = 1.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f };
-static Vec4f white = { .r = 1.0f, .g = 1.0f, .b = 1.0f, .a = 1.0f };
-static Vec4f red = { .r = 1.0f, .g = 0.0f, .b = 0.0f, .a = 1.0f };
-static Vec4f green = { .r = 0.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f };
-static Vec4f blue = { .r = 0.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f };
+Vec2f zero  = { 0.0, 0.0 };
+Vec4f cyan = { .r = 0.0f, .g = 1.0f, .b = 1.0f, .a = 1.0f };
+Vec4f magenta = { .r = 1.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f };
+Vec4f yellow = { .r = 1.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f };
+Vec4f white = { .r = 1.0f, .g = 1.0f, .b = 1.0f, .a = 1.0f };
+Vec4f red = { .r = 1.0f, .g = 0.0f, .b = 0.0f, .a = 1.0f };
+Vec4f green = { .r = 0.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f };
+Vec4f blue = { .r = 0.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f };
+Vec4f border_color = hex_to_vec4f(0x2C3337FF);
+Vec4f outline_color = hex_to_vec4f(0x4B5255FF);
+Vec4f background_color = hex_to_vec4f(0x181F23FF);
+Vec4f button_color = hex_to_vec4f(0x99A89FFF);
+Vec4f gray_background = hex_to_vec4f(0x646A71FF);
+Vec4f toolbar_color = hex_to_vec4f(0x5B6265FF);
 
-static void render_frame(UIWindow* window, Render* render);
+static void render_frame(UI* ui);
 
 ErrorOr<int> Main::main(int argc, c_string *argv)
 {
@@ -135,53 +141,63 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
     return 0;
 }
 
-static void buttons(UI* ui);
+static void file_browser(UI* ui);
+static void toolbar(UI* ui);
 
 static void render_frame(UI* ui)
 {
     render_clear(ui->render, vec4f(0, 0, 0, 1));
-    i32 height = 1;
-    i32 width = 1;
-    ui_window_size(ui->window, &width, &height);
+    auto window_size = ui_window_size(ui->window);
 
-    Vec4f color = cyan / 2;
-    i32 mouse_x = 0;
-    i32 mouse_y = 0;
-    ui_window_mouse_pos(ui->window, &mouse_x, &mouse_y);
+    Vec4f color = toolbar_color;
     if (ui_window_mouse_state(ui->window).left_down >= 2) {
         color = red;
     }
 
-    f32 titlebar_height = 28.0f / height;
-    render_quad(ui->render,
-        vec2f(0.0f, titlebar_height), cyan,    zero,
-        vec2f(1.0f, titlebar_height), yellow,  zero,
-        vec2f(0.0f, 1.0f), white,   zero,
-        vec2f(1.0f, 1.0f), magenta, zero
-    );
-    ui_spacer(ui, vec2f(0, 28.0f));
-    buttons(ui);
+    auto point = ui_current_point(ui);
+    ui_rect(ui, window_size, gray_background);
+    ui_move_point(ui, point);
 
-    render_quad(ui->render,
-        vec2f(0.0, 0.0),             color, zero,
-        vec2f(1.0, 0.0),             color, zero,
-        vec2f(0.0, titlebar_height), color, zero,
-        vec2f(1.0, titlebar_height), color, zero
-    );
+    auto titlebar_height = 28.0f;
+    ui_spacer(ui, vec2f(0, titlebar_height));
+
+    toolbar(ui);
+    file_browser(ui);
+
+    ui_move_point(ui, point);
+    ui_rect(ui, vec2f(window_size.x, titlebar_height), color);
 }
 
-static void buttons(UI* ui)
+static void toolbar(UI* ui)
 {
-    ui_spacer(ui, vec2f(8, 8));
-    if (ui_button(ui, "Button 1", red)) {
+    auto window_size = ui_window_size(ui->window);
+    ui_rect(ui, vec2f(window_size.x, 28), toolbar_color);
+}
+
+static void file_browser(UI* ui)
+{
+    auto window_size = ui_window_size(ui->window);
+
+    ui_rect(ui, vec2f(200, 2), outline_color);
+    auto pos = ui_current_point(ui);
+    ui_spacer(ui, vec2f(200, -2));
+    ui_rect(ui, vec2f(2, window_size.y), outline_color);
+    ui_move_point(ui, pos);
+    ui_rect(ui, vec2f(200, window_size.y), background_color);
+    ui_move_point(ui, pos);
+    ui_rect(ui, vec2f(8, window_size.y), border_color);
+    ui_move_point(ui, pos);
+
+    ui_spacer(ui, vec2f(12, 4));
+    if (ui_button(ui, "Button 1", button_color)) {
         dprintln("Button 1");
     }
     ui_spacer(ui, vec2f(0, 8));
-    if (ui_button(ui, "Button 2", green)) {
+    if (ui_button(ui, "Button 2", button_color)) {
         dprintln("Button 2");
     }
     ui_spacer(ui, vec2f(0, 8));
-    if (ui_button(ui, "Button 3", blue)) {
+    if (ui_button(ui, "Button 3", button_color)) {
         dprintln("Button 3");
     }
 }

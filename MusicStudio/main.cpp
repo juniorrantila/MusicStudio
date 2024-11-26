@@ -14,6 +14,7 @@
 #include <UI/Window.h>
 #include <Render/Render.h>
 #include <UI/UI.h>
+#include <time.h>
 
 template <typename T>
 void swap(T* a, T* b)
@@ -40,6 +41,7 @@ Vec4f gray_background = hex_to_vec4f(0x646A71FF);
 Vec4f toolbar_color = hex_to_vec4f(0x5B6265FF);
 
 static void render_frame(UI* ui);
+f64 time(void);
 
 ErrorOr<int> Main::main(int argc, c_string *argv)
 {
@@ -130,12 +132,19 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
         ui_end_frame(ui);
     });
 
-    while (!ui_window_should_close(window)) {
+    f64 average_frame_time = 0.0f;
+    for (usize frame = 0; !ui_window_should_close(window); frame++) {
         ui_application_poll_events(app);
 
+        f64 begin = time();
         ui_begin_frame(&ui);
         render_frame(&ui);
         ui_end_frame(&ui);
+        f64 frame_time = time() - begin;
+        average_frame_time = ((average_frame_time * frame) + frame_time) / (frame + 1);
+        if (frame % 500 == 0) {
+            dprintln("FPS: {}", (u32)(1 / (average_frame_time)));
+        }
     }
 
     return 0;
@@ -214,4 +223,11 @@ static void file_browser(UI* ui)
     if (ui_button(ui, "Button 3", button_color)) {
         dprintln("Button 3");
     }
+}
+
+f64 time(void)
+{
+    struct timespec spec;
+    clock_gettime(CLOCK_REALTIME, &spec);
+    return ((f64)spec.tv_sec) + (spec.tv_nsec / 1.0e9);
 }

@@ -22,6 +22,7 @@ void ui_begin_frame(UI* ui)
 {
     ui->state.id = 0;
     ui->state.current_point = vec2fs(0);
+    ui->state.mode = UIMode_Below;
 
     ui_window_gl_make_current_context(ui->window);
 
@@ -42,7 +43,11 @@ bool ui_button(UI* ui, c_string label, Vec4f color)
     auto size = normalized(ui, vec2f(text_size * 16.0f, 32.0f));
     auto start = ui->state.current_point;
     auto end = start + size;
-    ui->state.current_point.y = end.y;
+    if (ui->state.mode == UIMode_Below) {
+        ui->state.current_point.y = end.y;
+    } else {
+        ui->state.current_point.x = end.x;
+    }
 
     usize last_active = ui->state.active_id;
     bool click = false;
@@ -101,7 +106,11 @@ void ui_rect(UI* ui, Vec2f size, Vec4f color)
 {
     auto start = ui->state.current_point;
     auto end = start + normalized(ui, size);
-    ui->state.current_point.y = end.y;
+    if (ui->state.mode == UIMode_Below) {
+        ui->state.current_point.y = end.y;
+    } else {
+        ui->state.current_point.x = end.x;
+    }
     render_quad(ui->render,
         vec2f(start.x, start.y), color, vec2fs(0),
         vec2f(end.x,   start.y), color, vec2fs(0),
@@ -118,6 +127,13 @@ Vec2f ui_current_point(UI* ui)
 void ui_move_point(UI* ui, Vec2f point)
 {
     ui->state.current_point = normalized(ui, point);
+}
+
+UIMode ui_set_mode(UI* ui, UIMode new_mode)
+{
+    UIMode mode = ui->state.mode;
+    ui->state.mode = new_mode;
+    return mode;
 }
 
 static Vec2f normalized(UI* ui, Vec2f point)

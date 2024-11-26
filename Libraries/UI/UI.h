@@ -9,11 +9,17 @@
 extern "C" {
 #endif
 
+typedef enum UIMode {
+    UIMode_Beside,
+    UIMode_Below,
+} UIMode;
+
 typedef struct UIState {
     Vec2f current_point;
     usize id;
     usize active_id;
     usize hover_id;
+    UIMode mode;
 } UIState;
 
 typedef struct UI {
@@ -33,6 +39,8 @@ void ui_rect(UI* ui, Vec2f size, Vec4f color);
 
 Vec2f ui_current_point(UI* ui);
 void ui_move_point(UI* ui, Vec2f);
+
+UIMode ui_set_mode(UI* ui, UIMode mode);
 
 #ifdef __cplusplus
 }

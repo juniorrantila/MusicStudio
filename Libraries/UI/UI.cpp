@@ -1,5 +1,6 @@
 #include "./UI.h"
 #include "./Window.h"
+#include "./Application.h"
 
 #include <string.h>
 
@@ -46,7 +47,17 @@ bool ui_button(UI* ui, c_string label, Vec4f color)
     usize last_active = ui->state.active_id;
     bool click = false;
     auto mouse = normalized(ui, ui_window_mouse_pos(ui->window));
+
+    auto* app = ui_window_application(ui->window);
+    auto current_cursor = ui_application_cursor(app);
     if (mouse.is_inside(vec4fv(start, size))) {
+        if (ui->state.hover_id != id) {
+            if (current_cursor != UICursor_Pointer) {
+                ui_application_cursor_push(app, UICursor_Pointer);
+            }
+            ui->state.hover_id = id;
+        }
+
         color *= vec4fs(1.08);
         auto state = ui_window_mouse_state(ui->window);
         click = state.left_down;
@@ -55,6 +66,13 @@ bool ui_button(UI* ui, c_string label, Vec4f color)
             ui->state.active_id = id;
         } else {
             ui->state.active_id = 0;
+        }
+    } else {
+        if (ui->state.hover_id == id) {
+            if (current_cursor == UICursor_Pointer) {
+                ui_application_cursor_pop(app);
+            }
+            ui->state.hover_id = 0;
         }
     }
     if (last_active == ui->state.active_id) {

@@ -42,6 +42,45 @@ void ui_application_destroy(UIApplication* app)
     CFBridgingRelease(application);
 }
 
+UICursor ui_application_cursor(UIApplication* app)
+{
+    (void)app;
+    NSCursor* cursor = NSCursor.currentCursor;
+    if (cursor == NSCursor.arrowCursor) {
+        return UICursor_Arrow;
+    }
+    if (cursor == NSCursor.pointingHandCursor) {
+        return UICursor_Pointer;
+    }
+    if (cursor == NSCursor.closedHandCursor) {
+        return UICursor_ClosedHand;
+    }
+    assert(false && "Unknown cursor");
+}
+
+void ui_application_cursor_push(UIApplication* app, UICursor cursor)
+{
+    (void)app;
+    switch (cursor) {
+    case UICursor_Arrow:
+        [NSCursor.arrowCursor push];
+        break;
+    case UICursor_Pointer:
+        [NSCursor.pointingHandCursor push];
+        break;
+    case UICursor_ClosedHand:
+        [NSCursor.closedHandCursor push];
+        break;
+    }
+}
+
+void ui_application_cursor_pop(UIApplication* app)
+{
+    (void)app;
+    [NSCursor pop];
+}
+
+
 @implementation UIApplicationDelegate
 
 -(BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication*)theApplication

@@ -13,6 +13,7 @@ typedef struct UIState {
     Vec2f current_point;
     usize id;
     usize active_id;
+    usize hover_id;
 } UIState;
 
 typedef struct UI {

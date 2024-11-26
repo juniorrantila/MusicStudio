@@ -15,6 +15,7 @@
 
     @public void* resize_user;
     @public void(*resize_callback)(UIWindow*, void* user);
+    @public UIApplication* application;
 }
 @property (nonatomic, retain) NSOpenGLView* glView;
 
@@ -49,15 +50,21 @@ static UIAppKitWindow* create_window(UIWindowSpec spec)
 
 UIWindow* ui_window_create(UIApplication* app, UIWindowSpec spec)
 {
-    (void)app;
     auto* parent = (__bridge UIAppKitWindow*)spec.parent;
     auto* window = create_window(spec);
+    window->application = app;
     if (parent) {
         [parent addChildWindow:window ordered:NSWindowAbove];
     } else {
         [window makeKeyAndOrderFront:nil];
     }
     return (UIWindow*)CFBridgingRetain(window);
+}
+
+UIApplication* ui_window_application(UIWindow* win)
+{
+    auto* window = (__bridge UIAppKitWindow*)win;
+    return window->application;
 }
 
 void ui_window_destroy(UIWindow* win)

@@ -151,6 +151,9 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
 }
 
 static void file_browser(UI* ui);
+static void proj_browser(UI* ui);
+static void plug_browser(UI* ui);
+static void browser(UI* ui);
 static void toolbar(UI* ui);
 static void status_bar(UI* ui);
 
@@ -174,12 +177,53 @@ static void render_frame(UI* ui)
     }
 
     toolbar(ui);
-    file_browser(ui);
+    browser(ui);
     status_bar(ui);
 
     if (!ui_window_is_fullscreen(ui->window)) {
         ui_move_point(ui, point);
         ui_rect(ui, vec2f(window_size.x, titlebar_height), color);
+    }
+}
+
+static void browser(UI* ui)
+{
+    constexpr usize browse_tabs_size = 3;
+    c_string browser_tabs[browse_tabs_size] = {
+        "file",
+        "proj",
+        "plug",
+    };
+    Vec4f tab_colors[browse_tabs_size] = {
+        background_color + vec4f(0, 0, 0.5, 0),
+        background_color + vec4f(0.5, 0, 0, 0),
+        background_color + vec4f(0, 0.5, 0, 0),
+    };
+    auto browser_point = ui_current_point(ui);
+    static usize selected_tab = 0;
+    auto old = ui_set_mode(ui, UIMode_Beside);
+    for (usize i = 0; i < browse_tabs_size; i++) {
+        Vec4f button_color = tab_colors[i] * vec4f(1.2, 1.2, 1.2, 1);
+        if (selected_tab == i) {
+            button_color *= vec4f(0.2, 0.2, 0.2, 1);
+        }
+        if (ui_button(ui, browser_tabs[i], button_color)) {
+            selected_tab = i;
+        }
+    }
+    ui_set_mode(ui, old);
+    ui_move_point(ui, browser_point);
+    ui_spacer(ui, vec2f(0, 32));
+    switch (selected_tab) {
+    case 0:
+        file_browser(ui);
+        break;
+    case 1:
+        proj_browser(ui);
+        break;
+    case 2:
+        plug_browser(ui);
+        break;
     }
 }
 
@@ -207,6 +251,60 @@ static void file_browser(UI* ui)
     ui_rect(ui, vec2f(2, window_size.y), outline_color);
     ui_move_point(ui, pos);
     ui_rect(ui, vec2f(200, window_size.y), background_color);
+    ui_move_point(ui, pos);
+    ui_rect(ui, vec2f(8, window_size.y), border_color);
+    ui_move_point(ui, pos);
+
+    ui_spacer(ui, vec2f(12, 4));
+    if (ui_button(ui, "Button 1", button_color)) {
+        dprintln("Button 1");
+    }
+    ui_spacer(ui, vec2f(0, 8));
+    if (ui_button(ui, "Button 2", button_color)) {
+        dprintln("Button 2");
+    }
+    ui_spacer(ui, vec2f(0, 8));
+    if (ui_button(ui, "Button 3", button_color)) {
+        dprintln("Button 3");
+    }
+}
+
+static void proj_browser(UI* ui)
+{
+    auto window_size = ui_window_size(ui->window);
+
+    auto pos = ui_current_point(ui);
+    ui_spacer(ui, vec2f(200, -2));
+    ui_rect(ui, vec2f(2, window_size.y), outline_color);
+    ui_move_point(ui, pos);
+    ui_rect(ui, vec2f(200, window_size.y), background_color + vec4f(0.1, 0, 0, 0));
+    ui_move_point(ui, pos);
+    ui_rect(ui, vec2f(8, window_size.y), border_color);
+    ui_move_point(ui, pos);
+
+    ui_spacer(ui, vec2f(12, 4));
+    if (ui_button(ui, "Button 1", button_color)) {
+        dprintln("Button 1");
+    }
+    ui_spacer(ui, vec2f(0, 8));
+    if (ui_button(ui, "Button 2", button_color)) {
+        dprintln("Button 2");
+    }
+    ui_spacer(ui, vec2f(0, 8));
+    if (ui_button(ui, "Button 3", button_color)) {
+        dprintln("Button 3");
+    }
+}
+
+static void plug_browser(UI* ui)
+{
+    auto window_size = ui_window_size(ui->window);
+
+    auto pos = ui_current_point(ui);
+    ui_spacer(ui, vec2f(200, -2));
+    ui_rect(ui, vec2f(2, window_size.y), outline_color);
+    ui_move_point(ui, pos);
+    ui_rect(ui, vec2f(200, window_size.y), background_color + vec4f(0, 0.1, 0, 0));
     ui_move_point(ui, pos);
     ui_rect(ui, vec2f(8, window_size.y), border_color);
     ui_move_point(ui, pos);

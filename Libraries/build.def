@@ -18,6 +18,7 @@
 #include "./UI/build.def"
 #include "./Render/build.def"
 #include "./GL/build.def"
+#include "./Tar/build.def"
 
 typedef struct {
     // Core
@@ -28,6 +29,7 @@ typedef struct {
     Target cli;
     Target zip;
     Target fs;
+    Target tar;
 
     // Userspace
     Target rexim;
@@ -58,6 +60,7 @@ static auto const libraries = target([] {
         .cli = cli,
         .zip = zip,
         .fs = fs,
+        .tar = tar,
         .rexim = rexim,
         .soundio = soundio,
         .wasm = wasm,

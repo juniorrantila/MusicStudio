@@ -41,3 +41,10 @@ using nullptr_t = decltype(nullptr);
 #else
 #include <stdbool.h>
 #endif
+
+#define ty_offsetof(T, field) __builtin_offsetof(T, field)
+#ifdef __cplusplus
+#define ty_static_assert static_assert
+#else
+#define ty_static_assert(expr, ...) _Static_assert((expr), __VA_ARGS__ "")
+#endif

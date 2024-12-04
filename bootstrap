@@ -1,16 +1,23 @@
 #if 0
 set -e
-./Toolchain/bootstrap.sh > /dev/stderr
-source Toolchain/env
+
+BASE_PATH=`realpath $(dirname $0)`
+TOOLCHAIN_DIR=$BASE_PATH/Toolchain
+PROG_NAME=$(basename $0)
+
+$TOOLCHAIN_DIR/bootstrap.sh > /dev/stderr
+export PATH="$TOOLCHAIN_DIR/Tools/bin:$PATH"
 
 ccache clang -fcolor-diagnostics -std=c++17 -c -emit-llvm -xc++ $0 -o /tmp/bootstrap
 lli /tmp/bootstrap
 rm -f build/compile_commands.json
+
 if [ "$1" != "--no-echo" ]; then
-    echo '#' bootstrap: created build/build.ninja
-    echo '#' bootstrap: please run the command below:
+    echo '#' $PROG_NAME: created build/build.ninja
+    echo '#' $PROG_NAME: to build the project, run ninja -C build
+    echo '#' $PROG_NAME: if ninja is not in your PATH, run the command below:
     echo
-    echo source Toolchain/env
+    echo source $TOOLCHAIN_DIR/env
     echo
 fi
 

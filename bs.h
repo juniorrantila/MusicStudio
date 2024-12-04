@@ -315,7 +315,7 @@ static TargetRule ninja_rule(TargetRule rule)
 
 static inline TargetRule cxx_rule = ninja_rule({
     .name = "cxx",
-    .command = "ccache clang++ -target $target $args -MD -MQ $out -MF $out.d -o $out -c $in",
+    .command = "$bin/ccache $bin/clang++ -target $target $args -MD -MQ $out -MF $out.d -o $out -c $in",
     .description = "Compiling $language object $out",
     .variables = {
         (Variable){
@@ -403,7 +403,7 @@ static inline TargetRule merge_object_rule = ninja_rule({
 
 static inline TargetRule binary_link_rule = ninja_rule({
     .name = "link-binary",
-    .command = "clang++ -target $target -o $out $in $link_args",
+    .command = "$bin/clang++ -target $target -o $out $in $link_args",
     .description = "Linking binary target $out",
     .variables = {
         (Variable){
@@ -427,7 +427,7 @@ static inline TargetRule binary_link_rule = ninja_rule({
 
 static inline TargetRule compdb_rule = ninja_rule({
     .name = "compdb",
-    .command = "ninja -t compdb > compile_commands.json",
+    .command = "$bin/ninja -t compdb > compile_commands.json",
     .description = "Emitting compdb",
     .variables = {},
 });
@@ -583,10 +583,17 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
         fprintf(output, "\n");
     }
     if (strcmp(target_triple_string(library->target_triple), target_triple_string(wasm_target_triple())) == 0) {
-        fprintf(output, "    ld = wasm-ld\n");
+        fprintf(output, "    ld = $bin/wasm-ld\n");
         fprintf(output, "    extra_flags = --strip-all\n");
     } else {
-        fprintf(output, "    ld = ld\n");
+        // FIXME: Get linker from target triple.
+#ifdef __APPLE__
+        fprintf(output, "    ld = ld\n"); // FIXME: This is system ld
+#elif _WIN32
+        fprintf(output, "    ld = $bin/lld-link\n");
+#else
+        fprintf(output, "    ld = $bin/ld.lld\n");
+#endif
         fprintf(output, "    extra_flags = -r\n");
     }
     fprintf(output, "\n");
@@ -629,6 +636,8 @@ static inline c_string extra_target_files[MAX_ENTRIES];
 static inline void emit_ninja(FILE* output, Target target)
 {
     fprintf(output, "ninja_required_version = 1.8.2\n\n");
+
+    fprintf(output, "bin = ../Toolchain/Tools/bin\n\n");
 
     for (usize i = 0; i < all_rules_count; i++) {
         emit_ninja_rule(output, &all_rules[i]);

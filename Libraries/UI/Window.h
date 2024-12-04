@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+#define UI_KEYMAP_SIZE ((usize)1024)
+
 typedef struct WSWindowSpec {
     UIWindow* parent;
     c_string title;

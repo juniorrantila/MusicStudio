@@ -7,7 +7,7 @@
 #include <AppKit/AppKit.h>
 
 @interface UIAppKitWindow : NSWindow<NSWindowDelegate> {
-    @public u8 keymap[1024];
+    @public u8 keymap[UI_KEYMAP_SIZE];
     @public UIMouseState mouse_state;
     @public bool should_close;
     @public NSSize size;

@@ -30,10 +30,9 @@ then
     DEFAULT_SYSROOT="-DDEFAULT_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
 fi
 
-# -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;lldb" \
 cmake -S $REPO_DIR/llvm                                     \
     -DCMAKE_BUILD_TYPE=Release                              \
-    -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra"        \
+    -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;lld"    \
     -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR                     \
     -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly"       \
     -DLLVM_INCLUDE_TESTS=NO                                 \

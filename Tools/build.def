@@ -18,78 +18,86 @@ auto const vst_dump = target([] {
     });
 });
 
-auto const sine = target([] {
-    return cpp_binary("sine", {
-        .srcs = {
-            "./sine.cpp",
-        },
-        .compile_flags = {},
-        .linker_flags = {
-#ifdef __APPLE__
-        "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
-        "-framework", "CoreFoundation",
-        "-framework", "CoreAudio",
-        "-framework", "AudioUnit",
-#endif
-        },
-        .target_triple = system_target_triple(),
-        .deps = {
-            libraries.main,
-            libraries.soundio,
-            libraries.ty,
-            libraries.cli,
-        }
-    });
+auto const vst_dump = cpp_binary("vst-dump", {
+    .srcs = {
+        "./vst-dump.cpp",
+    },
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = system_target_triple(),
+    .deps = {
+        libraries.ms,
+        libraries.cli,
+        libraries.main,
+    }
 });
 
-auto const list_devices = target([] {
-    return cpp_binary("list-devices", {
-        .srcs = {
-            "./list-devices.cpp",
-        },
-        .compile_flags = {},
-        .linker_flags = {
+auto const sine = cpp_binary("sine", {
+    .srcs = {
+        "./sine.cpp",
+    },
+    .compile_flags = {},
+    .linker_flags = {
 #ifdef __APPLE__
-        "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
-        "-framework", "CoreFoundation",
-        "-framework", "CoreAudio",
-        "-framework", "AudioUnit",
+    "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
+    "-framework", "CoreFoundation",
+    "-framework", "CoreAudio",
+    "-framework", "AudioUnit",
 #endif
-        },
-        .target_triple = system_target_triple(),
-        .deps = {
-            libraries.main,
-            libraries.soundio,
-            libraries.ty,
-            libraries.cli,
-        }
-    });
+    },
+    .target_triple = system_target_triple(),
+    .deps = {
+        libraries.main,
+        libraries.soundio,
+        libraries.ty,
+        libraries.cli,
+    }
 });
 
-auto const vst_run_gui = target([] {
-    return cpp_binary("vst-run-gui", {
-        .srcs = {
-            "./vst-run-gui.cpp",
-        },
-        .compile_flags = {},
-        .linker_flags = {
+auto const list_devices = cpp_binary("list-devices", {
+    .srcs = {
+        "./list-devices.cpp",
+    },
+    .compile_flags = {},
+    .linker_flags = {
 #ifdef __APPLE__
-        "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
-        "-framework", "AppKit",
-        "-framework", "OpenGL",
-        "-framework", "CoreFoundation",
-        "-framework", "CoreAudio",
-        "-framework", "AudioUnit",
+    "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
+    "-framework", "CoreFoundation",
+    "-framework", "CoreAudio",
+    "-framework", "AudioUnit",
 #endif
-        },
-        .target_triple = system_target_triple(),
-        .deps = {
-            libraries.main,
-            libraries.ms,
-            libraries.soundio,
-            libraries.ty,
-            libraries.cli,
-            libraries.ui
-        }
-    });
+    },
+    .target_triple = system_target_triple(),
+    .deps = {
+        libraries.main,
+        libraries.soundio,
+        libraries.ty,
+        libraries.cli,
+    }
+});
+
+auto const vst_run_gui = cpp_binary("vst-run-gui", {
+    .srcs = {
+        "./vst-run-gui.cpp",
+    },
+    .compile_flags = {},
+    .linker_flags = {
+#ifdef __APPLE__
+    "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
+    "-framework", "AppKit",
+    "-framework", "OpenGL",
+    "-framework", "CoreFoundation",
+    "-framework", "CoreAudio",
+    "-framework", "AudioUnit",
+#endif
+    },
+    .target_triple = system_target_triple(),
+    .deps = {
+        libraries.main,
+        libraries.ms,
+        libraries.soundio,
+        libraries.ty,
+        libraries.cli,
+        libraries.ui
+    }
 });

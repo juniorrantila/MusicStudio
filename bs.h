@@ -754,6 +754,7 @@ static inline Strings default_cxx_args(void)
         "-fstrict-flex-arrays=2",
         "-Wno-c23-extensions",
         "-g3",
+        "-O2",
         "-gdwarf",
         "-gfull",
         "-gmodules",

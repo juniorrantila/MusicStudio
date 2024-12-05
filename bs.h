@@ -1,4 +1,31 @@
-#pragma once
+#if 0
+set -e
+
+BASE_PATH=`realpath $(dirname $0)`
+TOOLCHAIN_DIR=$BASE_PATH/Toolchain
+PROG_NAME=$(basename $0)
+
+$TOOLCHAIN_DIR/bootstrap.sh > /dev/stderr
+export PATH="$TOOLCHAIN_DIR/Tools/bin:$PATH"
+
+ccache clang -fcolor-diagnostics -std=c++17 -c -emit-llvm -xc++ $0 -o /tmp/bootstrap
+lli /tmp/bootstrap
+rm -f build/compile_commands.json
+
+if [ "$1" != "--no-echo" ]; then
+    echo '#' $PROG_NAME: created build/build.ninja
+    echo '#' $PROG_NAME: to build the project, run ninja -C build
+    echo '#' $PROG_NAME: if ninja is not in your PATH, run the command below:
+    echo
+    echo source $TOOLCHAIN_DIR/env
+    echo
+fi
+
+exit 0
+#endif
+#ifndef BS_H
+#define BS_H
+
 #include <stdlib.h>
 #include <libgen.h>
 #include <string.h>
@@ -892,3 +919,17 @@ static inline void dyn_targets_add_g(void* targets, Target target)
 {
     dyn_targets_add(((DynTargets*)targets), target);
 }
+
+#include "./build.def"
+int main(void)
+{
+    setup("build");
+    FILE* ninja = fopen("build/build.ninja", "w");
+    if (!ninja) {
+        perror("bs.h: could not open build/build.ninja");
+        return 1;
+    }
+    emit_ninja(ninja, all_targets);
+    fclose(ninja);
+}
+#endif

@@ -148,7 +148,6 @@ static inline c_string system_abi(void);
 
 static inline TargetTriple system_target_triple(void);
 static inline TargetTriple wasm_target_triple(void);
-static inline TargetTriple dynamic_target_tripple(void);
 static inline c_string target_triple_string(TargetTriple triple);
 
 static inline void setup(c_string, c_string file = __builtin_FILE());
@@ -314,6 +313,31 @@ static inline Language* language_from_filename(c_string name)
             .pretty_name = "Objective-C",
             .extension = ".m",
         },
+        {
+            .name = "asm",
+            .pretty_name = "assembly",
+            .extension = ".asm",
+        },
+        {
+            .name = "asm",
+            .pretty_name = "arm64 assembly",
+            .extension = ".arm64",
+        },
+        {
+            .name = "asm",
+            .pretty_name = "arm assembly",
+            .extension = ".arm",
+        },
+        {
+            .name = "asm",
+            .pretty_name = "x86 assembly",
+            .extension = ".x86",
+        },
+        {
+            .name = "asm",
+            .pretty_name = "i386 assembly",
+            .extension = ".i386",
+        },
     };
     usize name_len = strlen(name);
     for (usize i = 0; i < capacity(languages); i++) {
@@ -464,6 +488,10 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
     for (usize i = 0; i < srcs_len; i++) {
         c_string src = binary->srcs.entries[i];
         Language* language = language_from_filename(src);
+        if (!language) {
+            fprintf(stderr, "Error: unknown language for %s\n", src);
+            exit(1);
+        }
         fprintf(output, "build %s/%s/%s.o: cxx ../%s/%s\n", triple, base_dir, src, base_dir, src);
         fprintf(output, "    language = %s\n", language->pretty_name);
         fprintf(output, "    target = %s\n", triple);
@@ -566,6 +594,10 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
     for (usize i = 0; i < srcs_len; i++) {
         c_string src = library->srcs.entries[i];
         Language* language = language_from_filename(src);
+        if (!language) {
+            fprintf(stderr, "Error: unknown language for %s\n", src);
+            exit(1);
+        }
         fprintf(output, "build %s/%s/%s.o: cxx ../%s/%s\n", triple, base_dir, src, base_dir, src);
         fprintf(output, "    language = %s\n", language->pretty_name);
         fprintf(output, "    target = %s\n", triple);
@@ -608,6 +640,7 @@ static inline void emit_ninja(FILE* output, Target target)
     fprintf(output, "default_c_args      = $default_cxx_args -xc -std=c23\n");
     fprintf(output, "default_objc_args   = $default_cxx_args -xobjective-c -std=c23\n");
     fprintf(output, "default_objcpp_args = $default_cxx_args -xobjective-c++ -std=c++20\n");
+    fprintf(output, "default_asm_args    = -xassembler-with-cpp\n");
     fprintf(output, "\n");
 
     for (usize i = 0; i < all_rules_count; i++) {

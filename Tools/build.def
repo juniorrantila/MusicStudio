@@ -18,7 +18,7 @@ auto const vst_dump = target([] {
     });
 });
 
-auto const vst_dump = cpp_binary("vst-dump", {
+auto const vst_dump = cc_binary("vst-dump", {
     .srcs = {
         "./vst-dump.cpp",
     },
@@ -32,7 +32,7 @@ auto const vst_dump = cpp_binary("vst-dump", {
     }
 });
 
-auto const sine = cpp_binary("sine", {
+auto const sine = cc_binary("sine", {
     .srcs = {
         "./sine.cpp",
     },
@@ -54,7 +54,7 @@ auto const sine = cpp_binary("sine", {
     }
 });
 
-auto const list_devices = cpp_binary("list-devices", {
+auto const list_devices = cc_binary("list-devices", {
     .srcs = {
         "./list-devices.cpp",
     },
@@ -76,7 +76,7 @@ auto const list_devices = cpp_binary("list-devices", {
     }
 });
 
-auto const vst_run_gui = cpp_binary("vst-run-gui", {
+auto const vst_run_gui = cc_binary("vst-run-gui", {
     .srcs = {
         "./vst-run-gui.cpp",
     },

@@ -2,7 +2,7 @@
 #include "../bs.h"
 #include "../Libraries/build.def"
 
-static auto const shaders = cpp_library("Shaders", {
+static auto const shaders = cc_library("Shaders", {
     .srcs = {
         "./Shaders.cpp"
     },

@@ -2,7 +2,7 @@
 #include "../../bs.h"
 #include "../Ty/build.def"
 
-static auto const library = c_library("Library", {
+static auto const library = cc_library("Library", {
     .srcs = {
         "./Library.c",
     },

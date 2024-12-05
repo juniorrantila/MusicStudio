@@ -2,7 +2,7 @@
 #include "../../bs.h"
 #include "../Ty/build.def"
 
-static auto const core = cpp_library("Core", {
+static auto const core = cc_library("Core", {
     .srcs = {
         "./File.cpp",
         "./Library.cpp",

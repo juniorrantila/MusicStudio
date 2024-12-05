@@ -3,7 +3,7 @@
 #include "../Ty/build.def"
 #include "../Core/build.def"
 
-static auto const rexim = cpp_library("Rexim", {
+static auto const rexim = cc_library("Rexim", {
     .srcs = {
         "./Arena.cpp",
         "./File.cpp",

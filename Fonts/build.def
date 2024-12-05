@@ -2,7 +2,7 @@
 #include "../bs.h"
 #include "../Libraries/build.def"
 
-static auto const fonts = cpp_library("Fonts", {
+static auto const fonts = cc_library("Fonts", {
     .srcs = {
         "./Fonts.cpp"
     },

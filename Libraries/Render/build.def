@@ -5,7 +5,7 @@
 #include "../FS/build.def"
 #include "../GL/build.def"
 
-static auto const render = objcpp_library("Render", {
+static auto const render = cc_library("Render", {
     .srcs = {
         "./Render.cpp",
     },

@@ -4,36 +4,34 @@
 #include "../Fonts/build.def"
 #include "../Shaders/build.def"
 
-auto const music_studio = target([] {
-    return cpp_binary("music-studio", {
-        .srcs = {
-            "./main.cpp",
-        },
-        .compile_flags = {},
-        .linker_flags = {
+auto const music_studio = cc_binary("music-studio", {
+    .srcs = {
+        "./main.cpp",
+    },
+    .compile_flags = {},
+    .linker_flags = {
 #ifdef __APPLE__
-        "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
-        "-framework", "AppKit",
-        "-framework", "OpenGL",
-        "-framework", "CoreFoundation",
-        "-framework", "CoreAudio",
-        "-framework", "AudioUnit",
+    "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
+    "-framework", "AppKit",
+    "-framework", "OpenGL",
+    "-framework", "CoreFoundation",
+    "-framework", "CoreAudio",
+    "-framework", "AudioUnit",
 #endif
-        },
-        .target_triple = system_target_triple(),
-        .deps = {
-            fonts,
-            shaders,
-            libraries.render,
-            libraries.ms,
-            libraries.ui,
-            libraries.debug,
-            libraries.ty,
-            libraries.core,
-            libraries.fs,
-            libraries.cli,
-            libraries.main,
-            libraries.soundio,
-        }
-    });
+    },
+    .target_triple = system_target_triple(),
+    .deps = {
+        fonts,
+        shaders,
+        libraries.render,
+        libraries.ms,
+        libraries.ui,
+        libraries.debug,
+        libraries.ty,
+        libraries.core,
+        libraries.fs,
+        libraries.cli,
+        libraries.main,
+        libraries.soundio,
+    }
 });

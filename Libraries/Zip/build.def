@@ -1,7 +1,7 @@
 #pragma once
 #include "../../bs.h"
 
-static auto const zip = c_library("Zip", {
+static auto const zip = cc_library("Zip", {
     .srcs = {
         "./Zip.c",
     },

@@ -117,10 +117,7 @@ typedef struct LibraryArgs {
     Targets deps;
 } LibraryArgs;
 
-static inline Strings default_cpp_args(void);
-static inline Strings default_c_args(void);
-static inline Strings default_objc_args(void);
-static inline Strings default_objcpp_args(void);
+static inline Strings default_cxx_args(void);
 
 template <typename T, usize Count>
 static inline usize len(T const (& items)[Count]);
@@ -134,11 +131,9 @@ static inline void cat(T (&items)[Count], T const (& other)[Count2]);
 template <typename F>
 static inline auto target(F callback, c_string file = __builtin_FILE());
 
-static inline Target cpp_binary(c_string name, BinaryArgs args, c_string file = __builtin_FILE());
-static inline Target cpp_library(c_string name, LibraryArgs args, c_string file = __builtin_FILE());
-static inline Target c_library(c_string name, LibraryArgs args, c_string file = __builtin_FILE());
-static inline Target objc_library(c_string name, LibraryArgs args, c_string file = __builtin_FILE());
-static inline Target objcpp_library(c_string name, LibraryArgs args, c_string file = __builtin_FILE());
+static inline Target cc_binary(c_string name, BinaryArgs args, c_string file = __builtin_FILE());
+static inline Target cc_library(c_string name, LibraryArgs args, c_string file = __builtin_FILE());
+
 static inline Target cpp_bundle_library(c_string name, LibraryArgs args, c_string file = __builtin_FILE());
 
 static inline void emit_ninja(FILE* output, Target target);
@@ -201,14 +196,11 @@ static inline Target all_targets = {
     .targets = &all_targets_deps,
     .kind = TargetKind_Targets,
 };
-static inline Target cpp_binary(c_string name, BinaryArgs args, c_string file)
+static inline Target cc_binary(c_string name, BinaryArgs args, c_string file)
 {
     c_string base_dir = strdup(dirname(strdup(file)));
     BinaryArgs* res = (BinaryArgs*)malloc(sizeof(args));
     *res = args;
-    res->compile_flags = default_cpp_args();
-    res->target_triple = system_target_triple();
-    cat(res->compile_flags.entries, args.compile_flags.entries);
     Target target = {
         .name = name,
         .file = file,
@@ -220,67 +212,11 @@ static inline Target cpp_binary(c_string name, BinaryArgs args, c_string file)
     return target;
 }
 
-static inline Target cpp_library(c_string name, LibraryArgs args, c_string file)
+static inline Target cc_library(c_string name, LibraryArgs args, c_string file)
 {
     c_string base_dir = strdup(dirname(strdup(file)));
     LibraryArgs* res = (LibraryArgs*)malloc(sizeof(args));
     *res = args;
-    res->compile_flags = default_cpp_args();
-    cat(res->compile_flags.entries, args.compile_flags.entries);
-    Target target = {
-        .name = name,
-        .file = file,
-        .base_dir = base_dir,
-        .library = res,
-        .kind = TargetKind_Library,
-    };
-    all_targets_deps.entries[all_targets_count++] = target;
-    return target;
-}
-
-static inline Target c_library(c_string name, LibraryArgs args, c_string file)
-{
-    c_string base_dir = strdup(dirname(strdup(file)));
-    LibraryArgs* res = (LibraryArgs*)malloc(sizeof(args));
-    *res = args;
-    res->compile_flags = default_c_args();
-    cat(res->compile_flags.entries, args.compile_flags.entries);
-    Target target = {
-        .name = name,
-        .file = file,
-        .base_dir = base_dir,
-        .library = res,
-        .kind = TargetKind_Library,
-    };
-    all_targets_deps.entries[all_targets_count++] = target;
-    return target;
-}
-
-static inline Target objc_library(c_string name, LibraryArgs args, c_string file)
-{
-    c_string base_dir = strdup(dirname(strdup(file)));
-    LibraryArgs* res = (LibraryArgs*)malloc(sizeof(args));
-    *res = args;
-    res->compile_flags = default_objc_args();
-    cat(res->compile_flags.entries, args.compile_flags.entries);
-    Target target = {
-        .name = name,
-        .file = file,
-        .base_dir = base_dir,
-        .library = res,
-        .kind = TargetKind_Library,
-    };
-    all_targets_deps.entries[all_targets_count++] = target;
-    return target;
-}
-
-static inline Target objcpp_library(c_string name, LibraryArgs args, c_string file)
-{
-    c_string base_dir = strdup(dirname(strdup(file)));
-    LibraryArgs* res = (LibraryArgs*)malloc(sizeof(args));
-    *res = args;
-    res->compile_flags = default_objcpp_args();
-    cat(res->compile_flags.entries, args.compile_flags.entries);
     Target target = {
         .name = name,
         .file = file,
@@ -351,27 +287,44 @@ static inline TargetRule cxx_rule = ninja_rule({
 
 typedef struct Language {
     c_string name;
+    c_string pretty_name;
     c_string extension;
 } Language;
 
-static inline c_string language_from_filename(c_string name)
+static inline Language* language_from_filename(c_string name)
 {
-    Language languages[] = {
-        { .name = "C++", .extension = ".cpp" },
-        { .name = "C", .extension = ".c" },
-        { .name = "Objective-C++", .extension = ".mm" },
-        { .name = "Objective-C", .extension = ".m" },
+    static Language languages[] = {
+        {
+            .name = "cpp",
+            .pretty_name = "C++",
+            .extension = ".cpp",
+        },
+        {
+            .name = "c",
+            .pretty_name = "C",
+            .extension = ".c",
+        },
+        {
+            .name = "objcpp",
+            .pretty_name = "Objective-C++",
+            .extension = ".mm",
+        },
+        {
+            .name = "objc",
+            .pretty_name = "Objective-C",
+            .extension = ".m",
+        },
     };
     usize name_len = strlen(name);
     for (usize i = 0; i < capacity(languages); i++) {
-        Language language = languages[i];
-        usize extension_len = strlen(language.extension);
+        Language* language = &languages[i];
+        usize extension_len = strlen(language->extension);
         if (name_len < extension_len) {
             continue;
         }
         c_string ext = name + name_len - extension_len;
-        if (strcmp(ext, language.extension) == 0) {
-            return language.name;
+        if (strcmp(ext, language->extension) == 0) {
+            return language;
         }
     }
     return nullptr;
@@ -510,10 +463,11 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
     usize args_len = len(args->entries);
     for (usize i = 0; i < srcs_len; i++) {
         c_string src = binary->srcs.entries[i];
+        Language* language = language_from_filename(src);
         fprintf(output, "build %s/%s/%s.o: cxx ../%s/%s\n", triple, base_dir, src, base_dir, src);
-        fprintf(output, "    language = %s\n", language_from_filename(src));
+        fprintf(output, "    language = %s\n", language->pretty_name);
         fprintf(output, "    target = %s\n", triple);
-        fprintf(output, "    args =");
+        fprintf(output, "    args = $default_%s_args", language->name);
         for (usize arg = 0; arg < args_len; arg++) {
             fprintf(output, " %s", args->entries[arg]);
         }
@@ -611,10 +565,11 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
     usize args_len = len(args->entries);
     for (usize i = 0; i < srcs_len; i++) {
         c_string src = library->srcs.entries[i];
+        Language* language = language_from_filename(src);
         fprintf(output, "build %s/%s/%s.o: cxx ../%s/%s\n", triple, base_dir, src, base_dir, src);
-        fprintf(output, "    language = %s\n", language_from_filename(src));
+        fprintf(output, "    language = %s\n", language->pretty_name);
         fprintf(output, "    target = %s\n", triple);
-        fprintf(output, "    args =");
+        fprintf(output, "    args = $default_%s_args", language->name);
         for (usize arg = 0; arg < args_len; arg++) {
             fprintf(output, " %s", args->entries[arg]);
         }
@@ -638,6 +593,22 @@ static inline void emit_ninja(FILE* output, Target target)
     fprintf(output, "ninja_required_version = 1.8.2\n\n");
 
     fprintf(output, "bin = ../Toolchain/Tools/bin\n\n");
+
+    fprintf(output, "default_cxx_args =");
+    {
+        Strings args = default_cxx_args();
+        auto args_len = len(args.entries);
+        for (usize i = 0; i < args_len; i++) {
+            fprintf(output, " %s", args.entries[i]);
+        }
+    }
+    fprintf(output, "\n\n");
+
+    fprintf(output, "default_cpp_args    = $default_cxx_args -xc++ -std=c++20\n");
+    fprintf(output, "default_c_args      = $default_cxx_args -xc -std=c23\n");
+    fprintf(output, "default_objc_args   = $default_cxx_args -xobjective-c -std=c23\n");
+    fprintf(output, "default_objcpp_args = $default_cxx_args -xobjective-c++ -std=c++20\n");
+    fprintf(output, "\n");
 
     for (usize i = 0; i < all_rules_count; i++) {
         emit_ninja_rule(output, &all_rules[i]);
@@ -762,35 +733,6 @@ static inline Strings default_cxx_args(void)
         "-fno-omit-frame-pointer",
         "-fcolor-diagnostics",
     };
-}
-
-static inline Strings default_cpp_args(void)
-{
-    Strings args = default_cxx_args();
-    args.entries[len(args.entries)] = "-std=c++20";
-    return args;
-}
-
-static inline Strings default_c_args(void)
-{
-    Strings args = default_cxx_args();
-    args.entries[len(args.entries)] = "-std=c23";
-    args.entries[len(args.entries)] = "-xc";
-    return args;
-}
-
-static inline Strings default_objc_args(void)
-{
-    Strings args = default_c_args();
-    args.entries[len(args.entries)] = "-xobjective-c";
-    return args;
-}
-
-static inline Strings default_objcpp_args(void)
-{
-    Strings args = default_cpp_args();
-    args.entries[len(args.entries)] = "-xobjective-c++";
-    return args;
 }
 
 static inline c_string system_os(void)

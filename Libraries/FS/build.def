@@ -4,7 +4,7 @@
 #include "../Core/build.def"
 #include "../Zip/build.def"
 
-static auto const fs = cpp_library("FS", {
+static auto const fs = cc_library("FS", {
     .srcs = {
         "./Bundle.cpp"
     },

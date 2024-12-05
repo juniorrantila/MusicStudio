@@ -1,7 +1,7 @@
 #pragma once
 #include "../../bs.h"
 
-static auto const ty = cpp_library("Ty", {
+static auto const ty = cc_library("Ty", {
     .srcs = {
         "./ArenaAllocator.cpp",
         "./Bytes.cpp",

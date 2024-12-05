@@ -2,7 +2,7 @@
 #include "../../bs.h"
 #include "../Ty/build.def"
 
-static auto const native_plugin = cpp_library("NativePlugin", {
+static auto const native_plugin = cc_library("NativePlugin", {
     .srcs = {
         "./Dummy.cpp",
     },

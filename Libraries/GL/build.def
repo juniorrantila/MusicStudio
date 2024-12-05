@@ -1,7 +1,7 @@
 #pragma once
 #include "../../bs.h"
 
-static auto const gl = cpp_library("GL", {
+static auto const gl = cc_library("GL", {
     .srcs = {
         "./Dummy.cpp",
     },

@@ -1,7 +1,7 @@
 #pragma once
 #include "../../bs.h"
 
-static auto const debug = cpp_library("Debug", {
+static auto const debug = cc_library("Debug", {
     .srcs = {
         "./Instrumentation.cpp"
     },

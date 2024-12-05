@@ -2,7 +2,7 @@
 #include "../../bs.h"
 #include "../Ty/build.def"
 
-static auto const midi = cpp_library("Midi", {
+static auto const midi = cc_library("Midi", {
     .srcs = {
         "./Dummy.cpp"
     },

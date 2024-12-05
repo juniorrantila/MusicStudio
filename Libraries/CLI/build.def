@@ -3,7 +3,7 @@
 #include "../Ty/build.def"
 #include "../Core/build.def"
 
-static auto const cli = cpp_library("CLI", {
+static auto const cli = cc_library("CLI", {
     .srcs = {
         "./ArgumentParser.cpp",
         "./ArgumentParserError.cpp",

@@ -3,7 +3,7 @@
 #include "../Ty/build.def"
 #include "../Core/build.def"
 
-static auto const main_ = cpp_library("Main", {
+static auto const main_ = cc_library("Main", {
     .srcs = {
         "./Main.cpp",
     },

@@ -2,7 +2,7 @@
 #include "../../bs.h"
 #include "../Ty/build.def"
 
-static auto const wasm = c_library("WASM", {
+static auto const wasm = cc_library("WASM", {
     .srcs = {
         "./Allocator.c",
         "./Function.c",

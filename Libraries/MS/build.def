@@ -7,7 +7,7 @@
 #include "../Library/build.def"
 #include "../NativePlugin/build.def"
 
-static auto const ms = cpp_library("MS", {
+static auto const ms = cc_library("MS", {
     .srcs = {
         "./Host.cpp",
         "./Plugin.cpp",

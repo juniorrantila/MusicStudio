@@ -5,7 +5,7 @@
 #include "../Rexim/build.def"
 #include "../Render/build.def"
 
-static auto const ui = objcpp_library("UI", {
+static auto const ui = cc_library("UI", {
     .srcs = {
         "./AppKit/Application.mm",
         "./AppKit/Window.mm",

@@ -2,7 +2,7 @@
 #include "../../bs.h"
 #include "../Ty/build.def"
 
-static auto const tar = c_library("Tar", {
+static auto const tar = cc_library("Tar", {
     .srcs = {
         "./Tar.c",
     },

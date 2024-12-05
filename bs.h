@@ -563,7 +563,7 @@ static inline TargetRule binary_link_rule = ninja_rule({
 
 static inline TargetRule universal_binary_rule = ninja_rule({
     .name = "universal",
-    .command = "lipo -create -output $out $in",
+    .command = "$bin/llvm-lipo -create -output $out $in",
     .description = "Creating universal $out",
     .variables = {
         (Variable){

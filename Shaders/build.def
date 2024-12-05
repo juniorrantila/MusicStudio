@@ -12,7 +12,7 @@ static auto const shaders = cc_library("Shaders", {
     .header_namespace = "Shaders",
     .compile_flags = {},
     .linker_flags = {},
-    .target_triple = system_target_triple(),
+    .target_triple = {},
     .link_style = "static",
     .deps = {
         libraries.ty,

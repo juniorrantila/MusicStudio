@@ -16,7 +16,7 @@ static auto const render = cc_library("Render", {
     .header_namespace = "Render",
     .compile_flags = {},
     .linker_flags = {},
-    .target_triple = system_target_triple(),
+    .target_triple = {},
     .link_style = "static",
     .deps = {
         ty,

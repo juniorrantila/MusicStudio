@@ -15,7 +15,7 @@ static auto const library = cc_library("Library", {
         "-Wno-deprecated-declarations",
     },
     .linker_flags = {},
-    .target_triple = system_target_triple(),
+    .target_triple = {},
     .link_style = "static",
     .deps = {
         ty,

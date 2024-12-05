@@ -16,7 +16,7 @@ static auto const fs = cc_library("FS", {
     .header_namespace = "FS",
     .compile_flags = {},
     .linker_flags = {},
-    .target_triple = system_target_triple(),
+    .target_triple = {},
     .link_style = "static",
     .deps = {
         ty,

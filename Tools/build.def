@@ -24,7 +24,7 @@ auto const vst_dump = cc_binary("vst-dump", {
     },
     .compile_flags = {},
     .linker_flags = {},
-    .target_triple = system_target_triple(),
+    .target_triple = {},
     .deps = {
         libraries.ms,
         libraries.cli,
@@ -45,7 +45,7 @@ auto const sine = cc_binary("sine", {
     "-framework", "AudioUnit",
 #endif
     },
-    .target_triple = system_target_triple(),
+    .target_triple = {},
     .deps = {
         libraries.main,
         libraries.soundio,
@@ -67,7 +67,7 @@ auto const list_devices = cc_binary("list-devices", {
     "-framework", "AudioUnit",
 #endif
     },
-    .target_triple = system_target_triple(),
+    .target_triple = {},
     .deps = {
         libraries.main,
         libraries.soundio,
@@ -91,7 +91,7 @@ auto const vst_run_gui = cc_binary("vst-run-gui", {
     "-framework", "AudioUnit",
 #endif
     },
-    .target_triple = system_target_triple(),
+    .target_triple = {},
     .deps = {
         libraries.main,
         libraries.ms,

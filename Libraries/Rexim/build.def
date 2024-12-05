@@ -23,7 +23,7 @@ static auto const rexim = cc_library("Rexim", {
     .header_namespace = "Rexim",
     .compile_flags = {},
     .linker_flags = {},
-    .target_triple = system_target_triple(),
+    .target_triple = {},
     .link_style = "static",
     .deps = {
         ty,

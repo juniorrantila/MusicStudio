@@ -16,7 +16,7 @@ static auto const main_ = cc_library("Main", {
         // "-Wl,-undefined",
         // "-Wl,suppress",
     },
-    .target_triple = system_target_triple(),
+    .target_triple = {},
     .link_style = "static",
     .deps = {
         ty,

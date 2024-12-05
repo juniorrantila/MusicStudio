@@ -91,6 +91,7 @@ typedef enum {
     TargetKind_Library,
     TargetKind_Targets,
     TargetKind_UniversalBinary,
+    TargetKind_UniversalLibrary,
 } TargetKind;
 
 struct BinaryArgs;
@@ -106,6 +107,7 @@ typedef struct {
         struct LibraryArgs* library;
         struct Targets* targets;
         struct UniversalBinaryArgs* universal_binary;
+        struct UniversalLibraryArgs* universal_library;
     };
     TargetKind kind;
 } Target;
@@ -152,6 +154,10 @@ typedef struct UniversalBinaryArgs {
     Targets bins;
 } UniversalBinaryArgs;
 
+typedef struct UniversalLibraryArgs {
+    Targets libs;
+} UniversalLibraryArgs;
+
 static inline Strings default_cxx_args(void);
 
 template <typename T, usize Count>
@@ -170,6 +176,7 @@ static inline Target cc_binary(c_string name, BinaryArgs args, c_string file = _
 static inline Target cc_library(c_string name, LibraryArgs args, c_string file = __builtin_FILE());
 
 static inline Target universal_binary(c_string name, UniversalBinaryArgs args, c_string file = __builtin_FILE());
+static inline Target universal_library(c_string name, UniversalLibraryArgs args, c_string file = __builtin_FILE());
 
 static inline Target cpp_bundle_library(c_string name, LibraryArgs args, c_string file = __builtin_FILE());
 
@@ -296,6 +303,46 @@ static inline Target cc_library(c_string name, LibraryArgs args, c_string file)
     c_string base_dir = strdup(dirname(strdup(file)));
     LibraryArgs* res = (LibraryArgs*)malloc(sizeof(args));
     *res = args;
+
+    if (res->target_triple.abi == 0) {
+        res->target_triple.abi = system_abi();
+    }
+    if (res->target_triple.os == 0) {
+        res->target_triple.os = system_os();
+    }
+    if (res->target_triple.arch == 0) {
+#ifndef __APPLE__
+        res->target_triple.arch = system_arch();
+#else
+        res->target_triple.arch = "arm64";
+        LibraryArgs* x86 = (LibraryArgs*)malloc(sizeof(args));
+        *x86 = *res;
+        x86->target_triple.arch = "x86_64";
+        Target arm_target = {
+            .name = name,
+            .file = file,
+            .base_dir = base_dir,
+            .library = res,
+            .kind = TargetKind_Library,
+        };
+        Target x86_target = {
+            .name = name,
+            .file = file,
+            .base_dir = base_dir,
+            .library = x86,
+            .kind = TargetKind_Library,
+        };
+        all_targets_deps.entries[all_targets_count++] = arm_target;
+        all_targets_deps.entries[all_targets_count++] = x86_target;
+        return universal_library(name, {
+            .libs = {
+                arm_target,
+                x86_target,
+            },
+        }, file);
+#endif
+    }
+
     Target target = {
         .name = name,
         .file = file,
@@ -318,6 +365,22 @@ static inline Target universal_binary(c_string name, UniversalBinaryArgs args, c
         .base_dir = base_dir,
         .universal_binary = res,
         .kind = TargetKind_UniversalBinary,
+    };
+    all_targets_deps.entries[all_targets_count++] = target;
+    return target;
+}
+
+static inline Target universal_library(c_string name, UniversalLibraryArgs args, c_string file)
+{
+    c_string base_dir = strdup(dirname(strdup(file)));
+    UniversalLibraryArgs* res = (UniversalLibraryArgs*)malloc(sizeof(args));
+    *res = args;
+    Target target = {
+        .name = name,
+        .file = file,
+        .base_dir = base_dir,
+        .universal_library = res,
+        .kind = TargetKind_UniversalLibrary,
     };
     all_targets_deps.entries[all_targets_count++] = target;
     return target;
@@ -499,9 +562,9 @@ static inline TargetRule binary_link_rule = ninja_rule({
 });
 
 static inline TargetRule universal_binary_rule = ninja_rule({
-    .name = "universal-binary",
+    .name = "universal",
     .command = "lipo -create -output $out $in",
-    .description = "Creating universal binary $out",
+    .description = "Creating universal $out",
     .variables = {
         (Variable){
             .name = "out",
@@ -579,8 +642,14 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
         c_string src = binary->srcs.entries[i];
         fprintf(output, " %s/%s/%s.o", triple, base_dir, src);
     }
+    StringSet seen_deps = (StringSet){};
     for (usize i = 1; i < deps_len; i++) {
         Target const* dep = &deps.entries[i];
+        auto n = string_view(dep->name);
+        if (string_set_has(&seen_deps, n)) {
+            continue;
+        }
+        string_set_add(&seen_deps, n);
         fprintf(output, " %s/lib/%s.o", triple, dep->name);
     }
     fprintf(output, "\n");
@@ -598,6 +667,7 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
     Strings const* args = &binary->compile_flags;
     usize args_len = len(args->entries);
     for (usize i = 0; i < srcs_len; i++) {
+        seen_deps.size = 0;
         c_string src = binary->srcs.entries[i];
         Language* language = language_from_filename(src);
         if (!language) {
@@ -614,6 +684,11 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
         for (usize dep_index = 1; dep_index < deps_len; dep_index++) {
             Target const* dep = &deps.entries[dep_index];
             if (dep->kind == TargetKind_Library) {
+                StringView n = string_view(dep->name);
+                if (string_set_has(&seen_deps, n)) {
+                    continue;
+                }
+                string_set_add(&seen_deps, n);
                 LibraryArgs const* library = dep->library;
                 c_string ns = library->header_namespace;
                 fprintf(output, " -Ins/%s", ns);
@@ -629,7 +704,7 @@ static inline void emit_ninja_build_universal_binary(FILE* output, Target const*
     UniversalBinaryArgs* universal = target->universal_binary;
 
     c_string triple = target_triple_string(target_triple(*target));
-    fprintf(output, "build %s/bin/%s: universal-binary", triple, target->name);
+    fprintf(output, "build %s/bin/%s: universal", triple, target->name);
 
     auto bins_len = len(universal->bins.entries);
     for (usize i = 0; i < bins_len; i++) {
@@ -637,6 +712,23 @@ static inline void emit_ninja_build_universal_binary(FILE* output, Target const*
         assert(bin.kind == TargetKind_Binary);
         c_string triple = target_triple_string(target_triple(bin));
         fprintf(output, " %s/bin/%s", triple, bin.name);
+    }
+    fprintf(output, "\n\n");
+}
+
+static inline void emit_ninja_build_universal_library(FILE* output, Target const* target)
+{
+    UniversalLibraryArgs* universal = target->universal_library;
+
+    c_string triple = target_triple_string(target_triple(*target));
+    fprintf(output, "build %s/lib/%s.o: universal", triple, target->name);
+
+    auto bins_len = len(universal->libs.entries);
+    for (usize i = 0; i < bins_len; i++) {
+        Target bin = universal->libs.entries[i];
+        assert(bin.kind == TargetKind_Library);
+        c_string triple = target_triple_string(target_triple(bin));
+        fprintf(output, " %s/lib/%s.o", triple, bin.name);
     }
     fprintf(output, "\n\n");
 }
@@ -806,6 +898,9 @@ static inline void emit_ninja(FILE* output, Target target)
         case TargetKind_UniversalBinary:
             emit_ninja_build_universal_binary(output, target);
             break;
+        case TargetKind_UniversalLibrary:
+            emit_ninja_build_universal_library(output, target);
+            break;
         case TargetKind_Targets:
             break;
         }
@@ -826,6 +921,7 @@ static inline Targets const* target_deps(Target const* target)
     case TargetKind_Library: return &target->library->deps;
     case TargetKind_Targets: return target->targets;
     case TargetKind_UniversalBinary: return &target->universal_binary->bins;
+    case TargetKind_UniversalLibrary: return &target->universal_library->libs;
     }
 }
 
@@ -958,8 +1054,8 @@ static inline TargetTriple wasm_target_triple(void)
 {
     return (TargetTriple) {
         .arch = "wasm32",
-        .abi = nullptr,
-        .os = nullptr,
+        .abi = "unknown",
+        .os = "unknown",
     };
 }
 
@@ -1004,6 +1100,7 @@ static inline TargetTriple target_triple(Target target)
         return target.library->target_triple;
     case TargetKind_Targets:
         return (TargetTriple){};
+    case TargetKind_UniversalLibrary:
     case TargetKind_UniversalBinary:
         return (TargetTriple){
             .arch = "universal",

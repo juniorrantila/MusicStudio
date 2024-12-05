@@ -15,7 +15,7 @@ static auto const cli = cc_library("CLI", {
     .header_namespace = "CLI",
     .compile_flags = {},
     .linker_flags = {},
-    .target_triple = system_target_triple(),
+    .target_triple = {},
     .link_style = "static",
     .deps = {
         ty,

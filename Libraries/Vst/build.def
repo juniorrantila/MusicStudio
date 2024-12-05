@@ -24,7 +24,7 @@ static auto const vst = cc_library("Vst", {
     .header_namespace = "Vst",
     .compile_flags = {},
     .linker_flags = {},
-    .target_triple = system_target_triple(),
+    .target_triple = {},
     .link_style = "static",
     .deps = {
         ty,
@@ -39,7 +39,7 @@ static auto const vst_host = cc_library("VSTHost", {
     .header_namespace = "VSTHost",
     .compile_flags = {},
     .linker_flags = {},
-    .target_triple = system_target_triple(),
+    .target_triple = {},
     .link_style = "static",
     .deps = {
         vst,

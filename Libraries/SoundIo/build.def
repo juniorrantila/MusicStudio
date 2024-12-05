@@ -25,7 +25,7 @@ static auto const soundio = cc_library("SoundIo", {
 #endif
     },
     .linker_flags = {},
-    .target_triple = system_target_triple(),
+    .target_triple = {},
     .link_style = "static",
     .deps = {},
 });

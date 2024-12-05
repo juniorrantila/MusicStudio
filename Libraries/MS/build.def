@@ -26,7 +26,7 @@ static auto const ms = cc_library("MS", {
     .header_namespace = "MS",
     .compile_flags = {},
     .linker_flags = {},
-    .target_triple = system_target_triple(),
+    .target_triple = {},
     .link_style = "static",
     .deps = {
         ty,

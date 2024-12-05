@@ -12,7 +12,7 @@ static auto const fonts = cc_library("Fonts", {
     .header_namespace = "Fonts",
     .compile_flags = {},
     .linker_flags = {},
-    .target_triple = system_target_triple(),
+    .target_triple = {},
     .link_style = "static",
     .deps = {
         libraries.ty,

@@ -34,6 +34,7 @@ exit 0
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <stdbool.h>
 
 #define MAX_ENTRIES 128
 
@@ -47,15 +48,15 @@ typedef unsigned short u16;
 typedef unsigned int u32;
 typedef unsigned long u64;
 
-static_assert(sizeof(i8) == 1);
-static_assert(sizeof(i16) == 2);
-static_assert(sizeof(i32) == 4);
-static_assert(sizeof(i64) == 8);
+_Static_assert(sizeof(i8) == 1, "");
+_Static_assert(sizeof(i16) == 2, "");
+_Static_assert(sizeof(i32) == 4, "");
+_Static_assert(sizeof(i64) == 8, "");
 
-static_assert(sizeof(u8) == 1);
-static_assert(sizeof(u16) == 2);
-static_assert(sizeof(u32) == 4);
-static_assert(sizeof(u64) == 8);
+_Static_assert(sizeof(u8) == 1, "");
+_Static_assert(sizeof(u16) == 2, "");
+_Static_assert(sizeof(u32) == 4, "");
+_Static_assert(sizeof(u64) == 8, "");
 
 typedef __SIZE_TYPE__ usize;
 #define unsigned signed
@@ -71,8 +72,8 @@ typedef double f64;
 typedef char const* c_string;
 
 typedef struct StringView {
-    char const* characters { nullptr };
-    usize size { 0 };
+    char const* characters;
+    usize size;
 } StringView;
 
 typedef struct {

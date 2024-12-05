@@ -485,14 +485,14 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
     });
     usize deps_len = len(deps.entries);
 
-    fprintf(output, "build %s/%s: link-binary", triple, name);
+    fprintf(output, "build %s/bin/%s: link-binary", triple, name);
     for (usize i = 0; i < srcs_len; i++) {
         c_string src = binary->srcs.entries[i];
         fprintf(output, " %s/%s/%s.o", triple, base_dir, src);
     }
     for (usize i = 1; i < deps_len; i++) {
         Target const* dep = &deps.entries[i];
-        fprintf(output, " %s/%s.o", triple, dep->name);
+        fprintf(output, " %s/lib/%s.o", triple, dep->name);
     }
     fprintf(output, "\n");
     fprintf(output, "    target = %s\n", triple);
@@ -565,7 +565,7 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
         symlink(header_path, output_path);
     }
     
-    fprintf(output, "build %s/%s.o: merge-object ", triple, name);
+    fprintf(output, "build %s/lib/%s.o: merge-object ", triple, name);
     for (usize i = 0; i < srcs_len; i++) {
         c_string src = library->srcs.entries[i];
         fprintf(output, "%s/%s/%s.o", triple, base_dir, src);

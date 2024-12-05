@@ -90,10 +90,12 @@ typedef enum {
     TargetKind_Binary,
     TargetKind_Library,
     TargetKind_Targets,
+    TargetKind_UniversalBinary,
 } TargetKind;
 
 struct BinaryArgs;
 struct LibraryArgs;
+struct UniversalBinaryArgs;
 struct Targets;
 typedef struct {
     c_string name;
@@ -103,6 +105,7 @@ typedef struct {
         struct BinaryArgs* binary;
         struct LibraryArgs* library;
         struct Targets* targets;
+        struct UniversalBinaryArgs* universal_binary;
     };
     TargetKind kind;
 } Target;
@@ -145,6 +148,10 @@ typedef struct LibraryArgs {
     Targets deps;
 } LibraryArgs;
 
+typedef struct UniversalBinaryArgs {
+    Targets bins;
+} UniversalBinaryArgs;
+
 static inline Strings default_cxx_args(void);
 
 template <typename T, usize Count>
@@ -162,6 +169,8 @@ static inline auto target(F callback, c_string file = __builtin_FILE());
 static inline Target cc_binary(c_string name, BinaryArgs args, c_string file = __builtin_FILE());
 static inline Target cc_library(c_string name, LibraryArgs args, c_string file = __builtin_FILE());
 
+static inline Target universal_binary(c_string name, UniversalBinaryArgs args, c_string file = __builtin_FILE());
+
 static inline Target cpp_bundle_library(c_string name, LibraryArgs args, c_string file = __builtin_FILE());
 
 static inline void emit_ninja(FILE* output, Target target);
@@ -177,6 +186,9 @@ static inline c_string system_abi(void);
 static inline TargetTriple system_target_triple(void);
 static inline TargetTriple wasm_target_triple(void);
 static inline c_string target_triple_string(TargetTriple triple);
+static inline TargetTriple target_triple(Target target);
+static inline TargetTriple apple_arm_target_triple(void);
+static inline TargetTriple apple_x86_target_triple(void);
 
 static inline void setup(c_string, c_string file = __builtin_FILE());
 
@@ -228,6 +240,46 @@ static inline Target cc_binary(c_string name, BinaryArgs args, c_string file)
     c_string base_dir = strdup(dirname(strdup(file)));
     BinaryArgs* res = (BinaryArgs*)malloc(sizeof(args));
     *res = args;
+
+    if (res->target_triple.abi == 0) {
+        res->target_triple.abi = system_abi();
+    }
+    if (res->target_triple.os == 0) {
+        res->target_triple.os = system_os();
+    }
+    if (res->target_triple.arch == 0) {
+#ifndef __APPLE__
+        res->target_triple.arch = system_arch();
+#else
+        res->target_triple.arch = "arm64";
+        BinaryArgs* x86 = (BinaryArgs*)malloc(sizeof(args));
+        *x86 = *res;
+        x86->target_triple.arch = "x86_64";
+        Target arm_target = {
+            .name = name,
+            .file = file,
+            .base_dir = base_dir,
+            .binary = res,
+            .kind = TargetKind_Binary,
+        };
+        Target x86_target = {
+            .name = name,
+            .file = file,
+            .base_dir = base_dir,
+            .binary = x86,
+            .kind = TargetKind_Binary,
+        };
+        all_targets_deps.entries[all_targets_count++] = arm_target;
+        all_targets_deps.entries[all_targets_count++] = x86_target;
+        return universal_binary(name, {
+            .bins = {
+                arm_target,
+                x86_target,
+            },
+        }, file);
+#endif
+    }
+
     Target target = {
         .name = name,
         .file = file,
@@ -250,6 +302,22 @@ static inline Target cc_library(c_string name, LibraryArgs args, c_string file)
         .base_dir = base_dir,
         .library = res,
         .kind = TargetKind_Library,
+    };
+    all_targets_deps.entries[all_targets_count++] = target;
+    return target;
+}
+
+static inline Target universal_binary(c_string name, UniversalBinaryArgs args, c_string file)
+{
+    c_string base_dir = strdup(dirname(strdup(file)));
+    UniversalBinaryArgs* res = (UniversalBinaryArgs*)malloc(sizeof(args));
+    *res = args;
+    Target target = {
+        .name = name,
+        .file = file,
+        .base_dir = base_dir,
+        .universal_binary = res,
+        .kind = TargetKind_UniversalBinary,
     };
     all_targets_deps.entries[all_targets_count++] = target;
     return target;
@@ -430,6 +498,22 @@ static inline TargetRule binary_link_rule = ninja_rule({
     },
 });
 
+static inline TargetRule universal_binary_rule = ninja_rule({
+    .name = "universal-binary",
+    .command = "lipo -create -output $out $in",
+    .description = "Creating universal binary $out",
+    .variables = {
+        (Variable){
+            .name = "out",
+            .default_value = nullptr,
+        },
+        (Variable){
+            .name = "in",
+            .default_value = nullptr,
+        },
+    },
+});
+
 static inline TargetRule compdb_rule = ninja_rule({
     .name = "compdb",
     .command = "$bin/ninja -t compdb > compile_commands.json",
@@ -538,6 +622,23 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
         fprintf(output, "\n");
         fprintf(output, "\n");
     }
+}
+
+static inline void emit_ninja_build_universal_binary(FILE* output, Target const* target)
+{
+    UniversalBinaryArgs* universal = target->universal_binary;
+
+    c_string triple = target_triple_string(target_triple(*target));
+    fprintf(output, "build %s/bin/%s: universal-binary", triple, target->name);
+
+    auto bins_len = len(universal->bins.entries);
+    for (usize i = 0; i < bins_len; i++) {
+        Target bin = universal->bins.entries[i];
+        assert(bin.kind == TargetKind_Binary);
+        c_string triple = target_triple_string(target_triple(bin));
+        fprintf(output, " %s/bin/%s", triple, bin.name);
+    }
+    fprintf(output, "\n\n");
 }
 
 static inline void mkdir_p(char* path, mode_t mode)
@@ -702,6 +803,9 @@ static inline void emit_ninja(FILE* output, Target target)
         case TargetKind_Library:
             emit_ninja_build_library(output, target);
             break;
+        case TargetKind_UniversalBinary:
+            emit_ninja_build_universal_binary(output, target);
+            break;
         case TargetKind_Targets:
             break;
         }
@@ -721,13 +825,17 @@ static inline Targets const* target_deps(Target const* target)
     case TargetKind_Binary: return &target->binary->deps;
     case TargetKind_Library: return &target->library->deps;
     case TargetKind_Targets: return target->targets;
+    case TargetKind_UniversalBinary: return &target->universal_binary->bins;
     }
 }
 
 static inline void recurse_targets_r(StringSet* seen, Target target, void* user, void(*callback)(void* user, Target target))
 {
-    StringView name = string_view(target.name);
+    char* hash = 0;
+    asprintf(&hash, "%s/%s", target_triple_string(target_triple(target)), target.name);
+    StringView name = string_view(hash);
     if (string_set_has(seen, name)) {
+        free(hash);
         return;
     }
     string_set_add(seen, name);
@@ -855,6 +963,24 @@ static inline TargetTriple wasm_target_triple(void)
     };
 }
 
+static inline TargetTriple apple_arm_target_triple(void)
+{
+    return (TargetTriple) {
+        .arch = "arm64",
+        .abi = "apple",
+        .os = "darwin",
+    };
+}
+
+static inline TargetTriple apple_x86_target_triple(void)
+{
+    return (TargetTriple) {
+        .arch = "x86_64",
+        .abi = "apple",
+        .os = "darwin",
+    };
+}
+
 static inline c_string target_triple_string(TargetTriple triple)
 {
     usize len = 0;
@@ -867,6 +993,24 @@ static inline c_string target_triple_string(TargetTriple triple)
     char* dest = (char*)calloc(len, 1);
     snprintf(dest, len, "%s-%s-%s", arch, abi, os);
     return dest;
+}
+
+static inline TargetTriple target_triple(Target target)
+{
+    switch (target.kind) {
+    case TargetKind_Binary:
+        return target.binary->target_triple;
+    case TargetKind_Library:
+        return target.library->target_triple;
+    case TargetKind_Targets:
+        return (TargetTriple){};
+    case TargetKind_UniversalBinary:
+        return (TargetTriple){
+            .arch = "universal",
+            .abi = system_abi(),
+            .os = system_os(),
+        };
+    }
 }
 
 static inline StringView string_view(c_string string)

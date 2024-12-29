@@ -1,0 +1,9 @@
+.intel_syntax noprefix
+
+.align 8
+.global async_stack_swap
+async_stack_swap:
+    pop rcx // Return address
+    mov rax, rsp
+    mov rsp, rdi
+    jmp rcx

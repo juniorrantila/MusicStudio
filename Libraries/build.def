@@ -17,6 +17,7 @@
 #include "./Render/build.def"
 #include "./GL/build.def"
 #include "./Tar/build.def"
+#include "./Async/build.def"
 #include "./Layout/build.def"
 #include "./Vendor/SoundIo/build.def"
 #include "./Vendor/WASM3/build.def"
@@ -40,6 +41,8 @@ typedef struct {
     Target soundio;
     Target wasm;
     Target ms;
+
+    Target async;
 
     Target vst;
     Target vst_host;
@@ -73,6 +76,7 @@ static auto const libraries = target([] {
         .soundio = soundio,
         .wasm = wasm,
         .ms = ms,
+        .async = async,
         .vst = vst,
         .vst_host = vst_host,
         .midi = midi,

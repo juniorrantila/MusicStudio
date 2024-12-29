@@ -1,0 +1,24 @@
+#pragma once
+#include "../../bs.h"
+#include "../Ty/build.def"
+
+static auto const async = cc_library("Async", {
+    .srcs = {
+        "./Async.cpp",
+        "./Context.asm",
+        "./Stack.asm",
+    },
+    .exported_headers = {
+        "./Async.h",
+        "./Context.h",
+        "./Stack.h",
+    },
+    .header_namespace = "Async",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        ty,
+    },
+});

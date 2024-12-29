@@ -1,0 +1,27 @@
+#pragma once
+#include "../../bs.h"
+#include "../Ty/build.def"
+#include "../Clay/build.def"
+#include "../NanoVG/build.def"
+#include "../Rexim/build.def"
+
+static auto const layout = cc_library("Layout", {
+    .srcs = {
+        "./Layout.c",
+    },
+    .exported_headers = {
+        "./Layout.h",
+        "./Sugar.h",
+    },
+    .header_namespace = "Layout",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        ty,
+        clay,
+        nanovg,
+        rexim,
+    },
+});

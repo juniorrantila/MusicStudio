@@ -11,6 +11,7 @@ struct Project {
     f64 tempo { 120.0f };
     u32 sample_rate { 44100 };
     u32 channels { 1 };
+    StringView project_name { "no name"sv };
 
     /// Expecting object with shape:
     /// {
@@ -21,6 +22,9 @@ struct Project {
     ///     "res": string[]
     /// }
     static ErrorOr<Project> from_json(Json const& json, JsonObject const& object);
+
+    static void shape(Coder&);
+    static Coder shape();
 };
 
 }

@@ -1,0 +1,26 @@
+#pragma once
+#include "../../bs.h"
+#include "../GL/build.def"
+
+static auto const nanovg = cc_library("NanoVG", {
+    .srcs = {
+        "./nanovg.c",
+        "./nanovg_gl.c",
+    },
+    .exported_headers = {
+        "./nanovg.h",
+        "./nanovg_gl.h",
+        "./NanoVGL.h",
+    },
+    .header_namespace = "NanoVG",
+    .compile_flags = {
+        "-Wno-missing-prototypes",
+        "-Wno-implicit-fallthrough",
+    },
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        gl,
+    },
+});

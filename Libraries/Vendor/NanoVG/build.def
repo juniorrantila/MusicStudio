@@ -1,6 +1,6 @@
 #pragma once
-#include "../../bs.h"
-#include "../GL/build.def"
+#include "../../../bs.h"
+#include "../../GL/build.def"
 
 static auto const nanovg = cc_library("NanoVG", {
     .srcs = {

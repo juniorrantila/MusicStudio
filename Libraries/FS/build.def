@@ -2,7 +2,7 @@
 #include "../../bs.h"
 #include "../Ty/build.def"
 #include "../Core/build.def"
-#include "../Zip/build.def"
+#include "../Vendor/Zip/build.def"
 
 static auto const fs = cc_library("FS", {
     .srcs = {

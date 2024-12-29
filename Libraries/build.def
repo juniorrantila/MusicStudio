@@ -5,10 +5,8 @@
 #include "./Core/build.def"
 #include "./Main/build.def"
 #include "./CLI/build.def"
-#include "./Zip/build.def"
 #include "./FS/build.def"
 #include "./Rexim/build.def"
-#include "./SoundIo/build.def"
 #include "./WASM/build.def"
 #include "./MS/build.def"
 #include "./Midi/build.def"
@@ -19,10 +17,12 @@
 #include "./Render/build.def"
 #include "./GL/build.def"
 #include "./Tar/build.def"
-#include "./WASM3/build.def"
-#include "./NanoVG/build.def"
-#include "./Clay/build.def"
 #include "./Layout/build.def"
+#include "./Vendor/SoundIo/build.def"
+#include "./Vendor/WASM3/build.def"
+#include "./Vendor/NanoVG/build.def"
+#include "./Vendor/Clay/build.def"
+#include "./Vendor/Zip/build.def"
 
 typedef struct {
     // Core

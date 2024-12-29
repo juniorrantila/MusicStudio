@@ -21,6 +21,7 @@
 #include "./Tar/build.def"
 #include "./WASM3/build.def"
 #include "./NanoVG/build.def"
+#include "./Clay/build.def"
 
 typedef struct {
     // Core
@@ -51,6 +52,7 @@ typedef struct {
     Target gl;
     Target wasm3;
     Target nanovg;
+    Target clay;
     // Target uiview;
 } LibrariesTargets;
 
@@ -79,6 +81,7 @@ static auto const libraries = target([] {
         .gl = gl,
         .wasm3 = wasm3,
         .nanovg = nanovg,
+        .clay = clay,
     };
 
     // Target uiview;

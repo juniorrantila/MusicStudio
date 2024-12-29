@@ -1,0 +1,22 @@
+#pragma once
+#include "../../bs.h"
+
+static auto const clay = cc_library("Clay", {
+    .srcs = {
+        "./Clay.c",
+    },
+    .exported_headers = {
+        "./Clay.h",
+    },
+    .header_namespace = "Clay",
+    .compile_flags = {
+        "-Wno-unused-parameter",
+        "-Wno-sign-compare",
+        "-Wno-missing-prototypes",
+        "-Wno-missing-field-initializers",
+    },
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {},
+});

@@ -1,2 +1,6 @@
 */**/build.def linguist-language=C++
 Libraries/SoundIo/* linguist-vendored=true
+Libraries/Zip/miniz.h linguist-vendored=true
+Libraries/Clay/* linguist-vendored=true
+Libraries/NanoVG/* linguist-vendored=true
+Libraries/WASM3/* linguist-vendored=true

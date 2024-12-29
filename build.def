@@ -4,3 +4,4 @@
 #include "./Tools/build.def"
 #include "./Toys/build.def"
 #include "./MusicStudio/build.def"
+#include "./Plugins/build.def"

@@ -1,0 +1,22 @@
+#pragma once
+#include "../bs.h"
+
+static Target ms_wasm_plugin(c_string name, Strings sources) {
+    return cc_library(name, {
+        .srcs = sources,
+        .exported_headers = {},
+        .header_namespace = "Plugins",
+        .compile_flags = {},
+        .linker_flags = {
+            "--export=ms_main",
+            "--no-entry",
+        },
+        .target_triple = wasm_target_triple(),
+        .link_style = "static",
+        .deps = {},
+    });
+}
+
+auto const hello_wasm = ms_wasm_plugin("hello.wasm", {
+    "./hello.c",
+});

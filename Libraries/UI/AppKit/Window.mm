@@ -15,6 +15,12 @@
 
     @public void* resize_user;
     @public void(*resize_callback)(UIWindow*, void* user);
+
+    @public void* scroll_user;
+    @public void(*scroll_callback)(UIWindow*, void* user);
+
+    @public Vec2f scroll_delta;
+
     @public UIApplication* application;
 }
 @property (nonatomic, retain) NSOpenGLView* glView;
@@ -158,6 +164,20 @@ int ui_window_set_resize_callback(UIWindow* win, void* user, void(*callback)(UIW
     return 0;
 }
 
+int ui_window_set_scroll_callback(UIWindow* win, void* user, void(*callback)(UIWindow* window, void* user))
+{
+    auto* window = (__bridge UIAppKitWindow*)win;
+    window->scroll_user = user;
+    window->scroll_callback = callback;
+    return 0;
+}
+
+Vec2f ui_window_scroll_delta(UIWindow* win)
+{
+    auto* window = (__bridge UIAppKitWindow*)win;
+    return window->scroll_delta;
+}
+
 bool ui_window_is_fullscreen(UIWindow const* window)
 {
     auto* win = (__bridge UIAppKitWindow const*)window;
@@ -242,6 +262,16 @@ bool ui_window_is_fullscreen(UIWindow const* window)
 -(void)mouseUp:(NSEvent *)event
 {
     self->mouse_state.left_down = false;
+}
+
+-(void)scrollWheel:(NSEvent *)event {
+    self->scroll_delta = {
+        .x = (f32)event.scrollingDeltaX,
+        .y = (f32)event.scrollingDeltaY,
+    };
+    if (self->scroll_callback) {
+        self->scroll_callback((UIWindow*)self, self->scroll_user);
+    }
 }
 
 -(NSSize)windowWillResize:(NSWindow *)window toSize:(NSSize)proposedFrameSize

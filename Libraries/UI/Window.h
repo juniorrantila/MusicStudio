@@ -38,6 +38,9 @@ bool ui_window_is_fullscreen(UIWindow const* window);
 Vec2f ui_window_size(UIWindow*);
 int ui_window_set_resize_callback(UIWindow*, void* user, void(*)(UIWindow* window, void*));
 
+Vec2f ui_window_scroll_delta(UIWindow*);
+int ui_window_set_scroll_callback(UIWindow*, void* user, void(*)(UIWindow* window, void*));
+
 u8 const* ui_window_keymap(UIWindow*);
 Vec2f ui_window_mouse_pos(UIWindow*);
 UIMouseState ui_window_mouse_state(UIWindow*);

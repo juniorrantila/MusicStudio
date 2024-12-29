@@ -1,0 +1,60 @@
+#pragma once
+#include "../bs.h"
+#include "../Libraries/build.def"
+
+auto const sine = cc_binary("sine", {
+    .srcs = {
+        "./sine.cpp",
+    },
+    .compile_flags = {},
+    .linker_flags = {
+#ifdef __APPLE__
+    "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
+    "-framework", "CoreFoundation",
+    "-framework", "CoreAudio",
+    "-framework", "AudioUnit",
+#endif
+    },
+    .target_triple = {},
+    .deps = {
+        libraries.main,
+        libraries.soundio,
+        libraries.ty,
+        libraries.cli,
+    }
+});
+
+auto const hello_asm = cc_binary("hello-asm", {
+    .srcs = {
+        "./hello-asm/main.asm"
+    },
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .deps = {}
+});
+
+auto const async_c = cc_binary("async", {
+    .srcs = {
+        "./async.c"
+    },
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .deps = {
+        libraries.async,
+        libraries.ty,
+    },
+});
+
+auto const swap_stack = cc_binary("swap-stack", {
+    .srcs = {
+        "./swap-stack.c"
+    },
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .deps = {
+        libraries.async,
+    },
+});

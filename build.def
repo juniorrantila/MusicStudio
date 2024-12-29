@@ -2,4 +2,5 @@
 #include "./Fonts/build.def"
 #include "./Shaders/build.def"
 #include "./Tools/build.def"
+#include "./Toys/build.def"
 #include "./MusicStudio/build.def"

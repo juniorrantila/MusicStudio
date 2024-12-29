@@ -2,20 +2,18 @@
 #include "../bs.h"
 #include "../Libraries/build.def"
 
-auto const vst_dump = target([] {
-    return cpp_binary("vst-dump", {
-        .srcs = {
-            "./vst-dump.cpp",
-        },
-        .compile_flags = {},
-        .linker_flags = {},
-        .target_triple = system_target_triple(),
-        .deps = {
-            libraries.ms,
-            libraries.cli,
-            libraries.main,
-        }
-    });
+auto const ms_tar = cc_binary("ms-tar", {
+    .srcs = {
+        "./ms-tar.cpp",
+    },
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .deps = {
+        libraries.cli,
+        libraries.main,
+        libraries.tar,
+    }
 });
 
 auto const vst_dump = cc_binary("vst-dump", {
@@ -29,28 +27,6 @@ auto const vst_dump = cc_binary("vst-dump", {
         libraries.ms,
         libraries.cli,
         libraries.main,
-    }
-});
-
-auto const sine = cc_binary("sine", {
-    .srcs = {
-        "./sine.cpp",
-    },
-    .compile_flags = {},
-    .linker_flags = {
-#ifdef __APPLE__
-    "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
-    "-framework", "CoreFoundation",
-    "-framework", "CoreAudio",
-    "-framework", "AudioUnit",
-#endif
-    },
-    .target_triple = {},
-    .deps = {
-        libraries.main,
-        libraries.soundio,
-        libraries.ty,
-        libraries.cli,
     }
 });
 

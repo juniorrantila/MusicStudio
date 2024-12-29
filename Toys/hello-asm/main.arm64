@@ -1,0 +1,25 @@
+.text
+.global _main
+_main:
+	str lr, [sp, #-16]!
+
+    mov w9, 1 // i = 0
+.loop:
+    cmp w9, 10 // i >= 10
+    bgt .loop_end
+
+	str w9, [sp, #-16]!
+    adrp x0, hello@PAGE
+	add x0, x0, hello@PAGEOFF
+    bl _printf
+	ldr w9, [sp], #16
+
+    add w9, w9, 1 // i++
+    b .loop
+.loop_end:
+
+	ldr lr, [sp], #16
+    ret
+
+.data
+hello: .asciz "ARM Counting %d\n"

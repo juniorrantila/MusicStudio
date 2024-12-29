@@ -1,0 +1,19 @@
+.intel_syntax noprefix
+
+.text
+.global _main
+_main:
+    mov ecx, 10 // i = 10
+.loop:
+    lea esi, [ecx - 11]
+    neg esi
+    lea rdi, [rip + hello]
+    push rcx
+    call _printf
+    pop rcx
+
+    loop .loop // --i != 0
+    ret
+
+.data
+hello: .asciz "X86 Counting %d\n"

@@ -36,6 +36,9 @@ struct RefPtr;
 template <typename T>
 struct Signal;
 
+struct Coder;
+struct CoderField;
+
 }
 
 using Ty::StringBuffer;
@@ -52,3 +55,5 @@ using Ty::View;
 using Ty::Json;
 using Ty::Hash;
 using Ty::Signal;
+using Ty::Coder;
+using Ty::CoderField;

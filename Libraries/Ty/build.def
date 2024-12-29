@@ -22,6 +22,7 @@ static auto const ty = cc_library("Ty", {
         "./ByteBuffer.h",
         "./Bytes.h",
         "./CircularQueue.h",
+        "./Coder.h",
         "./Concepts.h",
         "./Defer.h",
         "./Error.h",

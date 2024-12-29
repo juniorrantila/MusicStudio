@@ -19,11 +19,13 @@
 #include "./Tar/build.def"
 #include "./Async/build.def"
 #include "./Layout/build.def"
+#include "./Image/build.def"
 #include "./Vendor/SoundIo/build.def"
 #include "./Vendor/WASM3/build.def"
 #include "./Vendor/NanoVG/build.def"
 #include "./Vendor/Clay/build.def"
 #include "./Vendor/Zip/build.def"
+#include "./Vendor/STB/build.def"
 
 typedef struct {
     // Core
@@ -58,6 +60,8 @@ typedef struct {
     Target nanovg;
     Target clay;
     Target layout;
+    Target image;
+    Target stb;
     // Target uiview;
 } LibrariesTargets;
 
@@ -89,6 +93,8 @@ static auto const libraries = target([] {
         .nanovg = nanovg,
         .clay = clay,
         .layout = layout,
+        .image = image,
+        .stb = stb,
     };
 
     // Target uiview;

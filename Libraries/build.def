@@ -19,6 +19,7 @@
 #include "./Render/build.def"
 #include "./GL/build.def"
 #include "./Tar/build.def"
+#include "./WASM3/build.def"
 
 typedef struct {
     // Core
@@ -47,6 +48,7 @@ typedef struct {
     Target ui;
     Target render;
     Target gl;
+    Target wasm3;
     // Target uiview;
 } LibrariesTargets;
 
@@ -73,6 +75,7 @@ static auto const libraries = target([] {
         .ui = ui,
         .render = render,
         .gl = gl,
+        .wasm3 = wasm3,
     };
 
     // Target uiview;

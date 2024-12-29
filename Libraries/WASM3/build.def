@@ -1,0 +1,37 @@
+#pragma once
+#include "../../bs.h"
+
+static auto const wasm3 = cc_library("WASM3", {
+    .srcs = {
+        // "./m3_api_libc.c",
+        // "./m3_api_meta_wasi.c",
+        // "./m3_api_tracer.c",
+        // "./m3_api_uvwasi.c",
+        // "./m3_api_wasi.c",
+        "./m3_bind.c",
+        "./m3_code.c",
+        "./m3_compile.c",
+        "./m3_core.c",
+        "./m3_env.c",
+        "./m3_exec.c",
+        "./m3_function.c",
+        "./m3_info.c",
+        "./m3_module.c",
+        "./m3_parse.c",
+    },
+    .exported_headers = {
+        "./wasm3.h",
+        "./wasm3_defs.h",
+    },
+    .header_namespace = "WASM3",
+    .compile_flags = {
+        "-Wno-unused-parameter",
+        "-Wno-unused-variable",
+        "-Wno-format-nonliteral",
+        "-Wno-missing-prototypes",
+    },
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {},
+});

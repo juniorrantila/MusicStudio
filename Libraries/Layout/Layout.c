@@ -22,7 +22,7 @@ static void clay_handle_error(Clay_ErrorData error);
 static Layout* g_layout;
 static Clay_Dimensions measure_text(Clay_String *text, Clay_TextElementConfig *config);
 
-Layout* layout_create(Vec2f bounds, void* on_error_user, void(*on_error)(void* user, char const*, usize))
+Layout* layout_create(void* on_error_user, void(*on_error)(void* user, char const*, usize))
 {
     uint64_t totalMemorySize = Clay_MinMemorySize();
     Layout* layout = calloc(sizeof(Layout) + totalMemorySize, 1);
@@ -41,7 +41,7 @@ Layout* layout_create(Vec2f bounds, void* on_error_user, void(*on_error)(void* u
     };
     g_layout = layout;
     Clay_Arena arena = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, &layout->clay);
-    Clay_Initialize(arena, (Clay_Dimensions){ bounds.x, bounds.y }, (Clay_ErrorHandler) {
+    Clay_Initialize(arena, (Clay_Dimensions){ 0, 0 }, (Clay_ErrorHandler) {
         .errorHandlerFunction = clay_handle_error,
         .userData = (uptr)layout,
     });

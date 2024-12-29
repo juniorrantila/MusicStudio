@@ -9,7 +9,7 @@ extern "C" {
 
 typedef struct Layout Layout;
 
-Layout* layout_create(Vec2f bounds, void* on_error_user, void(*on_error)(void* user, char const* error, usize size));
+Layout* layout_create(void* on_error_user, void(*on_error)(void* user, char const* error, usize size));
 void layout_destroy(Layout* layout);
 
 int layout_add_typeface(Layout* layout, c_string name, u8 const* data, usize data_size);

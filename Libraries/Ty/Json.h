@@ -213,7 +213,11 @@ private:
     JsonArrays m_arrays;
 };
 
+ErrorOr<void> json_decode_into(Json const& json, JsonObject const& object, View<CoderField const> fields, void* destination);
+
+
 }
+
 using Ty::Json;        // NOLINT
 using Ty::JsonArray;   // NOLINT
 using Ty::JsonArrays;  // NOLINT

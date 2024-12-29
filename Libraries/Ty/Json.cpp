@@ -3,6 +3,8 @@
 #include "./Assert.h"
 #include "./Parse.h"
 #include "./View.h"
+#include "./Coder.h"
+#include "./Limits.h"
 
 namespace {
 
@@ -126,6 +128,121 @@ ErrorOr<StringBuffer> Json::serialize() const
 {
     return root().serialize(*this);
 }
+
+static void* field_address(void* object, uptr offset) {
+    u8* o = (u8*)object;
+    uptr off = (uptr)offset;
+    return (void*)(o + off);
+};
+
+ErrorOr<void> json_decode_into(Json const& json, JsonObject const& object, View<CoderField const> fields, void* dest)
+{
+    (void)json;
+    JsonObject const* jos[32] = {};
+    void* os[32] = {};
+    usize indent = 0;
+    jos[indent] = &object;
+    os[indent] = dest;
+
+    for (auto field : fields) {
+        auto v = jos[indent]->fetch(field.name);
+        if (!v.has_value()) {
+            if (field.required) {
+                return Error::from_string_literal("missing field in JSON"); // FIXME: Add better error message.
+            }
+            continue;
+        }
+
+        void* p = field_address(os[indent], field.offset);
+
+        switch (field.type) {
+        case Coder::I8: {
+            auto n = TRY(v->as_number().or_throw([] { return Error::from_string_literal("expected number"); }));
+            if (n < Limits<i8>::min() || n > Limits<i8>::max()) {
+                return Error::from_string_literal("value outside range of i8");
+            }
+            *(i8*)p = n;
+            break;
+        }
+        case Coder::U8: {
+            auto n = TRY(v->as_number().or_throw([] { return Error::from_string_literal("expected number"); }));
+            if (n < Limits<u8>::min() || n > Limits<u8>::max()) {
+                return Error::from_string_literal("value outside range of u8");
+            }
+            *(u8*)p = n;
+            break;
+        }
+        case Coder::I16: {
+            auto n = TRY(v->as_number().or_throw([] { return Error::from_string_literal("expected number"); }));
+            if (n < Limits<i16>::min() || n > Limits<i16>::max()) {
+                return Error::from_string_literal("value outside range of i16");
+            }
+            *(i16*)p = n;
+            break;
+        }
+        case Coder::U16: {
+            auto n = TRY(v->as_number().or_throw([] { return Error::from_string_literal("expected number"); }));
+            if (n < Limits<u16>::min() || n > Limits<u16>::max()) {
+                return Error::from_string_literal("value outside range of u16");
+            }
+            *(u16*)p = n;
+            break;
+        }
+        case Coder::I32: {
+            auto n = TRY(v->as_number().or_throw([] { return Error::from_string_literal("expected number"); }));
+            if (n < Limits<i32>::min() || n > Limits<i32>::max()) {
+                return Error::from_string_literal("value outside range of i32");
+            }
+            *(i32*)p = n;
+            break;
+        }
+        case Coder::U32: {
+            auto n = TRY(v->as_number().or_throw([] { return Error::from_string_literal("expected number"); }));
+            if (n < Limits<u32>::min() || n > Limits<u32>::max()) {
+                return Error::from_string_literal("value outside range of u32"); 
+            }
+            *(u32*)p = n;
+            break;
+        }
+        case Coder::I64: {
+            auto n = TRY(v->as_number().or_throw([] { return Error::from_string_literal("expected number"); }));
+            if (n < Limits<i64>::min() || n > Limits<i64>::max()) {
+                return Error::from_string_literal("value outside range of i64");
+            }
+            *(i64*)p = n;
+            break;
+        }
+        case Coder::U64: {
+            auto n = TRY(v->as_number().or_throw([] { return Error::from_string_literal("expected number"); }));
+            if (n < Limits<u64>::min() || n > Limits<u64>::max()) {
+                return Error::from_string_literal("value outside range of u64");
+            }
+            *(u64*)p = n;
+            break;
+        }
+        case Coder::F32: {
+            *(f32*)p = TRY(v->as_number().or_throw([] { return Error::from_string_literal("expected number"); }));
+            break;
+        }
+        case Coder::F64: {
+            *(f64*)p = TRY(v->as_number().or_throw([] { return Error::from_string_literal("expected number"); }));
+            break;
+        }
+        case Coder::Bool:
+            *(bool*)p = TRY(v->as_bool().or_throw([] { return Error::from_string_literal("expected boolean"); }));
+            break;
+        case Coder::String:
+            *(StringView*)p = TRY(v->as_string().or_throw([] { return Error::from_string_literal("expected string"); }));
+            break;
+        case Coder::BeginObject:
+        case Coder::EndObject:
+            return Error::unimplemented();
+        }
+    }
+
+    return {};
+}
+
 
 }
 

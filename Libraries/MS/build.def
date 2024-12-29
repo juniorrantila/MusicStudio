@@ -6,22 +6,27 @@
 #include "../Vst/build.def"
 #include "../Library/build.def"
 #include "../NativePlugin/build.def"
+#include "../WASM3/build.def"
 
 static auto const ms = cc_library("MS", {
     .srcs = {
         "./Host.cpp",
         "./Plugin.cpp",
-        "./VstPlugin.cpp",
-        "./Project.cpp",
         "./PluginManager.cpp",
+        "./Project.cpp",
+        "./VstPlugin.cpp",
+        "./WASMPlugin.cpp",
+        "./WASMPluginManager.cpp",
     },
     .exported_headers = {
         "./Forward.h",
         "./Host.h",
         "./Plugin.h",
-        "./VstPlugin.h",
-        "./Project.h",
         "./PluginManager.h",
+        "./Project.h",
+        "./VstPlugin.h",
+        "./WASMPlugin.h",
+        "./WASMPluginManager.h",
     },
     .header_namespace = "MS",
     .compile_flags = {},
@@ -35,5 +40,6 @@ static auto const ms = cc_library("MS", {
         library,
         vst_host,
         native_plugin,
+        wasm3,
     },
 });

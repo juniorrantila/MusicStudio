@@ -31,6 +31,7 @@ void ui_window_close(UIWindow*);
 bool ui_window_should_close(UIWindow*);
 int ui_window_show(UIWindow*);
 UIApplication* ui_window_application(UIWindow* window);
+f32 ui_window_pixel_ratio(UIWindow* window);
 
 bool ui_window_is_fullscreen(UIWindow const* window);
 

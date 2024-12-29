@@ -103,6 +103,14 @@ Vec2f ui_window_size(UIWindow* win)
     return vec2f(window->size.width, window->size.height);
 }
 
+f32 ui_window_pixel_ratio(UIWindow* win)
+{
+    auto* window = (__bridge UIAppKitWindow*)win;
+    NSRect contentRect = window.glView.frame;
+    NSRect fbRect = [window.glView convertRectToBacking:contentRect];
+    return fbRect.size.width / contentRect.size.width;
+}
+
 u8 const* ui_window_keymap(UIWindow* win)
 {
     auto* window = (__bridge UIAppKitWindow*)win;

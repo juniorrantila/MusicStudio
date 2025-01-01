@@ -43,6 +43,17 @@ struct Bytes {
         return __builtin_memcmp(data(), other.data(), size()) == 0;
     }
 
+    Bytes slice(usize start, usize size) const
+    {
+        if (start >= m_size) {
+            return Bytes(data(), 0);
+        }
+        if (start + size > m_size) {
+            size = m_size - start;
+        }
+        return Bytes(data() + start, size);
+    }
+
     ErrorOr<StringBuffer> as_c_source_file(StringView variable_name) const;
 
 private:

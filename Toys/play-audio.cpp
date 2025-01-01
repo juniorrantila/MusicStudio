@@ -7,19 +7,14 @@
 #include <Core/Print.h>
 #include <Core/MappedFile.h>
 #include <Core/Time.h>
-
-struct StreamFormat {
-    void (*write_sample)(char* ptr, f64 sample);
-    SoundIoFormat format;
-};
+#include <AU/SoundIo.h>
 
 static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max);
 static void underflow_callback(SoundIoOutStream *outstream);
-static Optional<StreamFormat> select_stream_format(SoundIoDevice* device);
 
 struct Context {
     AU::Audio* audio;
-    void (*write_sample)(char* ptr, f64 sample);
+    void (*write_sample)(void* ptr, f64 sample);
     _Atomic usize played_frames;
 };
 
@@ -39,11 +34,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
 
     auto wav_file = TRY(Core::MappedFile::open(wav_path));
     auto audio = TRY(AU::Audio::decode(AU::AudioFormat::WAV, wav_file.bytes()));
-    auto context = Context {
-        .audio = &audio,
-        .write_sample = nullptr,
-        .played_frames = 0ULL,
-    };
+
     dprintln("\n----------------------");
     dprintln("Sample rate: {}", audio.sample_rate());
     dprintln("Channels: {}", audio.channel_count());
@@ -73,6 +64,14 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
     if (device->probe_error) {
         return Error::from_string_literal(soundio_strerror(device->probe_error));
     }
+    auto stream_writer = TRY(AU::select_writer_for_device(device).or_throw([]{
+        return Error::from_string_literal("could find suitable stream format");
+    }));
+    auto context = Context {
+        .audio = &audio,
+        .write_sample = stream_writer.writer,
+        .played_frames = 0ULL,
+    };
 
     SoundIoOutStream *outstream = soundio_outstream_create(device);
     if (!outstream) {
@@ -83,12 +82,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
     outstream->underflow_callback = underflow_callback;
     outstream->sample_rate = (i32)audio.sample_rate();
     outstream->userdata = &context;
-
-    auto stream_format = TRY(select_stream_format(device).or_throw([]{
-        return Error::from_string_literal("could find suitable stream format");
-    }));
-    outstream->format = stream_format.format;
-    context.write_sample = stream_format.write_sample;
+    outstream->format = stream_writer.format;
 
     if (int err = soundio_outstream_open(outstream)) {
         return Error::from_string_literal(soundio_strerror(err));
@@ -118,51 +112,6 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
     soundio_device_unref(device);
     soundio_destroy(soundio);
     return 0;
-}
-
-static Optional<StreamFormat> select_stream_format(SoundIoDevice* device)
-{
-    if (soundio_device_supports_format(device, SoundIoFormatFloat64NE)) {
-        return StreamFormat {
-            .write_sample = [](char* ptr, f64 sample) {
-                f64* buf = (f64*)ptr;
-                *buf = sample;
-            },
-            .format = SoundIoFormatFloat64NE,
-        };
-    }
-    if (soundio_device_supports_format(device, SoundIoFormatFloat32NE)) {
-        return StreamFormat{
-            .write_sample = [](char* ptr, f64 sample) {
-                f32* buf = (f32*)ptr;
-                *buf = (f32)sample;
-            },
-            .format = SoundIoFormatFloat32NE,
-        };
-    }
-    if (soundio_device_supports_format(device, SoundIoFormatS32NE)) {
-        return StreamFormat{
-            .write_sample = [](char* ptr, f64 sample) {
-                i32* buf = (i32*)ptr;
-                f64 range = (f64)Limits<i32>::max() - (f64)Limits<i32>::min();
-                f64 val = sample * range / 2.0;
-                *buf = (i32)val;
-            },
-            .format = SoundIoFormatS32NE,
-        };
-    }
-    if (soundio_device_supports_format(device, SoundIoFormatS16NE)) {
-        return StreamFormat{
-            .write_sample = [](char* ptr, f64 sample) {
-                i16* buf = (i16*)ptr;
-                f64 range = (f64)Limits<i16>::max() - (f64)Limits<i16>::min();
-                f64 val = sample * range / 2.0;
-                *buf = (i16)val;
-            },
-            .format = SoundIoFormatS16NE,
-        };
-    }
-    return {};
 }
 
 static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max) {

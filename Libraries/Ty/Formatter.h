@@ -255,10 +255,9 @@ struct Formatter<Error> {
     static constexpr ErrorOr<u32> write(U& to, Error error)
     {
         u32 size = 0;
-        if (!error.function().is_empty())
-            size += TRY(to.write(error.function(), ": "sv));
+        size += TRY(to.write(error.function()));
         if (auto message = error.user_message(); message.has_value()) {
-            size += TRY(to.write(*message));
+            size += TRY(to.write(": "sv, *message));
         }
         if (auto message = error.errno_message(); message.has_value()) {
             size += TRY(to.write(": "sv, *message));

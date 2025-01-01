@@ -39,6 +39,9 @@ struct Signal;
 struct Coder;
 struct CoderField;
 
+template <typename T>
+struct Buffer;
+
 }
 
 using Ty::StringBuffer;
@@ -57,3 +60,4 @@ using Ty::Hash;
 using Ty::Signal;
 using Ty::Coder;
 using Ty::CoderField;
+using Ty::Buffer;

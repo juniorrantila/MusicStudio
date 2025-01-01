@@ -34,6 +34,15 @@ struct Bytes {
     constexpr usize size() const { return m_size; }
     StringView as_view() const;
 
+    constexpr bool operator==(Bytes other) const
+    {
+        if (size() != other.size())
+            return false;
+        if (data() == other.data())
+            return true;
+        return __builtin_memcmp(data(), other.data(), size()) == 0;
+    }
+
     ErrorOr<StringBuffer> as_c_source_file(StringView variable_name) const;
 
 private:

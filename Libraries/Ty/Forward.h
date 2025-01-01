@@ -42,6 +42,8 @@ struct CoderField;
 template <typename T>
 struct Buffer;
 
+struct ByteDecoder;
+
 }
 
 using Ty::StringBuffer;
@@ -61,3 +63,4 @@ using Ty::Signal;
 using Ty::Coder;
 using Ty::CoderField;
 using Ty::Buffer;
+using Ty::ByteDecoder;

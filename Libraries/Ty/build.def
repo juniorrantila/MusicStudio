@@ -4,6 +4,7 @@
 static auto const ty = cc_library("Ty", {
     .srcs = {
         "./ArenaAllocator.cpp",
+        "./ByteDecoder.cpp",
         "./Bytes.cpp",
         "./Endian.cpp",
         "./Error.cpp",
@@ -22,6 +23,7 @@ static auto const ty = cc_library("Ty", {
         "./BitCast.h",
         "./Buffer.h",
         "./ByteBuffer.h",
+        "./ByteDecoder.h",
         "./Bytes.h",
         "./CircularQueue.h",
         "./Coder.h",

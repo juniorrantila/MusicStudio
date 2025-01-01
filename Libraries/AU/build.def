@@ -1,0 +1,22 @@
+#pragma once
+#include "../../bs.h"
+#include "../Ty/build.def"
+
+static auto const au = cc_library("AU", {
+    .srcs = {
+        "./Audio.cpp",
+        "./WAV.cpp",
+    },
+    .exported_headers = {
+        "./Forward.h",
+        "./Audio.h",
+    },
+    .header_namespace = "AU",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        ty,
+    },
+});

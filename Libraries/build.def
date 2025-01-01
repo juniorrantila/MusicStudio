@@ -20,6 +20,7 @@
 #include "./Async/build.def"
 #include "./Layout/build.def"
 #include "./Image/build.def"
+#include "./AU/build.def"
 #include "./Vendor/SoundIo/build.def"
 #include "./Vendor/WASM3/build.def"
 #include "./Vendor/NanoVG/build.def"
@@ -37,6 +38,7 @@ typedef struct {
     Target zip;
     Target fs;
     Target tar;
+    Target au;
 
     // Userspace
     Target rexim;
@@ -76,6 +78,7 @@ static auto const libraries = target([] {
         .zip = zip,
         .fs = fs,
         .tar = tar,
+        .au = au,
         .rexim = rexim,
         .soundio = soundio,
         .wasm = wasm,

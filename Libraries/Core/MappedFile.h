@@ -38,6 +38,7 @@ struct MappedFile {
     ~MappedFile();
 
     StringView view() const { return StringView((char*)m_data, m_size); }
+    Bytes bytes() const { return Bytes(m_data, m_size); }
 
     u8* data() const { return m_data; }
     u64 size() const { return m_size; }

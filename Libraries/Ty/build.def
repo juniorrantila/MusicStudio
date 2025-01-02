@@ -65,6 +65,7 @@ static auto const ty = cc_library("Ty", {
         "./Vector.h",
         "./Verify.h",
         "./View.h",
+        "./Swap.h",
     },
     .header_namespace = "Ty",
     .compile_flags = {},

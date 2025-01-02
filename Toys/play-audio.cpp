@@ -8,14 +8,20 @@
 #include <Core/MappedFile.h>
 #include <Core/Time.h>
 #include <AU/SoundIo.h>
+#include <AU/Pipeline.h>
+#include <Ty/ArenaAllocator.h>
 
 static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max);
 static void underflow_callback(SoundIoOutStream *outstream);
 
 struct Context {
-    AU::Audio* audio;
+    AU::Pipeline* pipeline;
     void (*write_sample)(void* ptr, f64 sample);
-    _Atomic usize played_frames;
+    usize _Atomic* played_frames;
+    usize frame_count;
+
+    View<f64> scratch;
+    View<f64> scratch2;
 };
 
 
@@ -67,10 +73,28 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
     auto stream_writer = TRY(AU::select_writer_for_device(device).or_throw([]{
         return Error::from_string_literal("could find suitable stream format");
     }));
+
+    _Atomic usize played_frames = 0;
+    auto arena = TRY(ArenaAllocator::create(sizeof(f64) * 2ULL * SOUNDIO_MAX_CHANNELS * audio.sample_rate()));
+
+    auto audio_pipeline = AU::Pipeline();
+    TRY(audio_pipeline.pipe([&](f64* out, f64*, usize frames, usize channels) {
+        usize played = played_frames;
+        for (usize frame = 0; frame < frames; frame++) {
+            for (usize channel = 0; channel < channels; channel++) {
+                f64 sample = audio.sample(played + frame, channel).or_default(0.0);
+                out[frame * channels + channel] = sample;
+            }
+        }
+    }));
+
     auto context = Context {
-        .audio = &audio,
+        .pipeline = &audio_pipeline,
         .write_sample = stream_writer.writer,
-        .played_frames = 0ULL,
+        .played_frames = &played_frames,
+        .frame_count = audio.frame_count(),
+        .scratch = TRY(arena.alloc<f64>(SOUNDIO_MAX_CHANNELS * audio.sample_rate())),
+        .scratch2 = TRY(arena.alloc<f64>(SOUNDIO_MAX_CHANNELS * audio.sample_rate())),
     };
 
     SoundIoOutStream *outstream = soundio_outstream_create(device);
@@ -96,8 +120,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
 
     auto last = Core::time();
     dprint("Time: {} / {}", 0, (usize)audio.duration());
-    while (context.played_frames < audio.frame_count()) {
-        usize played_frames = context.played_frames;
+    while (played_frames < audio.frame_count()) {
         soundio_flush_events(soundio);
         auto current_time = (usize)((f64)played_frames / (f64)audio.sample_rate());
         auto now = Core::time();
@@ -118,7 +141,8 @@ static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int
     (void)frame_count_min;
     int frames_left = frame_count_max;
     auto* ctx = (Context*)outstream->userdata;
-    usize played_frames = ctx->played_frames;
+    usize played_frames = *ctx->played_frames;
+
     for (;;) {
         int frame_count = frames_left;
         SoundIoChannelArea* areas = nullptr;
@@ -131,10 +155,14 @@ static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int
         if (!frame_count)
             break;
 
-        const SoundIoChannelLayout *layout = &outstream->layout;
+        SoundIoChannelLayout const* layout = &outstream->layout;
+        usize channel_count = layout->channel_count;
+        f64* scratch = ctx->scratch.data();
+        f64* scratch2 = ctx->scratch2.data();
+        f64* out = ctx->pipeline->run(scratch, scratch2, frame_count, channel_count);
         for (int frame = 0; frame < frame_count; frame += 1, played_frames += 1) {
-            for (int channel = 0; channel < layout->channel_count; channel += 1) {
-                f64 sample = ctx->audio->sample(played_frames, channel).or_else(0);
+            for (usize channel = 0; channel < channel_count; channel += 1) {
+                f64 sample = out[frame * channel_count + channel];
                 ctx->write_sample(areas[channel].ptr, sample);
                 areas[channel].ptr += areas[channel].step;
             }
@@ -153,8 +181,8 @@ static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int
             break;
     }
 
-    ctx->played_frames = played_frames; 
-    soundio_outstream_pause(outstream, played_frames >= ctx->audio->frame_count());
+    *ctx->played_frames = played_frames;
+    soundio_outstream_pause(outstream, played_frames >= ctx->frame_count);
 }
 
 static void underflow_callback(SoundIoOutStream *outstream) {

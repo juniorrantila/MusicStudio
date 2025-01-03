@@ -3,12 +3,20 @@
 typedef signed char i8;
 typedef signed short i16;
 typedef signed int i32;
+#if __wasm32__ || _WIN32
+typedef signed long long i64;
+#else
 typedef signed long i64;
+#endif
 
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
+#if __wasm32__ || _WIN32
+typedef unsigned long long u64;
+#else
 typedef unsigned long u64;
+#endif
 
 typedef signed __int128 i128;
 typedef unsigned __int128 u128;

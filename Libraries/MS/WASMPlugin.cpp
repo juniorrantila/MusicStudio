@@ -1,22 +1,15 @@
 #include "./WASMPlugin.h"
 
+#include <WASM3/wasm3.h>
 #include <Core/Print.h>
 #include <Ty/Defer.h>
 
 namespace MS {
 
-static const void* info_puts(IM3Runtime runtime, IM3ImportContext context, uint64_t* stack, void* memory)
-{
-    auto plugin_name = ((WASMPlugin*)(context->userdata))->name.view();
-    uint64_t ptr = *stack;
-    uint64_t size = m3_GetMemorySize(runtime);
-    if (ptr >= size) {
-        return m3Err_trapOutOfBoundsMemoryAccess;
-    }
-    auto message = StringView::from_c_string(&((char*)memory)[ptr]);
-    dprintln("INFO[{}]: {}", plugin_name, message);
-    return m3Err_none;
-}
+static const void* log_info(IM3Runtime runtime, IM3ImportContext context, uint64_t* stack, void* memory);
+static const void* log_debug(IM3Runtime runtime, IM3ImportContext context, uint64_t* stack, void* memory);
+static const void* log_error(IM3Runtime runtime, IM3ImportContext context, uint64_t* stack, void* memory);
+static const void* log_fatal(IM3Runtime runtime, IM3ImportContext context, uint64_t* stack, void* memory);
 
 WASMPlugin::WASMPlugin(Core::MappedFile&& file, StringBuffer&& name, IM3Environment env, IM3Runtime runtime, IM3Module mod)
     : file(move(file))
@@ -79,11 +72,11 @@ ErrorOr<WASMPlugin> WASMPlugin::create(StringView path)
     };
 
     IM3Module mod;
-    if (auto res = m3_ParseModule(env, &mod, file.data(), file.size())) {
+    if (c_string res = m3_ParseModule(env, &mod, file.data(), file.size())) {
         return Error::from_string_literal(res);
     }
 
-    if (auto res = m3_LoadModule(runtime, mod)) {
+    if (c_string res = m3_LoadModule(runtime, mod)) {
         return Error::from_string_literal(res);
     }
 
@@ -100,25 +93,41 @@ ErrorOr<WASMPlugin> WASMPlugin::create(StringView path)
 
 ErrorOr<void> WASMPlugin::link()
 {
-    if (auto res = m3_LinkRawFunctionEx(mod, "ms", "info_puts", "v(*)", info_puts, this)) {
+    if (c_string res = m3_LinkRawFunctionEx(mod, "ms", "log_info", "v(**)", log_info, this)) {
+        if (res != m3Err_functionLookupFailed) {
+            return Error::from_string_literal(res);
+        }
+    }
+    if (c_string res = m3_LinkRawFunctionEx(mod, "ms", "log_debug", "v(**)", log_debug, this)) {
+        if (res != m3Err_functionLookupFailed) {
+            return Error::from_string_literal(res);
+        }
+    }
+    if (c_string res = m3_LinkRawFunctionEx(mod, "ms", "log_error", "v(**)", log_error, this)) {
+        if (res != m3Err_functionLookupFailed) {
+            return Error::from_string_literal(res);
+        }
+    }
+    if (c_string res = m3_LinkRawFunctionEx(mod, "ms", "log_fatal", "v(**)", log_fatal, this)) {
         if (res != m3Err_functionLookupFailed) {
             return Error::from_string_literal(res);
         }
     }
 
-    if (auto res = m3_CompileModule(mod)) {
+
+    if (c_string res = m3_CompileModule(mod)) {
         return Error::from_string_literal(res);
     }
 
     if (!main) {
-        if (auto res = m3_FindFunction(&main, runtime, "ms_main")) {
+        if (c_string res = m3_FindFunction(&main, runtime, "ms_plugin_main")) {
             return Error::from_string_literal(res);
         }
         if (m3_GetRetCount(main) != 0) {
-            return Error::from_string_literal("expected ms_main to have signature void(void)");
+            return Error::from_string_literal("expected ms_plugin_main to have signature void(void)");
         }
         if (m3_GetArgCount(main) != 0) {
-            return Error::from_string_literal("expected ms_main to have signature void(void)");
+            return Error::from_string_literal("expected ms_plugin_main to have signature void(void)");
         }
     }
 
@@ -159,12 +168,64 @@ StringView WASMPlugin::name() const
 
 ErrorOr<void> WASMPlugin::run() const
 {
-    if (auto res = m3_Call(main, 0, 0)) {
+    if (c_string res = m3_Call(main, 0, 0)) {
         return Error::from_string_literal(res);
     }
 
     return {};
 }
 
+enum class LogSeverity {
+    Info,
+    Debug,
+    Error,
+    Fatal,
+};
+
+static StringView severity_string(LogSeverity severity)
+{
+    switch (severity) {
+    case LogSeverity::Info: return "INFO";
+    case LogSeverity::Debug: return "DEBUG";
+    case LogSeverity::Error: return "ERROR";
+    case LogSeverity::Fatal: return "FATAL";
+    }
+}
+
+static const void* log(IM3Runtime runtime, IM3ImportContext context, uint64_t* stack, void* memory, LogSeverity severity)
+{
+    auto plugin_name = ((WASMPlugin*)(context->userdata))->name();
+    uint64_t ptr = *stack;
+    uint64_t size = m3_GetMemorySize(runtime);
+    if (ptr >= size) {
+        return m3Err_trapOutOfBoundsMemoryAccess;
+    }
+    auto message = StringView::from_c_string(&((char*)memory)[ptr]);
+    dprintln("{}[{}]: {}", severity_string(severity), plugin_name, message);
+    if (severity == LogSeverity::Fatal) {
+        return m3Err_trapAbort;
+    }
+    return m3Err_none;
+}
+
+static const void* log_info(IM3Runtime runtime, IM3ImportContext context, uint64_t* stack, void* memory)
+{
+    return log(runtime, context, stack, memory, LogSeverity::Info);
+}
+
+static const void* log_debug(IM3Runtime runtime, IM3ImportContext context, uint64_t* stack, void* memory)
+{
+    return log(runtime, context, stack, memory, LogSeverity::Debug);
+}
+
+static const void* log_error(IM3Runtime runtime, IM3ImportContext context, uint64_t* stack, void* memory)
+{
+    return log(runtime, context, stack, memory, LogSeverity::Error);
+}
+
+static const void* log_fatal(IM3Runtime runtime, IM3ImportContext context, uint64_t* stack, void* memory)
+{
+    return log(runtime, context, stack, memory, LogSeverity::Fatal);
+}
 
 }

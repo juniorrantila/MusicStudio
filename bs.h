@@ -36,7 +36,7 @@ exit 0
 #include <sys/stat.h>
 #include <stdbool.h>
 
-#define MAX_ENTRIES 128
+#define MAX_ENTRIES 256
 
 typedef signed char i8;
 typedef signed short i16;
@@ -276,7 +276,9 @@ static inline Target cc_binary(c_string name, BinaryArgs args, c_string file)
             .binary = x86,
             .kind = TargetKind_Binary,
         };
+        assert(all_targets_count < MAX_ENTRIES - 1);
         all_targets_deps.entries[all_targets_count++] = arm_target;
+        assert(all_targets_count < MAX_ENTRIES - 1);
         all_targets_deps.entries[all_targets_count++] = x86_target;
         return universal_binary(name, {
             .bins = {
@@ -294,6 +296,7 @@ static inline Target cc_binary(c_string name, BinaryArgs args, c_string file)
         .binary = res,
         .kind = TargetKind_Binary,
     };
+    assert(all_targets_count < MAX_ENTRIES - 1);
     all_targets_deps.entries[all_targets_count++] = target;
     return target;
 }
@@ -332,7 +335,9 @@ static inline Target cc_library(c_string name, LibraryArgs args, c_string file)
             .library = x86,
             .kind = TargetKind_Library,
         };
+        assert(all_targets_count < MAX_ENTRIES - 1);
         all_targets_deps.entries[all_targets_count++] = arm_target;
+        assert(all_targets_count < MAX_ENTRIES - 1);
         all_targets_deps.entries[all_targets_count++] = x86_target;
         return universal_library(name, {
             .libs = {
@@ -350,6 +355,7 @@ static inline Target cc_library(c_string name, LibraryArgs args, c_string file)
         .library = res,
         .kind = TargetKind_Library,
     };
+    assert(all_targets_count < MAX_ENTRIES - 1);
     all_targets_deps.entries[all_targets_count++] = target;
     return target;
 }
@@ -366,6 +372,7 @@ static inline Target universal_binary(c_string name, UniversalBinaryArgs args, c
         .universal_binary = res,
         .kind = TargetKind_UniversalBinary,
     };
+    assert(all_targets_count < MAX_ENTRIES - 1);
     all_targets_deps.entries[all_targets_count++] = target;
     return target;
 }
@@ -382,6 +389,7 @@ static inline Target universal_library(c_string name, UniversalLibraryArgs args,
         .universal_library = res,
         .kind = TargetKind_UniversalLibrary,
     };
+    assert(all_targets_count < MAX_ENTRIES - 1);
     all_targets_deps.entries[all_targets_count++] = target;
     return target;
 }
@@ -403,6 +411,7 @@ static inline usize all_rules_count = 0;
 static inline TargetRule all_rules[64];
 static TargetRule ninja_rule(TargetRule rule)
 {
+    assert(all_rules_count < 64);
     all_rules[all_rules_count++] = rule;
     return rule;
 }

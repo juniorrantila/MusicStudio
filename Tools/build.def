@@ -77,3 +77,17 @@ auto const vst_run_gui = cc_binary("vst-run-gui", {
         libraries.ui
     }
 });
+
+auto const run_wasm_plugin = cc_binary("run-wasm-plugin", {
+    .srcs = {
+        "./run-wasm-plugin.cpp",
+    },
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .deps = {
+        libraries.ms,
+        libraries.cli,
+        libraries.main,
+    }
+});

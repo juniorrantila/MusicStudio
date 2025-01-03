@@ -1,0 +1,17 @@
+#pragma once
+#include "../../bs.h"
+
+static auto const math = cc_library("Math", {
+    .srcs = {
+        "./Math.cpp",
+    },
+    .exported_headers = {
+        "./Math.h",
+    },
+    .header_namespace = "math",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {},
+});

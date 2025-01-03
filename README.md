@@ -26,4 +26,4 @@
 
 ### Run:
 
-    ./build/<system-architecture>/music-studio
+    ./build/<system-architecture>/bin/music-studio

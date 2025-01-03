@@ -17,6 +17,11 @@ struct StringView {
         return StringView(data, length_of(data));
     }
 
+    static constexpr StringView from_c_string_with_max_size(c_string data, usize max_size)
+    {
+        return StringView(data, length_of_or_max(data, max_size));
+    }
+
     static constexpr StringView from_parts(char const* data, u32 size)
     {
         return StringView(data, size);
@@ -185,6 +190,15 @@ private:
         return size;
     }
 
+    static constexpr u32 length_of_or_max(c_string string, usize max)
+    {
+        u32 size = 0;
+        for (; string[size] != '\0'; ++size) {
+            if (size >= max) return max;
+        }
+        return size;
+    }
+
     char const* m_data { "" };
     u32 m_size { 0 };
 };
@@ -196,4 +210,4 @@ constexpr StringView operator""sv(c_string data, usize size)
 
 }
 
-using namespace Ty;
+using Ty::StringView;

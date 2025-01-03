@@ -1,8 +1,8 @@
 #pragma once
-#include "../../bs.h"
-#include "../Ty/build.def"
+#include "../../../bs.h"
+#include "../../Ty/build.def"
 
-static auto const native_plugin = cc_library("NativePlugin", {
+static auto const ms_native_plugin = cc_library("MSNativePlugin", {
     .srcs = {
         "./Dummy.cpp",
     },
@@ -10,7 +10,7 @@ static auto const native_plugin = cc_library("NativePlugin", {
         "./Plugin.h",
         "./Host.h",
     },
-    .header_namespace = "NativePlugin",
+    .header_namespace = "MS/NativePlugin",
     .compile_flags = {},
     .linker_flags = {},
     .target_triple = {},

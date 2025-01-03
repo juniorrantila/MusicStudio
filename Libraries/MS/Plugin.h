@@ -1,8 +1,9 @@
 #pragma once
 #include <Ty/ErrorOr.h>
-#include <NativePlugin/Host.h>
-#include <NativePlugin/Plugin.h>
 #include <Library/Library.h>
+
+#include "./NativePlugin/Host.h"
+#include "./NativePlugin/Plugin.h"
 
 namespace MS {
 
@@ -13,36 +14,42 @@ struct Plugin {
     void init();
     void deinit();
     void process_f32(f32* out, f32 const* in, u32 frames);
+    void process_f64(f64* out, f64 const* in, u32 frames);
+
+    bool can_process_f32() const { return m_client.process_f32 != nullptr; }
+    bool can_process_f64() const { return m_client.process_f64 != nullptr; }
 
 private:
     struct Client {
-        decltype(native_plugin_name)* name = nullptr;
-        decltype(native_plugin_process_f32)* process_f32 = nullptr;
-        decltype(native_plugin_init)* init = nullptr;
-        decltype(native_plugin_deinit)* deinit = nullptr;
+        decltype(ms_plugin_name)* name = nullptr;
+        decltype(ms_plugin_process_f32)* process_f32 = nullptr;
+        decltype(ms_plugin_process_f64)* process_f64 = nullptr;
+        decltype(ms_plugin_init)* init = nullptr;
+        decltype(ms_plugin_deinit)* deinit = nullptr;
     };
 
     Plugin(usize id, PluginManager const* manager, Client client);
 
     [[gnu::format(printf, 2, 3)]]
-    static void log_err(NativePluginHost const* host, c_string fmt, ...);
+    static void log_err(MSPluginHost const* host, c_string fmt, ...);
 
     [[gnu::format(printf, 2, 3)]]
-    static void log_info(NativePluginHost const* host, c_string fmt, ...);
+    static void log_info(MSPluginHost const* host, c_string fmt, ...);
 
     [[gnu::format(printf, 2, 3)]]
-    static void log_debug(NativePluginHost const* host, c_string fmt, ...);
+    static void log_debug(MSPluginHost const* host, c_string fmt, ...);
 
-    static u32 get_sample_rate(NativePluginHost const* host);
-    static u32 get_channels(NativePluginHost const* host);
+    static u32 get_sample_rate(MSPluginHost const* host);
+    static u32 get_channels(MSPluginHost const* host);
 
     c_string name() const;
 
-    NativePluginHost m_host {
-        .size = sizeof(NativePluginHost),
-        .log_err = log_err,
-        .log_info= log_info,
+    MSPluginHost m_host {
+        .size = sizeof(MSPluginHost),
+        .user = 0,
         .log_debug = log_debug,
+        .log_err = log_err,
+        .log_info = log_info,
         .get_sample_rate = get_sample_rate,
         .get_channels = get_channels,
     };

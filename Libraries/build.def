@@ -12,7 +12,6 @@
 #include "./Midi/build.def"
 #include "./Vst/build.def"
 #include "./Library/build.def"
-#include "./NativePlugin/build.def"
 #include "./UI/build.def"
 #include "./Render/build.def"
 #include "./GL/build.def"
@@ -53,7 +52,6 @@ typedef struct {
     Target midi;
 
     Target library;
-    Target native_plugin;
 
     Target ui;
     Target render;
@@ -88,7 +86,6 @@ static auto const libraries = target([] {
         .vst_host = vst_host,
         .midi = midi,
         .library = library,
-        .native_plugin = native_plugin,
         .ui = ui,
         .render = render,
         .gl = gl,

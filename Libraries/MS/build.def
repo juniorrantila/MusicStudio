@@ -5,7 +5,6 @@
 #include "../Midi/build.def"
 #include "../Vst/build.def"
 #include "../Library/build.def"
-#include "../NativePlugin/build.def"
 #include "../Vendor/WASM3/build.def"
 
 static auto const ms = cc_library("MS", {
@@ -27,6 +26,12 @@ static auto const ms = cc_library("MS", {
         "./VstPlugin.h",
         "./WASMPlugin.h",
         "./WASMPluginManager.h",
+
+        "./NativePlugin/Host.h",
+        "./NativePlugin/Plugin.h",
+
+        "./WASMPlugin/Base.h",
+        "./WASMPlugin/Plugin.h",
     },
     .header_namespace = "MS",
     .compile_flags = {},
@@ -39,7 +44,6 @@ static auto const ms = cc_library("MS", {
         midi,
         library,
         vst_host,
-        native_plugin,
         wasm3,
     },
 });

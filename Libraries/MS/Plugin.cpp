@@ -62,9 +62,9 @@ void Plugin::process_f32(f32* out, f32 const* in, u32 frames)
     }
 }
 
-void Plugin::log_err(NativePluginHost const* host, c_string fmt, ...)
+void Plugin::log_err(MSPluginHost const* host, c_string fmt, ...)
 {
-    auto* plugin = (Plugin const*)host;
+    auto const* plugin = (Plugin const*)host;
     va_list args;
     va_start(args, fmt);
     printf("[%zu:%s] error: ", plugin->m_id, plugin->name());
@@ -73,9 +73,9 @@ void Plugin::log_err(NativePluginHost const* host, c_string fmt, ...)
     va_end(args);
 }
 
-void Plugin::log_info(NativePluginHost const* host, c_string fmt, ...)
+void Plugin::log_info(MSPluginHost const* host, c_string fmt, ...)
 {
-    auto* plugin = (Plugin const*)host;
+    auto const* plugin = (Plugin const*)host;
     va_list args;
     va_start(args, fmt);
     printf("[%zu:%s] info: ", plugin->m_id, plugin->name());
@@ -84,9 +84,9 @@ void Plugin::log_info(NativePluginHost const* host, c_string fmt, ...)
     va_end(args);
 }
 
-void Plugin::log_debug(NativePluginHost const* host, c_string fmt, ...)
+void Plugin::log_debug(MSPluginHost const* host, c_string fmt, ...)
 {
-    auto* plugin = (Plugin const*)host;
+    auto const* plugin = (Plugin const*)host;
     va_list args;
     va_start(args, fmt);
     printf("[%zu:%s] debug: ", plugin->m_id, plugin->name());
@@ -95,15 +95,15 @@ void Plugin::log_debug(NativePluginHost const* host, c_string fmt, ...)
     va_end(args);
 }
 
-u32 Plugin::get_sample_rate(NativePluginHost const* host)
+u32 Plugin::get_sample_rate(MSPluginHost const* host)
 {
-    auto* plugin = (Plugin const*)host;
+    auto const* plugin = (Plugin const*)host;
     return plugin->m_manager->project->sample_rate;
 }
 
-u32 Plugin::get_channels(NativePluginHost const* host)
+u32 Plugin::get_channels(MSPluginHost const* host)
 {
-    auto* plugin = (Plugin const*)host;
+    auto const* plugin = (Plugin const*)host;
     return plugin->m_manager->project->channels;
 }
 

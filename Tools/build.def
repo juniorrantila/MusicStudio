@@ -120,3 +120,57 @@ auto const play_audio = cc_binary("play-audio", {
     }
 });
 
+
+auto const pipe_audio = cc_binary("pipe-audio", {
+    .srcs = {
+        "./pipe-audio.cpp",
+    },
+    .compile_flags = {},
+    .linker_flags = {
+#ifdef __APPLE__
+    "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
+    "-framework", "CoreFoundation",
+    "-framework", "CoreAudio",
+    "-framework", "AudioUnit",
+    // FIXME: Remove these
+    "-framework", "OpenGL",
+    "-framework", "AppKit",
+#endif
+    },
+    .target_triple = {},
+    .deps = {
+        libraries.main,
+        libraries.soundio,
+        libraries.ty,
+        libraries.cli,
+        libraries.au,
+        libraries.ms,
+    }
+});
+
+
+auto const play_pipe = cc_binary("play-pipe", {
+    .srcs = {
+        "./play-pipe.cpp",
+    },
+    .compile_flags = {},
+    .linker_flags = {
+#ifdef __APPLE__
+    "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
+    "-framework", "CoreFoundation",
+    "-framework", "CoreAudio",
+    "-framework", "AudioUnit",
+    // FIXME: Remove these
+    "-framework", "OpenGL",
+    "-framework", "AppKit",
+#endif
+    },
+    .target_triple = {},
+    .deps = {
+        libraries.main,
+        libraries.soundio,
+        libraries.ty,
+        libraries.cli,
+        libraries.au,
+    }
+});

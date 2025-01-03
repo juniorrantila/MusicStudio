@@ -9,15 +9,18 @@
 
 #include <stdio.h>
 
-namespace Main {
-
-ErrorOr<int> main(int argc, char const* argv[])
+ErrorOr<int> Main::main(int argc, char const* argv[])
 {
     auto argument_parser = CLI::ArgumentParser();
 
     c_string plugin_path = nullptr;
     TRY(argument_parser.add_positional_argument("plugin-path"sv, [&](c_string arg) {
         plugin_path = arg;
+    }));
+
+    bool print_parameters = false;
+    TRY(argument_parser.add_flag("--print-parameters", "-pp", "print parameters", [&]{
+        print_parameters = true;
     }));
 
     if (auto result = argument_parser.run(argc, argv); result.is_error()) {
@@ -71,9 +74,17 @@ ErrorOr<int> main(int argc, char const* argv[])
         };
         printf(" %.*s: %.*s\n", feature.name().size(), feature.name().data(), result.name().size(), result.name().data());
     }
-    printf("\n------------------------------------\n\n");
-
+    if (print_parameters && plugin.number_of_parameters() > 0) {
+        printf("\n\n-------------Parameters-------------\n\n");
+        for (u32 i = 0; i < plugin.number_of_parameters(); i++) {
+            char buf[1024];
+            printf("%d:\n", i);
+            printf("  - name: %s\n", plugin.parameter_name(buf, i));
+            printf("  - display: %s\n", plugin.parameter_display(buf, i));
+            printf("  - label: %s\n", plugin.parameter_label(buf, i));
+            printf("  - can be automated: %s\n", plugin.parameter_can_be_automated(i) ? "yes" : "no");
+        }
+    }
+    printf("------------------------------------\n\n");
     return 0;
-}
-
 }

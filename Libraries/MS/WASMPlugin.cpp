@@ -163,7 +163,7 @@ StringView WASMPlugin::name() const
     if (offset > memory_size) {
         return fallback_name.view();
     }
-    return StringView::from_c_string(&memory[offset]);
+    return StringView::from_c_string_with_max_size(&memory[offset], memory_size - offset);
 }
 
 ErrorOr<void> WASMPlugin::run() const
@@ -200,7 +200,7 @@ static const void* log(IM3Runtime runtime, IM3ImportContext context, uint64_t* s
     if (ptr >= size) {
         return m3Err_trapOutOfBoundsMemoryAccess;
     }
-    auto message = StringView::from_c_string(&((char*)memory)[ptr]);
+    auto message = StringView::from_c_string_with_max_size(&((char*)memory)[ptr], size - ptr);
     dprintln("{}[{}]: {}", severity_string(severity), plugin_name, message);
     if (severity == LogSeverity::Fatal) {
         return m3Err_trapAbort;

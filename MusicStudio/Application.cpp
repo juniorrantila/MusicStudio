@@ -2,22 +2,35 @@
 #include "./StatusBar.h"
 #include "./Style.h"
 
-#include "./PathEvent.h"
+#include "./DeviceBrowser.h"
+#include "./Toolbar.h"
+#include "Rexim/LA.h"
+#include "UIView/View.h"
 
+#include <SoundIo/SoundIo.h>
 #include <UI/Application.h>
 #include <FS/Bundle.h>
 #include <Ty/Try.h>
 #include <Ty/Move.h>
 #include <UI/Window.h>
 
-Application::Application(UI::Application&& application, UI::UI&& ui, FileBrowser&& file_browser)
-    : m_application(move(application))
+#include <UIView/List.h>
+#include <UIView/Text.h>
+#include <UIView/Box.h>
+
+using UIView::list;
+using UIView::text;
+
+Application::Application(UI::Application&& application, UI::UI&& ui, FileBrowser&& file_browser, DeviceBrowser&& device_browser, SoundIo* soundio)
+    : m_soundio(soundio)
+    , m_application(move(application))
     , m_ui(move(ui))
     , m_file_browser(move(file_browser))
+    , m_device_browser(move(device_browser))
 {
 }
 
-ErrorOr<Application> Application::create(FS::Bundle& bundle)
+ErrorOr<Application> Application::create(FS::Bundle& bundle, SoundIo* soundio)
 {
     auto application = TRY(UI::Application::create("MusicStudio"sv, 0, 0, 800, 600));
     auto sr = TRY(UI::SimpleRenderer::create(bundle));
@@ -37,15 +50,29 @@ ErrorOr<Application> Application::create(FS::Bundle& bundle)
 
     TRY(ui.load_font(font.bytes(), vec2f(0.0f, 24.0f)));
 
-    return Application(
+    return Application {
         move(application),
         move(ui),
-        TRY(FileBrowser::create("."))
-    );
+        TRY(FileBrowser::create(".")),
+        DeviceBrowser(soundio),
+        soundio,
+        
+    };
 }
 
 void Application::run()
 {
+    m_soundio->userdata = this;
+    m_soundio->on_devices_change = [](SoundIo* soundio) {
+        auto* app = (decltype(this))soundio->userdata;
+        auto result = app->m_device_browser.refresh();
+        if (result.is_error()) {
+            auto message = result.error().message();
+            flash_error("%.*s", message.size(), message.data());
+        }
+    };
+    MUST(m_device_browser.refresh());
+
     MUST(m_application.window_size.add_observer([this](Vec2f size) {
         m_ui.set_resolution(size);
     }));
@@ -63,19 +90,28 @@ void Application::run()
         m_ui.set_scroll_y(scroll.y);
     }));
 
-    m_application.on_update = [this]() {
-        handle_events();
+    m_application.on_update = [&, this]() {
+        UIView::ViewBase::drain();
+
+        soundio_flush_events(m_soundio);
 
         m_ui.begin_frame();
         m_ui.clear(Style::the().background_color());
 
-        render(vec4fv(
-            vec2fs(0.0f),
+        view()->render(m_ui, vec4fv(
+            vec2f(0, 0),
             m_ui.resolution()
         ));
 
         m_ui.end_frame();
     };
+
+    MUST(m_file_browser.selected_file.add_observer([this](StringView new_path) {
+        m_current_path.update([&](StringBuffer& path) {
+            path.clear();
+            MUST(path.write(new_path));
+        });
+    }));
 
     MUST(m_current_path.add_observer([this](StringBuffer const& path) {
         MUST(change_path(path.view()));
@@ -167,37 +203,47 @@ ErrorOr<void> Application::change_path(StringView path)
     return {};
 }
 
-void Application::handle_events()
+ErrorOr<void> Application::connect_default_backend()
 {
-    for (auto event : m_event_loop.events()) {
-        event.match(
-            On<ChangePathEvent>([this](ChangePathEvent const& event) {
-                m_current_path.update([&](StringBuffer& path) {
-                    path.clear();
-                    MUST(path.write(event.file_path_buf.view()));
-                });
-            })
-        );
+    int res = soundio_connect(m_soundio);
+    if (res != 0) {
+        return Error::from_string_literal(soundio_strerror(res));
     }
+    m_soundio->on_backend_disconnect = [](SoundIo* soundio, int){
+        auto* app = ((Application*)soundio->userdata);
+        MUST(app->m_device_browser.refresh());
+        soundio_connect(soundio);
+    };
+    return {};
 }
 
-void Application::render(Vec4f box)
+UIView::ViewBase* Application::view()
 {
-    Vec2f toolbar_size = vec2f(box.width, 48.0f);
-    m_toolbar.render(m_ui, m_event_loop, vec4fv(
-        vec2f(0.0f, box.height - toolbar_size.y),
-        toolbar_size
-    ));
-    box.height -= toolbar_size.y;
+    // auto input_name = m_device_browser.input_device->map([](SoundIoDevice const* value) -> c_string {
+    //     return value->name;
+    // }).or_default("<none>");
 
-    m_file_browser.render(m_ui, m_event_loop, vec4fv(
-        vec2fs(0.0f),
-        vec2f(200.0f, box.height)
-    ));
+    // auto output_name = m_device_browser.output_device->map([](SoundIoDevice const* value) -> c_string {
+    //     return value->name;
+    // }).or_default("<none>");
 
-    auto status_bar_size = vec2f(box.width, 32.0f);
-    StatusBar::the().render(m_ui, m_event_loop, vec4fv(
-       vec2fs(0.0f),
-       status_bar_size
-    ));
+    return list({
+        m_file_browser.view(),
+        m_device_browser.view(),
+    })->horizontal()->space_between();
+        // list({
+        // list({
+        //     text("Current output: %s", input_name)
+        //         ->set_text_color(Style::the().text_color())
+        //         ->set_font_size(Style::the().file_browser_font_size().y),
+        //     text("Current input: %s", output_name)
+        //         ->set_text_color(Style::the().text_color())
+        //         ->set_font_size(Style::the().file_browser_font_size().y),
+        // })->vertical()->space_between(),
+
+        // m_file_browser.view(),
+        // m_device_browser.view(),
+
+        // m_device_browser.view(),
+    // });
 }

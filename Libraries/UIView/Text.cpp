@@ -1,4 +1,5 @@
 #include "./Text.h"
+#include "Rexim/LA.h"
 
 #include <UI/UI.h>
 
@@ -11,16 +12,8 @@ namespace UIView {
 Vec4f Text::render(UI::UI& ui, Vec4f bounds) const
 {
     bounds = ViewBase::render(ui, bounds);
-    ui.fill_rect(bounds, background_color());
     MUST(ui.set_font_size(vec2fs(font_size())));
-
-    auto w = width(ui);
-    auto h = height(ui);
-    auto s = bounds.start_point();
-    s.x += bounds.width / 2.0 - w / 2.0;
-    s.y += bounds.height / 2.0 - h / 2.0;
-
-    ui.text(vec4fv(s, vec2f(w, h)), text(), text_color());
+    ui.text(bounds, text(), text_color());
     return bounds;
 }
 
@@ -40,8 +33,7 @@ f64 Text::height(UI::UI& ui) const
         return m_height;
     }
     MUST(ui.set_font_size(vec2fs(font_size())));
-    m_height = m_font_size;
-    // FIXME: m_height = ui.measure_text(m_text).y;
+    m_height = ui.measure_text("m").x;
     return ViewBase::height(ui);
 }
 

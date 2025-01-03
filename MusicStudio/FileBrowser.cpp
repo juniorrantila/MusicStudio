@@ -4,6 +4,13 @@
 #include "./Style.h"
 
 #include "./PathEvent.h"
+#include "Rexim/LA.h"
+
+#include <UIView/View.h>
+#include <UIView/List.h>
+#include <UIView/Text.h>
+#include <UIView/Button.h>
+#include <UIView/Box.h>
 
 #include <UI/FreeGlyph.h>
 #include <UI/SimpleRenderer.h>
@@ -14,6 +21,11 @@
 
 #include <Ty/StringBuffer.h>
 #include <Ty/Optional.h>
+
+using UIView::list;
+using UIView::text;
+using UIView::button;
+using UIView::box;
 
 static int file_cmp(const void *ap, const void *bp)
 {
@@ -171,72 +183,43 @@ Optional<StringView> FileBrowser::current_file()
     return StringView::from_c_string(m_file_path.items);
 }
 
-void FileBrowser::render(UI::UI& ui, EventLoop& event_loop, Vec4f box)
+UIView::ViewBase* FileBrowser::view()
 {
-    f32 border_size = 2.0f;
-
-    auto font_size = Style::the().file_browser_font_size();
-    MUST(ui.set_font_size(font_size));
-
-    ui.outline_rect({
-        .box = box,
-        .outline_size = border_size,
-        .fill_color = Style::the().file_browser_color(),
-        .right_color = Style::the().file_browser_border_color(),
-    });
-
-    auto indent_size = Style::the().file_browser_indent_width();
-    ui.fill_rect(vec4fv(
-            vec2f(0.0f, 0.0f),
-            vec2f(indent_size, box.height)
-        ),
-        Style::the().file_browser_indent_color()
-    );
-
-    for (usize row = 0; row < m_files.count; ++row) {
-        const Vec2f pos = vec2f(indent_size + 2.0f, box.height - ((f32)row + 1) * font_size.y);
-        StringView file_name = StringView::from_c_string(m_files.items[row].name);
-
-        auto text_size = ui.measure_text(file_name);
-        ui.text(vec4fv(pos, box.size() - pos + box.start_point()), file_name, Style::the().text_color());
-
-        if (text_size.x < box.width) {
-            if (m_files.items[row].type == FT_DIRECTORY) {
-                auto slash_pos = pos + text_size;
-                auto text_box = vec4fv(slash_pos, box.size() - slash_pos);
-                ui.text(text_box, "/"sv, Style::the().text_alternate_color());
-            }
-        }
-
-        auto box = vec4fv(
-            pos - vec2f(0.0f, 3.0f),
-            vec2f(200.0f - indent_size - 3.0f * 2.0f, font_size.y)
-        );
-        auto button = ui.button(box);
-        switch (button.state()) {
-        case UI::ButtonState::Action:
-            ui.fill_rect(box, vec4f(1.0f, 0.0f, 0.0f, 0.50));
-            if (auto file_path = current_file()) {
-                MUST(event_loop.dispatch_event(ChangePathEvent {
-                    .file_path_buf = MUST(StringBuffer::create_fill(file_path.value(), "\0"sv)),
-                }));
-            }
-            break;
-        case UI::ButtonState::Pressed:
-            ui.fill_rect(box, vec4f(0.2f, 0.5f, 0.5f, 0.25));
-            break;
-        case UI::ButtonState::Hovered:
-            if (auto file_path = current_file()) {
-                if (file_path != m_hovered_file) {
-                    m_hovered_file = file_path.value();
-                    StatusBar::the().set_text(StatusKind::Info, "%.*s", file_path->size(), file_path->data());
+    // FIXME
+    // ui.outline_rect({
+    //     .box = box,
+    //     .outline_size = 2.0f,
+    //     .fill_color = Style::the().file_browser_color(),
+    //     .right_color = Style::the().file_browser_border_color(),
+    // });
+    auto files = View(m_files.items, m_files.count);
+    return list(files, [&, this](File file, usize index) {
+        return button(" %s%s", file.name, file.type == FT_DIRECTORY ? "/" : "")
+            ->set_text_color(Style::the().text_color())
+            ->set_font_size(Style::the().file_browser_font_size().y)
+            ->set_background_color(Style::the().file_browser_color())
+            ->hover_style([](UIView::Button* self) {
+                self->set_background_color(vec4f(1.0f, 1.0f, 1.0f, 0.25f));
+            })
+            ->action_style([](UIView::Button* self) {
+                self->set_background_color(vec4f(1.0f, 0.0f, 0.0f, 0.50f));
+            })
+            ->press_style([](UIView::Button* self) {
+                self->set_background_color(vec4f(0.2f, 0.5f, 0.5f, 0.25f));
+            })
+            ->hover([=, this] {
+                if (auto file_path = current_file()) {
+                    if (file_path != m_hovered_file) {
+                        m_hovered_file = file_path.value();
+                        StatusBar::the().set_text(StatusKind::Info, "%.*s", file_path->size(), file_path->data());
+                    }
                 }
-            }
-            ui.fill_rect(box, vec4f(1.0f, 1.0f, 1.0f, 0.25));
-            m_cursor = row;
-            break;
-        case UI::ButtonState::None:
-            break;
-        }
-    }
+                m_cursor = index;
+            })
+            ->action([this] {
+                if (auto file_path = current_file()) {
+                    this->selected_file.update(file_path.value());
+                }
+            });
+    });
 }

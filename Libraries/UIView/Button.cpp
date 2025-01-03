@@ -41,7 +41,8 @@ Vec4f Button::render(UI::UI& ui, Vec4f bounds) const
         break;
     }
 
-    ui.fill_rect(bounds, background_color());
+    bounds = ViewBase::render(ui, bounds);
+    MUST(ui.set_font_size(vec2fs(font_size())));
     ui.text(bounds, text(), text_color());
 
     return bounds;

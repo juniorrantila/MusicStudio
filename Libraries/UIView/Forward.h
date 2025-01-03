@@ -12,6 +12,7 @@ struct Button;
 struct List;
 struct Split;
 struct Text;
+struct ToggleList;
 
 template<typename>
 struct FrameCapture;

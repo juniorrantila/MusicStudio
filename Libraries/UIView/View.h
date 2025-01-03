@@ -37,6 +37,60 @@ struct ViewBase {
     virtual f64 border_left_width() const { return m_border_left_width; }
     virtual Vec4f border_bottom_color() const { return m_border_bottom_color; }
     virtual f64 border_bottom_width() const { return m_border_left_width; }
+
+    ViewBase* set_x(f64 x)
+    {
+        m_x = x;
+        return this;
+    }
+
+    ViewBase* set_y(f64 y)
+    {
+        m_y = y;
+        return this;
+    }
+
+    ViewBase* set_width(f64 width)
+    {
+        m_width = width;
+        return this;
+    }
+
+    ViewBase* set_height(f64 height)
+    {
+        m_height = height;
+        return this;
+    }
+
+    ViewBase* set_background_color(Vec4f color)
+    {
+        m_background_color = color;
+        return this;
+    }
+
+    ViewBase* set_border_left_color(Vec4f color)
+    {
+        m_border_left_color = color;
+        return this;
+    }
+
+    ViewBase* set_border_left_width(f64 width)
+    {
+        m_border_left_width = width;
+        return this;
+    }
+
+    ViewBase* set_border_bottom_color(Vec4f color)
+    {
+        m_border_bottom_color = color;
+        return this;
+    }
+
+    ViewBase* set_border_bottom_width(f64 width)
+    {
+        m_border_bottom_width = width;
+        return this;
+    }
  
 private:
     static inline ArenaAllocator s_pool {};

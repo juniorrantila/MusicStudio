@@ -2,14 +2,15 @@
 
 #include "./Style.h"
 
-#include <UI/UI.h>
+#include <UIView/Box.h>
 
-void Toolbar::render(UI::UI& ui, EventLoop&, Vec4f box)
+using UIView::box;
+
+UIView::ViewBase* toolbar()
 {
-    ui.outline_rect({
-        .box = box,
-        .outline_size = Style::the().border_size(),
-        .fill_color   = Style::the().toolbar_color(),
-        .bottom_color = Style::the().toolbar_border_color(),
-    });
+    return box()
+        ->set_height(48.0)
+        ->set_border_bottom_width(Style::the().border_size())
+        ->set_border_bottom_color(Style::the().toolbar_border_color())
+        ->set_background_color(Style::the().toolbar_color());
 }

@@ -60,7 +60,7 @@ ErrorOr<void*> ViewBase::alloc(usize size, usize align, c_string function, c_str
         TRY(init());
     }
 
-    return TRY(s_pool.alloc(size, align, function, file, line));
+    return TRY(s_pool.raw_alloc(size, align, function, file, line));
 }
 
 void ViewBase::drain()

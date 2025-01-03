@@ -1,24 +1,26 @@
 #pragma once
 #include "./Forward.h"
-#include "./Widget.h"
 
 #include <Ty/Forward.h>
 #include <UI/Forward.h>
+#include <UIView/Forward.h>
 
 #include <Rexim/File.h>
 #include <Rexim/LA.h>
 #include <Ty/Signal.h>
 #include <Ty/StringBuffer.h>
 
-struct FileBrowser : Widget {
+struct FileBrowser {
     static ErrorOr<FileBrowser> create(StringView path);
-    virtual ~FileBrowser() = default;
 
     ErrorOr<void> open_dir(StringView path);
     ErrorOr<void> change_dir();
     Optional<StringView> current_file();
 
-    void render(UI::UI&, EventLoop& event_loop, Vec4f box) override;
+    UIView::ViewBase* view();
+    operator UIView::ViewBase*() { return view(); }
+
+    Signal<StringView> selected_file {};
 
 private:
     constexpr FileBrowser() = default;

@@ -40,9 +40,6 @@ struct FrameCapture;
 
 template<typename Out, typename... In>
 struct FrameCapture<Out(In...)> {
-    FrameCapture(FrameCapture const&) = delete;
-    FrameCapture& operator=(FrameCapture const&) = delete;
-
     constexpr FrameCapture() = default;
     constexpr FrameCapture(nullptr_t)
         : m_wrapper(nullptr)
@@ -85,6 +82,19 @@ struct FrameCapture<Out(In...)> {
         if (this != &other) {
             m_wrapper = other.m_wrapper;
             other.m_wrapper = nullptr;
+        }
+        return *this;
+    }
+
+    constexpr FrameCapture(FrameCapture const& other)
+        : m_wrapper(other.m_wrapper)
+    {
+    }
+
+    constexpr FrameCapture& operator=(FrameCapture const& other)
+    {
+        if (this != &other) {
+            m_wrapper = other.m_wrapper;
         }
         return *this;
     }

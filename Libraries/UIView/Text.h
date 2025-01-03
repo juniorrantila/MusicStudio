@@ -44,7 +44,7 @@ struct Text : public UIView<Text> {
     }
 
 protected:
-    f64 m_font_size = 12.0f;
+    f64 m_font_size = 32.0f;
     Vec4f m_text_color = hex_to_vec4f(0x000000FF);
 
 private:

@@ -2,34 +2,31 @@
 #include "Ty/Base.h"
 
 #include <Rexim/LA.h>
+#include <UI/UI.h>
 
 namespace UIView {
 
 Vec4f List::render(UI::UI& ui, Vec4f bounds) const
 {
-    bounds = ViewBase::render(ui, bounds);
-    auto size = bounds.size();
-    Vec2f start = bounds.start_point();
+    auto placement = bounds;
 
     if (justify_content() == SpaceBetween) {
         if (direction() == Vertical) {
+            auto size = bounds.size();
+            Vec2f start = bounds.end_point();
             for (f64 i = 0; i < m_items.size(); i++) {
                 start.y = bounds.height / f64(m_items.size()) * i;
                 size.y = bounds.height / f64(m_items.size());
-                if (auto h = m_items[i]->height(ui); size.y < h) {
-                    size.y = h;
-                }
                 m_items[i]->render(ui, vec4fv(start, size));
             }
             return bounds;
         }
 
+        auto size = bounds.size();
+        Vec2f start = bounds.end_point();
         for (f64 i = 0; i < m_items.size(); i++) {
             start.x = bounds.width / f64(m_items.size()) * i;
             size.x = bounds.width / f64(m_items.size());
-            if (auto w = m_items[i]->width(ui); size.x < w) {
-                size.x = w;
-            }
             m_items[i]->render(ui, vec4fv(start, size));
         }
         return bounds;
@@ -37,27 +34,21 @@ Vec4f List::render(UI::UI& ui, Vec4f bounds) const
 
     switch (direction()) {
     case Vertical:
-        for (auto* item : m_items) {
-            auto height = item->height(ui);
-            if (start.y + height >= bounds.height) {
-                return bounds;
-            }
-            size.y = height;
-
-            item->height(ui);
-            item->render(ui, vec4fv(start, size));
-            start.y += height + gap();
+        for (auto item : m_items) {
+            auto item_height = item->height(ui);
+            placement.y -= item_height;
+            placement.height = item_height;
+            item->render(ui, placement);
+            placement.y -= gap();
         }
         break;
     case Horizontal:
         for (auto item : m_items) {
-            auto width = item->width(ui);
-            if (start.x + width >= bounds.width) {
-                return bounds;
-            }
-            size.x = width;
-            item->render(ui, vec4fv(start, size));
-            start.x += width + gap();
+            auto item_width = item->width(ui);
+            placement.x -= item_width;
+            placement.width = item_width;
+            item->render(ui, placement);
+            placement.x -= gap();
         }
         break;
     }

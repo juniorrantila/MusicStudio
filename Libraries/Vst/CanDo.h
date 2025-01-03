@@ -7,15 +7,30 @@ namespace Vst {
 
 struct CanDo {
     enum class Kind : i32 {
+        Unknown = -2,
         No = -1,
         Maybe = 0,
-        Yes = 1
+        Yes = 1,
     };
     using enum Kind;
 
     constexpr CanDo(iptr kind)
-        : m_kind((Kind)kind)
     {
+        switch ((i32)kind) {
+        case -1:
+            m_kind = No;
+            break;
+        case 0:
+            m_kind = Maybe;
+            break;
+        case 1:
+        case (i32)0xbeef0000:
+            m_kind = Yes;
+            break;
+        default:
+            m_kind = Unknown;
+            break;
+        }
     }
     explicit operator iptr() const { return (iptr)m_kind; }
 
@@ -29,6 +44,7 @@ struct CanDo {
     constexpr StringView name() const
     {
         switch(*this) {
+        case Unknown: return "unknown"sv;
         case No: return "no"sv;
         case Maybe: return "maybe"sv;
         case Yes: return "yes"sv;

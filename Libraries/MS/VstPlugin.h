@@ -207,6 +207,11 @@ struct Plugin {
         return vst->set_sample_rate(sample_rate);
     }
 
+    [[nodiscard]] bool set_block_size(i32 block_size) const
+    {
+        return vst->set_block_size(block_size);
+    }
+
     [[nodiscard]] bool pause() const
     {
         return vst->pause();

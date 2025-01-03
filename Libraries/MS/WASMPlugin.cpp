@@ -4,6 +4,7 @@
 #include <Core/Print.h>
 #include <Ty/Defer.h>
 #include <Core/Time.h>
+#include <string.h>
 
 namespace MS {
 
@@ -144,6 +145,42 @@ ErrorOr<void> WASMPlugin::link()
         }
     }
 
+    if (!process_f32_func) {
+        if (c_string res = m3_FindFunction(&process_f32_func, runtime, "ms_plugin_process_f32")) {
+            if (res != m3Err_functionLookupFailed) {
+                return Error::from_string_literal(res);
+            }
+        }
+        if (process_f32_func) {
+            if (m3_GetRetCount(main) != 0) {
+                return Error::from_string_literal("expected ms_plugin_process_f32 to have signature void(f32* out, f32 const* in, u32 frames, u32 channels)");
+            }
+            if (m3_GetArgCount(main) != 4) {
+                return Error::from_string_literal("expected ms_plugin_process_f32 to have signature void(f32* out, f32 const* in, u32 frames, u32 channels)");
+            }
+        }
+    }
+
+    if (!process_f64_func) {
+        if (c_string res = m3_FindFunction(&process_f64_func, runtime, "ms_plugin_process_f64")) {
+            if (res != m3Err_functionLookupFailed) {
+                return Error::from_string_literal(res);
+            }
+        }
+        if (process_f64_func) {
+            if (m3_GetRetCount(process_f64_func) != 0) {
+                return Error::from_string_literal("expected ms_plugin_process_f64 to have signature void(f64* out, f64 const* in, u32 frames, u32 channels)");
+            }
+            if (m3_GetArgCount(process_f64_func) != 4) {
+                return Error::from_string_literal("expected ms_plugin_process_f64 to have signature void(f64* out, f64 const* in, u32 frames, u32 channels)");
+            }
+        }
+    }
+
+    if (!process_f32_func && !process_f64_func) {
+        return Error::from_string_literal("either ms_plugin_process_f32 or ms_plugin_process_f64 needs to be defined");
+    }
+
     return {};
 }
 
@@ -186,6 +223,56 @@ ErrorOr<void> WASMPlugin::run() const
     }
 
     return {};
+}
+
+ErrorOr<void> WASMPlugin::process_f32(f32* out, f32 const* in, u32 frames, u32 channels) const
+{
+    if (!process_f32_func) {
+        return Error::from_string_literal("plugin cannot process f32");
+    }
+    u32 size;
+    f32* memory = (f32*)m3_GetMemory(runtime, &size, 0);
+    usize samples = ((usize)channels) * (usize)frames;
+    usize sample_bytes = samples * sizeof(f32);
+    if (2ULL * sample_bytes >= size) {
+        return Error::from_string_literal("plugin does not have enough memory");
+    }
+    memcpy(memory + samples, in, sample_bytes);
+    if (c_string res = m3_CallV(process_f32_func, 0, sample_bytes, frames, channels)) {
+        return Error::from_string_literal(res);
+    }
+    memcpy(out, memory, sample_bytes);
+    return {};
+}
+
+ErrorOr<void> WASMPlugin::process_f64(f64* out, f64 const* in, u32 frames, u32 channels) const
+{
+    if (!process_f64_func) {
+        return Error::from_string_literal("plugin cannot process f64");
+    }
+    u32 size;
+    f64* memory = (f64*)m3_GetMemory(runtime, &size, 0);
+    usize samples = ((usize)channels) * (usize)frames;
+    usize sample_bytes = samples * sizeof(f64);
+    if (2ULL * sample_bytes >= size) {
+        return Error::from_string_literal("plugin does not have enough memory");
+    }
+    memcpy(memory + samples, in, sample_bytes);
+    if (c_string res = m3_CallV(process_f64_func, 0, sample_bytes, frames, channels)) {
+        return Error::from_string_literal(res);
+    }
+    memcpy(out, memory, sample_bytes);
+    return {};
+}
+
+bool WASMPlugin::can_process_f32() const
+{
+    return process_f32_func != nullptr;
+}
+
+bool WASMPlugin::can_process_f64() const
+{
+    return process_f64_func != nullptr;
 }
 
 enum class LogSeverity {

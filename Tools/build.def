@@ -91,3 +91,32 @@ auto const run_wasm_plugin = cc_binary("run-wasm-plugin", {
         libraries.main,
     }
 });
+
+auto const play_audio = cc_binary("play-audio", {
+    .srcs = {
+        "./play-audio.cpp",
+    },
+    .compile_flags = {},
+    .linker_flags = {
+#ifdef __APPLE__
+    "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
+    "-framework", "CoreFoundation",
+    "-framework", "CoreAudio",
+    "-framework", "AudioUnit",
+    // FIXME: Remove these
+    "-framework", "OpenGL",
+    "-framework", "AppKit",
+#endif
+    },
+    .target_triple = {},
+    .deps = {
+        libraries.main,
+        libraries.soundio,
+        libraries.ty,
+        libraries.cli,
+        libraries.au,
+        libraries.ms,
+        libraries.ui,
+    }
+});
+

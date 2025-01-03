@@ -24,29 +24,6 @@ auto const sine = cc_binary("sine", {
     }
 });
 
-auto const play_audio = cc_binary("play-audio", {
-    .srcs = {
-        "./play-audio.cpp",
-    },
-    .compile_flags = {},
-    .linker_flags = {
-#ifdef __APPLE__
-    "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
-    "-framework", "CoreFoundation",
-    "-framework", "CoreAudio",
-    "-framework", "AudioUnit",
-#endif
-    },
-    .target_triple = {},
-    .deps = {
-        libraries.main,
-        libraries.soundio,
-        libraries.ty,
-        libraries.cli,
-        libraries.au,
-    }
-});
-
 auto const hello_asm = cc_binary("hello-asm", {
     .srcs = {
         "./hello-asm/main.asm"

@@ -37,6 +37,7 @@ static UIAppKitWindow* create_window(UIWindowSpec spec)
     auto* window = [[UIAppKitWindow alloc]
         initWithContentRect:NSMakeRect(spec.x, spec.y, spec.width, spec.height)
                   styleMask:0
+                           | NSWindowStyleMaskBorderless
                            | NSWindowStyleMaskFullSizeContentView
                            | NSWindowStyleMaskUnifiedTitleAndToolbar
                            | NSWindowStyleMaskTitled

@@ -1,0 +1,18 @@
+#pragma once
+#include "../../../bs.h"
+
+static auto const ms_wasm_plugin = cc_library("MSWASMPlugin", {
+    .srcs = {
+        "./Dummy.cpp",
+    },
+    .exported_headers = {
+        "./Base.h",
+        "./Plugin.h",
+    },
+    .header_namespace = "MS/WASMPlugin",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {},
+});

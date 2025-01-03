@@ -7,7 +7,7 @@ namespace MS {
 
 struct WASMPlugin {
     Core::MappedFile file;
-    StringBuffer name {};
+    StringBuffer fallback_name {};
     IM3Environment env { nullptr };
     IM3Runtime runtime { nullptr };
     IM3Module mod { nullptr };
@@ -19,6 +19,7 @@ struct WASMPlugin {
 
     static ErrorOr<WASMPlugin> create(StringView path);
 
+    StringView name() const;
     ErrorOr<void> link();
     ErrorOr<void> run();
 

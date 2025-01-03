@@ -20,7 +20,7 @@ static const void* info_puts(IM3Runtime runtime, IM3ImportContext context, uint6
 
 WASMPlugin::WASMPlugin(Core::MappedFile&& file, StringBuffer&& name, IM3Environment env, IM3Runtime runtime, IM3Module mod)
     : file(move(file))
-    , name(move(name))
+    , fallback_name(move(name))
     , env(env)
     , runtime(runtime)
     , mod(mod)
@@ -29,7 +29,7 @@ WASMPlugin::WASMPlugin(Core::MappedFile&& file, StringBuffer&& name, IM3Environm
 
 WASMPlugin::WASMPlugin(WASMPlugin&& other)
     : file(move(other.file))
-    , name(move(other.name))
+    , fallback_name(move(other.fallback_name))
     , env(other.env)
     , runtime(other.runtime)
     , mod(other.mod)
@@ -42,7 +42,7 @@ WASMPlugin& WASMPlugin::operator=(WASMPlugin&& other)
 {
     if (this == &other) return *this;
     file = move(other.file);
-    name = move(other.name);
+    fallback_name = move(other.fallback_name);
     env = other.env;
     runtime = other.runtime;
     mod = other.mod;
@@ -123,6 +123,38 @@ ErrorOr<void> WASMPlugin::link()
     }
 
     return {};
+}
+
+StringView WASMPlugin::name() const
+{
+    auto* plugin_name_id = m3_FindGlobal(mod, "ms_plugin_name");
+    if (!plugin_name_id) {
+        return fallback_name.view();
+    }
+    M3TaggedValue value;
+    if (m3_GetGlobal(plugin_name_id, &value)) {
+        return fallback_name.view();
+    }
+    usize offset = 0;
+    switch (value.type) {
+    case c_m3Type_i32:
+        offset = value.value.i32;
+        break;
+    case c_m3Type_i64:
+        offset = value.value.i64;
+        break;
+    case c_m3Type_none:
+    case c_m3Type_f32:
+    case c_m3Type_f64:
+    case c_m3Type_unknown:
+        return fallback_name.view();
+    }
+    u32 memory_size = 0;
+    char* memory = (char*)m3_GetMemory(runtime, &memory_size, 0);
+    if (offset > memory_size) {
+        return fallback_name.view();
+    }
+    return StringView::from_c_string(&memory[offset]);
 }
 
 ErrorOr<void> WASMPlugin::run()

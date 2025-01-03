@@ -27,8 +27,8 @@ extern void ms_fatal(c_string format, ...);
 // Defined by the plugin.
 extern const char ms_plugin_name[] __asm__("ms_plugin_name");
 void ms_plugin_draw_ui(void) __asm__("ms_plugin_draw_ui");
-void ms_plugin_process_f64(f64* out, f64* in, u32 frames) __asm__("ms_plugin_process_f64");
-void ms_plugin_process_f32(f32* out, f32* in, u32 frames) __asm__("ms_plugin_process_f32");
+void ms_plugin_process_f64(f64* out, f64 const* in, u32 frames, u32 channels) __asm__("ms_plugin_process_f64");
+void ms_plugin_process_f32(f32* out, f32 const* in, u32 frames, u32 channels) __asm__("ms_plugin_process_f32");
 void ms_plugin_main(void) __asm__("ms_plugin_main");
 
 #ifdef __cplusplus

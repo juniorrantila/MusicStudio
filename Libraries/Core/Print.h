@@ -41,11 +41,28 @@ constexpr u32 dprintln(StringView format, Args const&... args)
     return size;
 }
 
+template <typename... Args>
+constexpr u32 dprint(StringView format, Args const&... args)
+{
+    auto parts = MUST(format.split_on("{}"));
+    assert(sizeof...(Args) == parts.size() - 1);
+
+    u32 size = 0;
+    u32 i = 0;
+    u32 results[] = {
+        (size += dbgwrite(parts[i++], args))...,
+        (size += dbgwrite(parts.last())),
+    };
+    (void)results;
+    return size;
+}
+
 }
 
 using Core::dbgln;
 using Core::dbgwrite;
 using Core::dprintln;
+using Core::dprint;
 
 #ifdef stdout
 #pragma pop_macro("stdout")

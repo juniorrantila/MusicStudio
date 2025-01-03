@@ -763,8 +763,13 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
         char* out = 0;
         asprintf(&out, "%s/%s", base_dir, header);
         c_string header_path = realpath(out, 0);
+        if (!header_path) {
+            fprintf(stderr, "Error: Could not find '%s'\n", out);
+            exit(1);
+        }
         char* output_path = 0;
         asprintf(&output_path, "%s/%s", dir, header);
+        mkdir_p(dirname(strdup(output_path)), 0777);
         symlink(header_path, output_path);
     }
     

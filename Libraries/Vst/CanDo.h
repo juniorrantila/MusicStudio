@@ -76,6 +76,7 @@ struct Feature {
         HasCockosNoScrollUI,
         WantsChannelCountNotifications,
         HasCockosExtensions,
+        HasCockosViewAsConfig,
     };
     using enum Kind;
 
@@ -96,11 +97,12 @@ struct Feature {
         case ViewEmbedding: return "supportsViewEmbedding"sv;  // Prosonussv;
         case ViewResize: return "supportsViewResize"sv;     // Prosonussv;
 
-        case MidiSingleNoteTuning: return "midiSingleNoteTuningChange"sv; // Bitwigsv;
-        case MidiKeyBasedInstrumentControl: return "midiKeyBasedInstrumentControl"sv; // Bitwigsv;
-        case HasCockosNoScrollUI: return "hasCockosNoScrollUI"sv; // Reapersv;
-        case WantsChannelCountNotifications: return "wantsChannelCountNotifications"sv; // Reapersv;
-        case HasCockosExtensions: return "hasCockosExtensions"sv; // Reapersv;
+        case MidiSingleNoteTuning: return "midiSingleNoteTuningChange"sv; // Bitwig
+        case MidiKeyBasedInstrumentControl: return "midiKeyBasedInstrumentControl"sv; // Bitwig
+        case HasCockosNoScrollUI: return "hasCockosNoScrollUI"sv; // Reaper
+        case WantsChannelCountNotifications: return "wantsChannelCountNotifications"sv; // Reaper
+        case HasCockosExtensions: return "hasCockosExtensions"sv; // Reaper
+        case HasCockosViewAsConfig: return "hasCockosViewAsConfig"sv; // Reaper
         }
     }
 
@@ -141,9 +143,10 @@ struct Feature {
             MidiKeyBasedInstrumentControl,
 
             // Reaper
-            HasCockosNoScrollUI,
-            WantsChannelCountNotifications,
             HasCockosExtensions,
+            HasCockosNoScrollUI,
+            HasCockosViewAsConfig,
+            WantsChannelCountNotifications,
         };
         return View(features, sizeof(features) / sizeof(features[0]));
     }

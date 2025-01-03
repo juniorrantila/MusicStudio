@@ -157,7 +157,7 @@ StringView WASMPlugin::name() const
     return StringView::from_c_string(&memory[offset]);
 }
 
-ErrorOr<void> WASMPlugin::run()
+ErrorOr<void> WASMPlugin::run() const
 {
     if (auto res = m3_Call(main, 0, 0)) {
         return Error::from_string_literal(res);

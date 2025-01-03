@@ -21,7 +21,7 @@ struct WASMPlugin {
 
     StringView name() const;
     ErrorOr<void> link();
-    ErrorOr<void> run();
+    ErrorOr<void> run() const;
 
 private:
     WASMPlugin(Core::MappedFile&& file, StringBuffer&& name, IM3Environment env, IM3Runtime runtime, IM3Module mod);

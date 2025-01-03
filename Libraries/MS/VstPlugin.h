@@ -117,6 +117,31 @@ struct Plugin {
         return vst->number_of_parameters;
     }
 
+    Vst::ParameterProperties parameter_properties(u32 id) const
+    {
+        return vst->parameter_properties((i32)id);
+    }
+
+    char const* parameter_name(char* name, u32 id) const
+    {
+        return vst->parameter_name(name, (i32)id);
+    }
+
+    char const* parameter_label(char* name, u32 id) const
+    {
+        return vst->parameter_label(name, (i32)id);
+    }
+
+    char const* parameter_display(char* name, u32 id) const
+    {
+        return vst->parameter_display(name, (i32)id);
+    }
+
+    bool parameter_can_be_automated(u32 id) const
+    {
+        return vst->parameter_can_be_automated((i32)id);
+    }
+
     u32 number_of_presets() const
     {
         return vst->number_of_presets;

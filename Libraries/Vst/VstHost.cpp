@@ -37,19 +37,20 @@ char const* Effect::preset_name()
     return (char const*)dispatch(PluginOpcode::GetPresetName);
 }
 
-char const* Effect::parameter_label()
+char const* Effect::parameter_label(char* name, i32 id)
 {
-    return (char const*)dispatch(PluginOpcode::GetParameterLabel);
+    return (char const*)dispatch(PluginOpcode::GetParameterLabel, id, 0, name);
 }
 
-char const* Effect::parameter_display()
+char const* Effect::parameter_display(char* name, i32 id)
 {
-    return (char const*)dispatch(PluginOpcode::GetParameterDisplay);
+    return (char const*)dispatch(PluginOpcode::GetParameterDisplay, id, 0, name);
 }
 
-char const* Effect::parameter_name()
+char const* Effect::parameter_name(char* name, i32 id)
 {
-    return (char const*)dispatch(PluginOpcode::GetParameterName);
+    dispatch(PluginOpcode::GetParameterName, id, 0, name);
+    return name;
 }
 
 bool Effect::set_sample_rate(f32 value)

@@ -134,9 +134,9 @@ struct Effect
     i32 preset_number();
     [[nodiscard]] bool set_preset_name(char const* name);
     char const* preset_name();
-    char const* parameter_label();
-    char const* parameter_display();
-    char const* parameter_name();
+    char const* parameter_label(char*, i32);
+    char const* parameter_display(char*, i32);
+    char const* parameter_name(char*, i32);
     [[nodiscard]] bool set_sample_rate(f32 value);
     [[nodiscard]] bool set_block_size(i32 value);
     [[nodiscard]] bool pause();

@@ -3,6 +3,7 @@
 #include <WASM3/wasm3.h>
 #include <Core/Print.h>
 #include <Ty/Defer.h>
+#include <Core/Time.h>
 
 namespace MS {
 
@@ -10,6 +11,8 @@ static const void* log_info(IM3Runtime runtime, IM3ImportContext context, uint64
 static const void* log_debug(IM3Runtime runtime, IM3ImportContext context, uint64_t* stack, void* memory);
 static const void* log_error(IM3Runtime runtime, IM3ImportContext context, uint64_t* stack, void* memory);
 static const void* log_fatal(IM3Runtime runtime, IM3ImportContext context, uint64_t* stack, void* memory);
+static const void* time_f32(IM3Runtime runtime, IM3ImportContext context, uint64_t* stack, void* memory);
+static const void* time_f64(IM3Runtime runtime, IM3ImportContext context, uint64_t* stack, void* memory);
 
 WASMPlugin::WASMPlugin(Core::MappedFile&& file, StringBuffer&& name, IM3Environment env, IM3Runtime runtime, IM3Module mod)
     : file(move(file))
@@ -109,6 +112,16 @@ ErrorOr<void> WASMPlugin::link()
         }
     }
     if (c_string res = m3_LinkRawFunctionEx(mod, "ms", "log_fatal", "v(**)", log_fatal, this)) {
+        if (res != m3Err_functionLookupFailed) {
+            return Error::from_string_literal(res);
+        }
+    }
+    if (c_string res = m3_LinkRawFunctionEx(mod, "ms", "time_f32", "f()", time_f32, this)) {
+        if (res != m3Err_functionLookupFailed) {
+            return Error::from_string_literal(res);
+        }
+    }
+    if (c_string res = m3_LinkRawFunctionEx(mod, "ms", "time_f64", "F()", time_f64, this)) {
         if (res != m3Err_functionLookupFailed) {
             return Error::from_string_literal(res);
         }
@@ -226,6 +239,18 @@ static const void* log_error(IM3Runtime runtime, IM3ImportContext context, uint6
 static const void* log_fatal(IM3Runtime runtime, IM3ImportContext context, uint64_t* stack, void* memory)
 {
     return log(runtime, context, stack, memory, LogSeverity::Fatal);
+}
+
+static const void* time_f32(IM3Runtime, IM3ImportContext, uint64_t* stack, void*)
+{
+    *((f64*)stack) = Core::time();
+    return m3Err_none;
+}
+
+static const void* time_f64(IM3Runtime, IM3ImportContext, uint64_t* stack, void*)
+{
+    *((f32*)stack) = (f32)Core::time();
+    return m3Err_none;
 }
 
 }

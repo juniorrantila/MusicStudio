@@ -24,6 +24,12 @@ MS_WASM("ms", "log_fatal")
 [[gnu::format(printf, 1, 0)]]
 extern void ms_fatal(c_string format, ...);
 
+MS_WASM("ms", "time_f32")
+extern f32 ms_time_f32(void);
+
+MS_WASM("ms", "time_f64")
+extern f32 ms_time_f64(void);
+
 // Defined by the plugin.
 extern const char ms_plugin_name[] __asm__("ms_plugin_name");
 void ms_plugin_draw_ui(void) __asm__("ms_plugin_draw_ui");

@@ -64,6 +64,9 @@ struct View {
     constexpr ReverseIterator<T> in_reverse() { return { begin(), end() }; }
 
     constexpr usize size() const { return m_size; }
+
+    constexpr usize byte_size() const { return size() * sizeof(T); }
+
     constexpr T* data()
     {
         VERIFY(m_data);

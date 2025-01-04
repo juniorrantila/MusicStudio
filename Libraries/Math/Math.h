@@ -30,6 +30,9 @@ inline double math_cos_turns_f64(double t)
 inline float math_sin_turns_f32(float t) { return math_cos_turns_f32(t + 0.5f); }
 inline double math_sin_turns_f64(double t) { return math_cos_turns_f64(t + 0.5); }
 
+inline float math_mod_f32(float x, float y) { return __builtin_fmodf(x, y); }
+inline double math_mod_f64(double x, double y) { return __builtin_fmod(x, y); }
+
 #ifdef __cplusplus
 }
 #endif

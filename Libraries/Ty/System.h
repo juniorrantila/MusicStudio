@@ -210,6 +210,7 @@ namespace Ty::System {
 ErrorOr<usize> write(int fd, StringBuffer const& string);
 ErrorOr<usize> write(int fd, StringView string);
 ErrorOr<usize> write(int fd, void const* data, usize size);
+ErrorOr<usize> read(int fd, void* data, usize size);
 ErrorOr<usize> writev(int fd, IOVec const* iovec, int count);
 ErrorOr<void> fsync(int fd);
 ErrorOr<void> munmap(void const* addr, usize size);

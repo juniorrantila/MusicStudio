@@ -77,6 +77,15 @@ ErrorOr<usize> writev(int fd, IOVec const* iovec, int count)
     return rv;
 }
 
+ErrorOr<usize> read(int fd, void* data, usize size)
+{
+    auto rv = ::read(fd, data, size);
+    if (rv < 0) {
+        return Error::from_errno();
+    }
+    return (usize)rv;
+}
+
 ErrorOr<u8*> mmap(void* addr, usize size, int prot, int flags,
     int fd, long offset)
 {

@@ -237,7 +237,11 @@ ErrorOr<void> WASMPlugin::process_f32(f32* out, f32 const* in, u32 frames, u32 c
     if (2ULL * sample_bytes >= size) {
         return Error::from_string_literal("plugin does not have enough memory");
     }
-    memcpy(memory + samples, in, sample_bytes);
+    if (in) {
+        memcpy(memory + samples, in, sample_bytes);
+    } else {
+        memset(memory + samples, 0, sample_bytes);
+    }
     if (c_string res = m3_CallV(process_f32_func, 0, sample_bytes, frames, channels)) {
         return Error::from_string_literal(res);
     }
@@ -257,7 +261,11 @@ ErrorOr<void> WASMPlugin::process_f64(f64* out, f64 const* in, u32 frames, u32 c
     if (2ULL * sample_bytes >= size) {
         return Error::from_string_literal("plugin does not have enough memory");
     }
-    memcpy(memory + samples, in, sample_bytes);
+    if (in) {
+        memcpy(memory + samples, in, sample_bytes);
+    } else {
+        memset(memory + samples, 0, sample_bytes);
+    }
     if (c_string res = m3_CallV(process_f64_func, 0, sample_bytes, frames, channels)) {
         return Error::from_string_literal(res);
     }

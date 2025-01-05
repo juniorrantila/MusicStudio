@@ -40,7 +40,8 @@ struct ArenaAllocator : public Allocator {
             return *this;
         }
         this->~ArenaAllocator();
-        return *new (this)ArenaAllocator(move(other));
+        new (this)ArenaAllocator(move(other));
+        return *this;
     }
 
     constexpr ~ArenaAllocator()

@@ -30,6 +30,15 @@ extern f32 ms_time_f32(void);
 MS_WASM("ms", "time_f64")
 extern f32 ms_time_f64(void);
 
+MS_WASM("ms", "store")
+extern i64 ms_store(void const* key, u32 key_size, void const* value, u32 value_size);
+
+MS_WASM("ms", "stores")
+extern i64 ms_stores(c_string key, void const* value, u32 value_size);
+
+MS_WASM("ms", "fetch")
+extern i64 ms_fetch(void const* key, u32 key_size, void* value, u32 value_size);
+
 // Defined by the plugin.
 extern const char ms_plugin_name[] __asm__("ms_plugin_name");
 void ms_plugin_draw_ui(void) __asm__("ms_plugin_draw_ui");

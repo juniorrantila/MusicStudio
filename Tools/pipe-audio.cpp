@@ -4,6 +4,7 @@
 #include <AU/Audio.h>
 #include <Core/File.h>
 #include <Ty/System.h>
+#include <Ty/ArenaAllocator.h>
 #include <unistd.h>
 
 ErrorOr<int> Main::main(int argc, c_string argv[]) {
@@ -20,7 +21,9 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
     }
 
     auto wav_file = TRY(Core::MappedFile::open(wav_path));
-    auto audio = TRY(AU::Audio::decode(AU::AudioFormat::WAV, wav_file.bytes()));
+    auto size = TRY(AU::Audio::samples_byte_size(AU::AudioFormat::WAV, wav_file.bytes()));
+    auto arena = TRY(ArenaAllocator::create(size));
+    auto audio = TRY(AU::Audio::decode(&arena, AU::AudioFormat::WAV, wav_file.bytes()));
 
     u32 channel_count = audio.channel_count();
     u32 sample_rate = audio.sample_rate();

@@ -35,8 +35,8 @@ struct Audio {
     }
 
     usize frame_count() const { return m_frame_count; }
-    usize channel_count() const { return m_channel_count; }
-    usize sample_rate() const { return m_sample_rate; }
+    u32 channel_count() const { return m_channel_count; }
+    u32 sample_rate() const { return m_sample_rate; }
     f64 duration() const { return (f64)frame_count() / (f64)sample_rate(); }
     View<f64 const> samples() const { return m_samples.view(); }
 

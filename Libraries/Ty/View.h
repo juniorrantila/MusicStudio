@@ -31,6 +31,14 @@ struct View {
         return m_data[index];
     }
 
+    Optional<T> at(usize index) const
+    {
+        if (index >= size()) {
+            return {};
+        }
+        return m_data[index];
+    }
+
     constexpr bool is_empty() const { return size() == 0; }
 
     constexpr T* begin()

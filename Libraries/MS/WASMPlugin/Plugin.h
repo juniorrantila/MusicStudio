@@ -65,9 +65,9 @@ void ms_plugin_init(u32 plugin_version) __asm__("ms_plugin_init");
 void ms_plugin_deinit(void) __asm__("ms_plugin_deinit");
 
 void ms_plugin_draw_ui(void) __asm__("ms_plugin_draw_ui");
-void ms_plugin_process_f64(f64* out, f64 const* in, u32 frames, u32 channels) __asm__("ms_plugin_process_f64");
 void ms_plugin_process_f32(f32* out, f32 const* in, u32 frames, u32 channels) __asm__("ms_plugin_process_f32");
-void ms_plugin_main(void) __asm__("ms_plugin_main");
+void ms_plugin_process_f64(f64* out, f64 const* in, u32 frames, u32 channels) __asm__("ms_plugin_process_f64");
+
 
 #ifdef __cplusplus
 }

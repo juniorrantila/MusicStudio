@@ -18,6 +18,15 @@
 #include <Ty/Swap.h>
 #include <MS/Project.h>
 #include <string.h>
+#include <unistd.h>
+
+struct PartTime {
+    u32 hours;
+    u8 minutes;
+    u8 seconds;
+};
+
+static PartTime part_time(u32 seconds);
 
 static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max);
 static void underflow_callback(SoundIoOutStream *outstream);
@@ -75,7 +84,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
     dprintln("\n----------------------");
     dprintln("Sample rate: {}", audio.sample_rate());
     dprintln("Channels: {}", audio.channel_count());
-    dprintln("Duration: {}", (usize)audio.duration());
+    dprintln("Duration: {}", part_time((u32)audio.duration()));
     dprintln("----------------------\n");
 
     SoundIo *soundio = soundio_create();
@@ -160,18 +169,15 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         return Error::from_string_literal(soundio_strerror(err));
     }
 
-    auto last = Core::time();
-    dprint("Time: {} / {}", 0, (usize)audio.duration());
+    auto duration = part_time((u32)audio.duration());
+    dprint("Time: {} / {}", part_time(0), duration);
     while (played_frames < audio.frame_count()) {
         soundio_flush_events(soundio);
-        auto current_time = (usize)((f64)played_frames / (f64)audio.sample_rate());
-        auto now = Core::time();
-        if (now >= last + 0.5) {
-            last = now;
-            dprint("\r\033[KTime: {} / {}", current_time, (usize)audio.duration());
-        }
+        auto current_time = part_time(played_frames / audio.sample_rate());
+        dprint("\r\033[KTime: {} / {}", current_time, duration);
+        sleep(1);
     }
-    dprintln("\r\033[KTime: {} / {}", (usize)audio.duration(), (usize)audio.duration());
+    dprintln("\r\033[KTime: {} / {}", duration, duration);
 
     soundio_outstream_destroy(outstream);
     soundio_device_unref(device);
@@ -232,3 +238,27 @@ static void underflow_callback(SoundIoOutStream *outstream) {
     static usize count = 0;
     dprintln("underflow {}", count++);
 }
+
+static PartTime part_time(u32 seconds)
+{
+    u8 s = seconds % 60;
+    u32 minutes = seconds / 60;
+    u8 m = minutes % 60;
+    u32 hours = minutes / 60;
+    u32 h = hours;
+    return {
+        .hours = h,
+        .minutes = m,
+        .seconds = s,
+    };
+}
+
+template <>
+struct Ty::Formatter<PartTime> {
+    template <typename U>
+        requires Ty::Writable<U>
+    static constexpr ErrorOr<u32> write(U& to, PartTime time)
+    {
+        return TRY(to.write(time.hours, "h"sv, (u32)time.minutes, "m"sv, (u32)time.seconds, "s"sv));
+    }
+};

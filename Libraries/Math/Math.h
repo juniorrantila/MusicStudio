@@ -8,6 +8,8 @@ inline float math_abs_f32(float x) { return x < 0.0f ? -x : x; }
 inline double math_abs_f64(double x) { return x < 0.0 ? -x : x; }
 inline float math_floor_f32(float x) { return (float)(long long)x; }
 inline double math_floor_f64(double x) { return (double)(long long)x; }
+inline float math_ceil_f32(float x) { return x == math_floor_f32(x) ? x : math_floor_f32(x) + 1.0f; }
+inline double math_ceil_f64(double x) { return x == math_floor_f64(x) ? x : math_floor_f64(x) + 1.0; }
 inline float math_frac_f32(float x) { return x - math_floor_f32(x); }
 inline double math_frac_f64(double x) { return x - math_floor_f64(x); }
 

@@ -63,7 +63,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
     auto arena = TRY(ArenaAllocator::create(1024ULL * 1024ULL * 1024ULL));
 
     auto wav_file = TRY(Core::MappedFile::open(wav_path));
-    auto audio = TRY(AU::Audio::decode(AU::AudioFormat::WAV, wav_file.bytes()));
+    auto audio = TRY(AU::Audio::decode(&arena, AU::AudioFormat::WAV, wav_file.bytes()));
 
     auto project = MS::Project {
         .sample_rate = audio.sample_rate(),

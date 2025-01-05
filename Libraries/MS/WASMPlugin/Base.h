@@ -1,6 +1,10 @@
 #pragma once
 
+#ifdef __wasm__
 #define MS_WASM(mod, name) [[clang::import_module(mod), clang::import_name(name)]]
+#else
+#define MS_WASM(mod, name)
+#endif
 
 typedef signed char i8;
 typedef signed short i16;

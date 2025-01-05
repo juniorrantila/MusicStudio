@@ -34,11 +34,14 @@ struct Audio {
         return m_samples.at(frame * channel_count() + channel);
     }
 
+    Optional<f64> sample_frac(f64 frame, usize channel) const;
+
     usize frame_count() const { return m_frame_count; }
     u32 channel_count() const { return m_channel_count; }
     u32 sample_rate() const { return m_sample_rate; }
     f64 duration() const { return (f64)frame_count() / (f64)sample_rate(); }
     View<f64 const> samples() const { return m_samples.view(); }
+    ErrorOr<void> resample(u32 sample_rate);
 
 private:
     Buffer<f64> m_samples {};

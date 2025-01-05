@@ -1,6 +1,7 @@
 #pragma once
 #include "../../bs.h"
 #include "../Ty/build.def"
+#include "../Math/build.def"
 #include "../Vendor/SoundIo/build.def"
 
 static auto const au = cc_library("AU", {
@@ -24,5 +25,6 @@ static auto const au = cc_library("AU", {
     .deps = {
         ty,
         soundio,
+        math,
     },
 });

@@ -21,7 +21,7 @@ MS_WASM("ms", "log_error")
 extern void ms_error(c_string format, ...);
 
 MS_WASM("ms", "log_fatal")
-[[gnu::format(printf, 1, 0)]]
+[[noreturn, gnu::format(printf, 1, 0)]]
 extern void ms_fatal(c_string format, ...);
 
 MS_WASM("ms", "time_f32")

@@ -44,6 +44,9 @@ struct Buffer;
 
 struct ByteDecoder;
 
+template <typename T>
+struct Ref;
+
 }
 
 using Ty::StringBuffer;

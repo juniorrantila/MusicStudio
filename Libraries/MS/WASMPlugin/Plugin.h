@@ -39,6 +39,12 @@ extern i64 ms_stores(c_string key, void const* value, u32 value_size);
 MS_WASM("ms", "fetch")
 extern i64 ms_fetch(void const* key, u32 key_size, void* value, u32 value_size);
 
+MS_WASM("ms", "heap_base")
+void* ms_heap_base(void);
+
+MS_WASM("ms", "heap_end")
+void* ms_heap_end(void);
+
 // Defined by the plugin.
 extern const char ms_plugin_name[] __asm__("ms_plugin_name");
 void ms_plugin_draw_ui(void) __asm__("ms_plugin_draw_ui");

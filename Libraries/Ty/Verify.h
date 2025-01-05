@@ -10,3 +10,12 @@
             __builtin_trap();                                 \
         }                                                     \
     } while (0)
+
+#define UNIMPLEMENTED()                     \
+    do {                                    \
+        __builtin_printf(                   \
+            "UNIMPLEMENTED: %s [%s:%d]\n",  \
+            __PRETTY_FUNCTION__, __FILE__,  \
+            __LINE__);                      \
+        __builtin_trap();                   \
+    } while (0)

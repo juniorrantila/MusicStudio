@@ -137,6 +137,13 @@ struct [[nodiscard]] ErrorOr {
         return Return(callback(release_value()));
     }
 
+    constexpr bool operator==(T other) const
+    {
+        if (!has_value())
+            return false;
+        return value() == other;
+    }
+
     constexpr void ignore() const { }
 
 private:

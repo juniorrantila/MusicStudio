@@ -49,7 +49,7 @@ struct WAV {
         return frame_count() * channel_count();
     }
 
-    ErrorOr<usize> write_into(Buffer<f64>*);
+    ErrorOr<usize> write_into(View<f64>);
 
 private:
     WAVFormat m_format {};

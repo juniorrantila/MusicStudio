@@ -88,44 +88,44 @@ ErrorOr<WAV> WAV::decode(Bytes bytes)
     });
 }
 
-static void write_i8(WAV&, usize, Buffer<f64>&);
-static void write_i16(WAV&, usize, Buffer<f64>&);
-static void write_i32(WAV&, usize, Buffer<f64>&);
-static void write_i64(WAV&, usize, Buffer<f64>&);
-static void write_f32(WAV&, usize, Buffer<f64>&);
-static void write_f64(WAV&, usize, Buffer<f64>&);
+static void write_i8(WAV&, usize, View<f64>);
+static void write_i16(WAV&, usize, View<f64>);
+static void write_i32(WAV&, usize, View<f64>);
+static void write_i64(WAV&, usize, View<f64>);
+static void write_f32(WAV&, usize, View<f64>);
+static void write_f64(WAV&, usize, View<f64>);
 
-ErrorOr<usize> WAV::write_into(Buffer<f64>* buffer)
+ErrorOr<usize> WAV::write_into(View<f64> buffer)
 {
-    usize samples_to_write = buffer->capacity() < sample_count() ? buffer->capacity() : sample_count();
+    usize samples_to_write = buffer.size() < sample_count() ? buffer.size() : sample_count();
     switch (format()) {
     case AU::WAVAudioFormat::Unknown:
         return Error::from_string_literal("unknown WAV format");
     case WAVAudioFormat::PCM:
         if (bits_per_sample() == 8) {
-            write_i8(*this, samples_to_write, *buffer);
+            write_i8(*this, samples_to_write, buffer);
             return samples_to_write;
         }
         if (bits_per_sample() == 16) {
-            write_i16(*this, samples_to_write, *buffer);
+            write_i16(*this, samples_to_write, buffer);
             return samples_to_write;
         }
         if (bits_per_sample() == 32) {
-            write_i32(*this, samples_to_write, *buffer);
+            write_i32(*this, samples_to_write, buffer);
             return samples_to_write;
         }
         if (bits_per_sample() == 64) {
-            write_i64(*this, samples_to_write, *buffer);
+            write_i64(*this, samples_to_write, buffer);
             return samples_to_write;
         }
         return Error::unimplemented();
     case WAVAudioFormat::Float:
         if (bits_per_sample() == 32) {
-            write_f32(*this, samples_to_write, *buffer);
+            write_f32(*this, samples_to_write, buffer);
             return samples_to_write;
         }
         if (bits_per_sample() == 64) {
-            write_f64(*this, samples_to_write, *buffer);
+            write_f64(*this, samples_to_write, buffer);
             return samples_to_write;
         }
         return Error::unimplemented();
@@ -133,7 +133,7 @@ ErrorOr<usize> WAV::write_into(Buffer<f64>* buffer)
     return {};
 }
 
-static void write_i8(WAV& wav, usize samples_to_write, Buffer<f64>& buffer)
+static void write_i8(WAV& wav, usize samples_to_write, View<f64> buffer)
 {
     auto samples = wav.samples();
     for (usize i = 0; i < samples_to_write; i++) {
@@ -142,7 +142,7 @@ static void write_i8(WAV& wav, usize samples_to_write, Buffer<f64>& buffer)
     }
 }
 
-static void write_i16(WAV& wav, usize samples_to_write, Buffer<f64>& buffer)
+static void write_i16(WAV& wav, usize samples_to_write, View<f64> buffer)
 {
     auto samples = wav.samples();
     for (usize i = 0; i < samples_to_write; i++) {
@@ -151,7 +151,7 @@ static void write_i16(WAV& wav, usize samples_to_write, Buffer<f64>& buffer)
     }
 }
 
-static void write_i32(WAV& wav, usize samples_to_write, Buffer<f64>& buffer)
+static void write_i32(WAV& wav, usize samples_to_write, View<f64> buffer)
 {
     auto samples = wav.samples();
     for (usize i = 0; i < samples_to_write; i++) {
@@ -160,7 +160,7 @@ static void write_i32(WAV& wav, usize samples_to_write, Buffer<f64>& buffer)
     }
 }
 
-static void write_i64(WAV& wav, usize samples_to_write, Buffer<f64>& buffer)
+static void write_i64(WAV& wav, usize samples_to_write, View<f64> buffer)
 {
     auto samples = wav.samples();
     for (usize i = 0; i < samples_to_write; i++) {
@@ -169,7 +169,7 @@ static void write_i64(WAV& wav, usize samples_to_write, Buffer<f64>& buffer)
     }
 }
 
-static void write_f32(WAV& wav, usize samples_to_write, Buffer<f64>& buffer)
+static void write_f32(WAV& wav, usize samples_to_write, View<f64> buffer)
 {
     auto samples = wav.samples();
     for (usize i = 0; i < samples_to_write; i++) {
@@ -177,7 +177,7 @@ static void write_f32(WAV& wav, usize samples_to_write, Buffer<f64>& buffer)
     }
 }
 
-static void write_f64(WAV& wav, usize samples_to_write, Buffer<f64>& buffer)
+static void write_f64(WAV& wav, usize samples_to_write, View<f64> buffer)
 {
     auto samples = wav.samples();
     for (usize i = 0; i < samples_to_write; i++) {

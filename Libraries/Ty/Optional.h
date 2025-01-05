@@ -277,6 +277,12 @@ struct [[nodiscard]] Optional<T*> {
         return Optional<Return>{};
     }
 
+    T* unwrap()
+    {
+        VERIFY(has_value());
+        return release_value();
+    }
+
     operator T*&() { return m_value; }
     operator T*() const { return m_value; }
 

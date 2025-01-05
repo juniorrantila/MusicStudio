@@ -33,6 +33,9 @@ inline double math_sin_turns_f64(double t) { return math_cos_turns_f64(t + 0.5);
 inline float math_mod_f32(float x, float y) { return __builtin_fmodf(x, y); }
 inline double math_mod_f64(double x, double y) { return __builtin_fmod(x, y); }
 
+inline float math_round_f32(float t) { return math_abs_f32(math_frac_f32(t)) < 0.5f ? math_floor_f32(t) : math_floor_f32(t + 1.0f); }
+inline double math_round_f64(double t) { return math_abs_f64(math_frac_f64(t)) < 0.5 ? math_floor_f64(t) : math_floor_f64(t + 1.0); }
+
 #ifdef __cplusplus
 }
 #endif

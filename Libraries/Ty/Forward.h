@@ -47,6 +47,8 @@ struct ByteDecoder;
 template <typename T>
 struct Ref;
 
+struct ArenaAllocator;
+
 }
 
 using Ty::StringBuffer;

@@ -17,6 +17,13 @@ ErrorOr<Audio> Audio::decode(AudioFormat format, Bytes bytes)
     }
 }
 
+ErrorOr<Audio> Audio::decode_with_sample_rate(u32 sample_rate, AudioFormat format, Bytes bytes)
+{
+    auto audio = TRY(decode(format, bytes));
+    TRY(audio.resample(sample_rate));
+    return audio;
+}
+
 static ErrorOr<Audio> transcode(WAV wav)
 {
     auto samples = TRY(Buffer<f64>::create(wav.frame_count() * wav.channel_count()));

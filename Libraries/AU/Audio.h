@@ -28,6 +28,7 @@ struct Audio {
     }
 
     static ErrorOr<Audio> decode(AudioFormat, Bytes);
+    static ErrorOr<Audio> decode_with_sample_rate(u32 sample_rate, AudioFormat, Bytes);
 
     Optional<f64> sample(usize frame, usize channel) const
     {

@@ -1,22 +1,44 @@
 #pragma once
 #include "../bs.h"
+#include "../Libraries/MS/WASMPlugin/build.def"
+#include "../Libraries/Math/build.def"
 
-static Target ms_wasm_plugin(c_string name, Strings sources) {
+static Target ms_wasm_plugin_target(c_string name, Strings sources) {
     return cc_library(name, {
         .srcs = sources,
         .exported_headers = {},
         .header_namespace = "Plugins",
         .compile_flags = {},
         .linker_flags = {
-            "--export=ms_main",
+            "--export=ms_plugin_version",
+            "--export=ms_plugin_id",
+            "--export=ms_plugin_name",
+            "--export=ms_plugin_kind",
+            "--export=ms_plugin_init",
+            "--export=ms_plugin_deinit",
+            "--export=ms_plugin_process_f64",
+            "--export=ms_plugin_parameter_count",
+            "--export=ms_plugin_get_parameter",
+            "--export=ms_plugin_set_parameter",
+            "--export=ms_plugin_parameter_kind",
+            "--export=ms_plugin_parameter_name",
+            "--export=ms_plugin_parameter_min_value",
+            "--export=ms_plugin_parameter_max_value",
+            "--export=ms_plugin_parameter_step_size",
+            "--export=ms_plugin_parameter_option_name",
+            "--export=__heap_base",
+            "--export=__heap_end",
             "--no-entry",
         },
         .target_triple = wasm_target_triple(),
         .link_style = "static",
-        .deps = {},
+        .deps = {
+            ms_wasm_plugin,
+            math,
+        },
     });
 }
 
-auto const hello_wasm = ms_wasm_plugin("hello.wasm", {
+auto const hello_wasm = ms_wasm_plugin_target("hello.wasm", {
     "./hello.c",
 });

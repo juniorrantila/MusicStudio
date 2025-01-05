@@ -82,6 +82,14 @@ struct [[nodiscard]] Optional {
         return Return(error_callback());
     }
 
+    template <typename E>
+    ErrorOr<T, E> or_error(E error)
+    {
+        if (has_value())
+            return release_value();
+        return error;
+    }
+
     template <typename F>
     constexpr decltype(auto) or_else(F callback)
         requires IsCallableWithArguments<F, T>
@@ -233,6 +241,14 @@ struct [[nodiscard]] Optional<T*> {
         if (has_value())
             return Return(release_value());
         return Return(error_callback());
+    }
+
+    template <typename E>
+    ErrorOr<T*, E> or_error(E error)
+    {
+        if (has_value())
+            return release_value();
+        return error;
     }
 
     constexpr T* or_default(T* value)

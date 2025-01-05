@@ -118,13 +118,15 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         }
     }));
 
-    TRY(audio_pipeline.pipe([&](f64* out, f64* in, usize frames, usize channels) {
+    TRY(audio_pipeline.pipe([&](f64* const out, f64* const in, usize frames, usize channels) {
+        f64* a = out;
+        f64* b = in;
         for (auto& plugin : plugin_manager.plugins()) {
-            MUST(plugin.process_f64(out, in, frames, channels));
-            swap(&out, &in);
+            MUST(plugin.process_f64(a, b, frames, channels));
+            swap(&a, &b);
         }
         if (plugin_manager.plugins().size() % 2 == 0) {
-            memcpy(in, out, frames * channels * sizeof(f64));
+            memcpy(out, in, frames * channels * sizeof(f64));
         }
     }));
 

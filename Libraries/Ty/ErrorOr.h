@@ -120,6 +120,14 @@ struct [[nodiscard]] ErrorOr {
         return release_value();
     }
 
+    constexpr T or_default(T default_value)
+    {
+        if (is_error()) {
+            return default_value;
+        }
+        return release_value();
+    }
+
     template <typename F>
     constexpr decltype(auto) then(F callback)
     {

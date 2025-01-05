@@ -68,6 +68,20 @@ void ms_plugin_draw_ui(void) __asm__("ms_plugin_draw_ui");
 void ms_plugin_process_f32(f32* out, f32 const* in, u32 frames, u32 channels) __asm__("ms_plugin_process_f32");
 void ms_plugin_process_f64(f64* out, f64 const* in, u32 frames, u32 channels) __asm__("ms_plugin_process_f64");
 
+typedef char const* MSPluginParameterKind;
+#define MSPluginParameterKind_Knob    ("com.music-studio.knob")
+#define MSPluginParameterKind_Toggle  ("com.music-studio.toggle")
+#define MSPluginParameterKind_Options ("com.music-studio.options")
+
+u32 ms_plugin_parameter_count(void) __asm__("ms_plugin_parameter_count");
+f64 ms_plugin_get_parameter(u32 id) __asm__("ms_plugin_get_parameter");
+void ms_plugin_set_parameter(u32 id, f64 value) __asm__("ms_plugin_set_parameter");
+MSPluginParameterKind ms_plugin_parameter_kind(u32 id) __asm__("ms_plugin_parameter_kind");
+char const* ms_plugin_parameter_name(u32 id, u32* size) __asm__("ms_plugin_parameter_name");
+f64 ms_plugin_parameter_min_value(u32 id) __asm__("ms_plugin_parameter_min_value");
+f64 ms_plugin_parameter_max_value(u32 id) __asm__("ms_plugin_parameter_max_value");
+f64 ms_plugin_parameter_step_size(u32 id) __asm__("ms_plugin_parameter_step_size");
+char const* ms_plugin_parameter_option_name(u32 parameter_id, u32 option_id, u32* size) __asm__("ms_plugin_parameter_option_name");
 
 #ifdef __cplusplus
 }

@@ -38,6 +38,9 @@ inline double math_mod_f64(double x, double y) { return __builtin_fmod(x, y); }
 inline float math_round_f32(float t) { return math_abs_f32(math_frac_f32(t)) < 0.5f ? math_floor_f32(t) : math_floor_f32(t + 1.0f); }
 inline double math_round_f64(double t) { return math_abs_f64(math_frac_f64(t)) < 0.5 ? math_floor_f64(t) : math_floor_f64(t + 1.0); }
 
+inline float math_lerp_f32(float v0, float v1, float t) { return (v0 * (1.0f - t) + v1 * t); }
+inline double math_lerp_f64(double v0, double v1, double t) { return (v0 * (1.0 - t) + v1 * t); }
+
 #ifdef __cplusplus
 }
 #endif

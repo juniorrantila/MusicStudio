@@ -18,7 +18,9 @@ static auto const au = cc_library("AU", {
         "./Pipeline.h",
     },
     .header_namespace = "AU",
-    .compile_flags = {},
+    .compile_flags = {
+        "-O3",
+    },
     .linker_flags = {},
     .target_triple = {},
     .link_style = "static",

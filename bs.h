@@ -792,9 +792,7 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
                     continue;
                 }
                 string_set_add(&seen_deps, n);
-                LibraryArgs const* library = dep->library;
-                c_string ns = library->header_namespace;
-                fprintf(output, " -Ins/%s", ns);
+                fprintf(output, " -Ins/%s", dep->name);
             }
         }
         fprintf(output, "\n");

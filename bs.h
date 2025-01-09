@@ -970,7 +970,7 @@ static inline void emit_ninja(FILE* output, Target target)
     }
     fprintf(output, "\n\n");
 
-    fprintf(output, "default_cpp_args    = $default_cxx_args -xc++ -std=c++20\n");
+    fprintf(output, "default_cpp_args    = $default_cxx_args -fno-exceptions -fno-rtti -xc++ -std=c++20\n");
     fprintf(output, "default_c_args      = $default_cxx_args -xc -std=c23\n");
     fprintf(output, "default_objc_args   = $default_cxx_args -xobjective-c -std=c23\n");
     fprintf(output, "default_objcpp_args = $default_cxx_args -xobjective-c++ -std=c++20\n");

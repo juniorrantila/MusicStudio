@@ -73,6 +73,7 @@ Optional<f64> Parse<f64>::from(StringView from)
     bool add_to_fraction = false;
     u128 whole_part = 0;
     u128 fraction_part = 0;
+    u128 digits_in_fraction = 0;
     for (u32 i = 0; i < from.size(); i++) {
         if (add_to_fraction) {
             fraction_part *= 10;
@@ -80,6 +81,7 @@ Optional<f64> Parse<f64>::from(StringView from)
             if (!maybe_number.has_value())
                 return {};
             fraction_part += maybe_number.value();
+            digits_in_fraction += 1;
             continue;
         }
         if (from[i] == '.') {
@@ -95,18 +97,6 @@ Optional<f64> Parse<f64>::from(StringView from)
         if (whole_part > Limits<u64>::max())
             return {};
     }
-
-    auto digits_in = [](u128 value) {
-        u128 digits = 0;
-
-        do {
-            digits++;
-            value /= 10;
-        } while (value != 0);
-
-        return digits;
-    };
-    auto digits_in_fraction = digits_in(fraction_part);
 
     auto pow = [](u128 a, u128 b) {
         auto orig_a = a;

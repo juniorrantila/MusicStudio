@@ -203,15 +203,38 @@ struct Formatter<f64> {
         size += TRY(Formatter<u128>::write(to, integer_part));
         size += TRY(to.write("."sv));
         auto fraction_part = (number - (f64)integer_part);
-        auto fraction = (u128)(fraction_part * 1000000000000000.0);
-        if (fraction == 0) {
+        if (fraction_part == 0) {
             size += TRY(to.write("0"sv));
             return size;
         }
-        while (fraction % 10 == 0)
-            fraction /= 10;
-        size += TRY(Formatter<u128>::write(to, fraction));
+        u32 leading_digits = 0;
+        u32 trailing_digits = 0;
+        f64 digit_f = fraction_part;
+        for (u32 i = 0; i < 8; i++) {
+            digit_f *= 10;
+            u32 digit = (u32)digit_f % 10;
+            if (digit == 0 && trailing_digits == 0) {
+                leading_digits += 1;
+            } else {
+                trailing_digits += 1;
+            }
+        }
 
+        for (u32 i = 0; i < leading_digits; i++) {
+            size += TRY(to.write("0"sv));
+        }
+        fraction_part *= 10;
+        for (u32 i = 0; i < trailing_digits; i++) {
+            fraction_part *= 10;
+        }
+        u64 fraction = (u64)fraction_part;
+        for (u64 i = 0; i < trailing_digits; i++) {
+            if (fraction % 10 == 0) {
+                fraction /= 10;
+            }
+        }
+
+        size += TRY(Formatter<u64>::write(to, fraction));
         return size;
     }
 };

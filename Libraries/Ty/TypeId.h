@@ -1,30 +1,29 @@
 #pragma once
 #include "./Base.h"
-#include "./Verify.h"
 
 namespace Ty {
 
 namespace Internal {
 
-inline u16 next_id()
+static consteval u16 djb2(char const* bytes, usize size)
 {
-    static u16 id = 0;
-    VERIFY(id != 0xFFFF);
-    return id++;
+    u16 hash = 5381;
+    for (usize i = 0; i < size; ++i) {
+        hash = hash * 33 + (u8)bytes[i];
+    }
+    return hash;
 }
 
 template <typename T>
 struct TypeTrick {
-    static u16 eval()
+    static consteval u16 eval()
     {
-        if (id != 0xFFFF)
-            return id;
-        return id = next_id();
+        return djb2(__PRETTY_FUNCTION__, sizeof(__PRETTY_FUNCTION__));
     }
-
-private:
-    static inline u16 id { 0xFFFF };
 };
+
+template <typename T>
+static constexpr u16 id = TypeTrick<T>::eval();
 
 }
 
@@ -36,16 +35,24 @@ struct TypeId {
 
     constexpr bool operator==(TypeId other) const { return m_raw == other.m_raw; }
 
-    u16 raw() const { return m_raw; }
+    constexpr u16 raw() const { return m_raw; }
+
+    constexpr operator u16() const
+    {
+        return m_raw;
+    }
 
 private:
     u16 m_raw { 0 };
 };
 
 template <typename T>
-static inline TypeId type_id()
+static consteval inline TypeId type_id()
 {
-    return TypeId(Internal::TypeTrick<T>::eval());
+    constexpr u16 id = Internal::id<T>;
+    static_assert(id != 0, "0 type id is reserved for special values");
+    static_assert(id != 0xFFFF, "0xFFFF type id is reserved for special values");
+    return TypeId(id);
 }
 
 }

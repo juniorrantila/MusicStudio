@@ -13,9 +13,11 @@ Error Error::from_leaky_string(StringView message, c_string function, c_string f
 
 Optional<StringView> Error::errno_message() const
 {
-    if (m_errno == 0)
+    auto e = errno_code();
+    if (!e.has_value()) {
         return {};
-    auto code = strerror(m_errno);
+    }
+    auto code = strerror(e.value());
     if (!code)
         return {};
     return StringView::from_c_string(code);

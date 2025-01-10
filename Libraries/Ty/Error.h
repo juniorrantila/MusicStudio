@@ -1,6 +1,7 @@
 #pragma once
 #include "./Base.h"
 #include "./StringView.h"
+#include "./TypeId.h"
 #include <errno.h>
 
 namespace Ty {
@@ -24,7 +25,7 @@ struct Error {
         c_string file = __builtin_FILE(),
         u32 line = __builtin_LINE())
     {
-        return { message, function, file, line, 0 };
+        return { message, function, file, line, string_domain, 0 };
     }
 
     static Error from_string_literal_with_errno(c_string message, int code = errno,
@@ -43,6 +44,14 @@ struct Error {
         return { nullptr, function, file, line, code };
     }
 
+    template <typename T>
+        requires __is_enum(T) && (sizeof(T) <= sizeof(u16))
+    static Error from_enum(T value, c_string function = __builtin_FUNCTION(), c_string file = __builtin_FILE(), u32 line = __builtin_LINE())
+    {
+        c_string message = to_c_string(value);
+        return { message, function, file, line, type_id<T>(), (u16)value };
+    }
+
     constexpr StringView message() const
     {
         return user_message().or_else([this] {
@@ -57,11 +66,27 @@ struct Error {
         return StringView::from_c_string(m_user_message);
     }
 
+    constexpr static TypeId errno_domain = TypeId(0);
+    constexpr static TypeId string_domain = TypeId(0xFFFF);
+
+    constexpr TypeId domain() const
+    {
+        return m_domain;
+    }
+
+    template <typename T>
+    constexpr T error_code() const
+    {
+        VERIFY(m_domain == type_id<T>());
+        return (T)m_error_code;
+    }
+
     constexpr Optional<int> errno_code() const
     {
-        if (!m_errno)
-            return {};
-        return m_errno;
+        if (m_domain == errno_domain) {
+            return (int)m_error_code;
+        }
+        return {};
     }
 
     Optional<StringView> errno_message() const;
@@ -82,20 +107,28 @@ struct Error {
     }
 
 private:
-    constexpr Error(c_string message, c_string function, c_string file, u32 line, int errno_code)
+    constexpr Error(c_string message, c_string function, c_string file, u32 line, TypeId domain, u16 code)
         : m_user_message(message)
         , m_function(function)
         , m_file(file)
         , m_line(line)
-        , m_errno(errno_code)
+        , m_domain(domain)
+        , m_error_code(code)
     {
+    }
+
+    constexpr Error(c_string message, c_string function, c_string file, u32 line, int errno_code)
+        : Error(message, function, file, line, errno_domain, (u16)__builtin_abs(errno_code))
+    {
+        VERIFY(__builtin_abs(errno_code) < 65536);
     }
 
     c_string m_user_message { 0 };
     c_string m_function { 0 };
     c_string m_file { 0 };
     u32 m_line { 0 };
-    int m_errno { 0 };
+    TypeId m_domain;
+    u16 m_error_code { 0 };
 };
 
 }

@@ -16,6 +16,7 @@ static auto const soundio = cc_library("SoundIo", {
     .exported_headers = {
         "./SoundIo.h",
         "./endian.h",
+        "./os.h",
     },
     .header_namespace = "SoundIo",
     .compile_flags = {

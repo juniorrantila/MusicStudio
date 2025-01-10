@@ -39,6 +39,9 @@ typedef __SIZE_TYPE__ isize;
 typedef usize uptr;
 typedef isize iptr;
 
+_Static_assert(sizeof(uptr) == sizeof(void*), "");
+_Static_assert(sizeof(iptr) == sizeof(void*), "");
+
 typedef float f32;
 typedef double f64;
 

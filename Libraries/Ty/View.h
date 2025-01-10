@@ -124,7 +124,7 @@ struct View {
         };
     }
 
-    View<T>& assign_from(View<T> other)
+    View<T>& assign_from(View<T const> other)
     {
         VERIFY(other.size() >= size());
         for (usize i = 0; i < size(); i++) {

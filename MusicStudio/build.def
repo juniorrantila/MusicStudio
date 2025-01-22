@@ -7,6 +7,12 @@
 auto const music_studio = cc_binary("music-studio", {
     .srcs = {
         "./main.cpp",
+        "./Browser.cpp",
+        "./Context.cpp",
+        "./PianoRoll.cpp",
+        "./PinBoard.cpp",
+        "./Style.cpp",
+        "./UI.cpp",
     },
     .compile_flags = {},
     .linker_flags = {
@@ -33,5 +39,7 @@ auto const music_studio = cc_binary("music-studio", {
         libraries.cli,
         libraries.main,
         libraries.soundio,
+        libraries.layout,
+        libraries.au,
     }
 });

@@ -4,6 +4,8 @@
 
 ![MusicStudio](Res/MusicStudio.png)
 
+![Piano](Res/Piano.png)
+
 ## Build instructions
 
 ### Prerequisites

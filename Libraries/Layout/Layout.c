@@ -19,8 +19,7 @@ typedef struct Layout {
 } Layout;
 
 static void clay_handle_error(Clay_ErrorData error);
-static Layout* g_layout;
-static Clay_Dimensions measure_text(Clay_String *text, Clay_TextElementConfig *config);
+static Clay_Dimensions measure_text(Clay_StringSlice text, Clay_TextElementConfig *config, uintptr_t user);
 
 Layout* layout_create(void* on_error_user, void(*on_error)(void* user, char const*, usize))
 {
@@ -39,14 +38,13 @@ Layout* layout_create(void* on_error_user, void(*on_error)(void* user, char cons
         .on_error = on_error,
         .on_error_user = on_error_user,
     };
-    g_layout = layout;
     Clay_Arena arena = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, &layout->clay);
     Clay_Initialize(arena, (Clay_Dimensions){ 0, 0 }, (Clay_ErrorHandler) {
         .errorHandlerFunction = clay_handle_error,
         .userData = (uptr)layout,
     });
 
-    Clay_SetMeasureTextFunction(measure_text);
+    Clay_SetMeasureTextFunction(measure_text, (uptr)layout);
 
     return layout;
 }
@@ -90,16 +88,17 @@ void layout_set_size(Layout* layout, Vec2f size, f32 pixel_ratio)
 void layout_render(Layout* layout, Clay_RenderCommandArray commands)
 {
     nvgBeginFrame(layout->nvg, layout->width, layout->height, layout->pixel_ratio);
-    for (u32 i = 0; i < commands.length; i++) {
+    for (i32 i = 0; i < commands.length; i++) {
         Clay_RenderCommand* command = Clay_RenderCommandArray_Get(&commands, i);
         Clay_BoundingBox box = command->boundingBox;
         switch (command->commandType) {
         case CLAY_RENDER_COMMAND_TYPE_RECTANGLE: {
             Clay_RectangleElementConfig* config = command->config.rectangleElementConfig;
             Clay_Color color = config->color;
+            Clay_CornerRadius corner = config->cornerRadius;
             nvgBeginPath(layout->nvg);
             nvgFillColor(layout->nvg, nvgRGBA(color.r, color.g, color.b, color.a));
-            nvgRoundedRect(layout->nvg, box.x, box.y, box.width, box.height, config->cornerRadius.topLeft);
+            nvgRoundedRectVarying(layout->nvg, box.x, box.y, box.width, box.height, corner.topLeft, corner.topRight, corner.bottomRight, corner.bottomLeft);
             nvgFill(layout->nvg);
             break;
         }
@@ -137,15 +136,16 @@ void layout_render(Layout* layout, Clay_RenderCommandArray commands)
 }
 
 
-static Clay_Dimensions measure_text(Clay_String* text, Clay_TextElementConfig* config)
+static Clay_Dimensions measure_text(Clay_StringSlice text, Clay_TextElementConfig* config, uintptr_t user)
 {
-    nvgFontFaceId(g_layout->nvg, config->fontId);
-    nvgFontSize(g_layout->nvg, config->fontSize);
-    nvgTextLineHeight(g_layout->nvg, config->lineHeight);
-    nvgTextLetterSpacing(g_layout->nvg, config->letterSpacing);
-    nvgTextAlign(g_layout->nvg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
+    Layout* layout = (Layout*)user;
+    nvgFontFaceId(layout->nvg, config->fontId);
+    nvgFontSize(layout->nvg, config->fontSize);
+    nvgTextLineHeight(layout->nvg, config->lineHeight);
+    nvgTextLetterSpacing(layout->nvg, config->letterSpacing);
+    nvgTextAlign(layout->nvg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
     f32 bounds[4];
-    nvgTextBounds(g_layout->nvg, 0, 0, text->chars, text->chars + text->length, bounds);
+    nvgTextBounds(layout->nvg, 0, 0, text.chars, text.chars + text.length, bounds);
     return (Clay_Dimensions) {
         .width = bounds[2],
         .height = bounds[3],

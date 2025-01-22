@@ -71,8 +71,9 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
         hot_reload = StringView::from_c_string(arg);
     }));
 
-    TRY(argument_parser.add_flag("--call-graph", "-c", "show function call graph", [&]() {
-        Debug::Instrumentation::enabled = true;
+    u32 app_hints = 0;
+    TRY(argument_parser.add_flag("--native-like", "-nl", "run native-like mode", [&]() {
+        app_hints |= UIApplicationHint_NativeLike;
     }));
 
     if (auto result = argument_parser.run(argc, argv); result.is_error()) {
@@ -80,7 +81,11 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
         return 1;
     }
 
-    auto* app = ui_application_create(0);
+    auto* app = ui_application_create(app_hints);
+    Defer destroy_app = [&]{
+        ui_application_destroy(app);
+    };
+
     auto* window = ui_window_create(app, {
         .parent = nullptr,
         .title = "MusicStudio",
@@ -89,6 +94,9 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
         .width = 900,
         .height = 600,
     });
+    Defer destroy_window = [&]{
+        ui_window_destroy(window);
+    };
 
     auto arena = TRY(ArenaAllocator::create(1024ULL * 1024ULL));
     auto project = MS::Project();

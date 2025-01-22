@@ -275,6 +275,7 @@ void hstack(ID name, F callback)
 }
 
 struct BoxConfig {
+    Clay_CornerRadius corner_radius;
     Clay_Padding padding;
     Clay_Sizing sizing;
     Clay_Color color;
@@ -300,7 +301,7 @@ void box(ID name, SmallCapture<BoxConfig()> build_config, F callback)
         });
         rectangle({
             .color = config.color,
-            .cornerRadius = {},
+            .cornerRadius = config.corner_radius,
         });
         if (config.on_hover) {
             Clay_OnHover(config.on_hover, config.on_hover_user);

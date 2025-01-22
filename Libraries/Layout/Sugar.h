@@ -1,8 +1,38 @@
 #pragma once
 #include <Clay/Clay.h>
+#include <Ty/StringView.h>
 #include <Ty/SmallCapture.h>
 
 namespace LayoutSugar {
+
+struct ID {
+    ID() = default;
+
+    constexpr ID(ID const&) = default;
+    constexpr ID(ID&&) = default;
+
+    constexpr ID(StringView text)
+        : text(text)
+    {
+    }
+
+    constexpr ID(StringView text, u32 offset)
+        : text(text)
+        , offset(offset)
+    {
+    }
+
+    constexpr ID& operator=(ID const&) = default;
+    constexpr ID& operator=(ID&&) = default;
+
+    constexpr explicit operator bool() const
+    {
+        return bool(text) && offset;
+    }
+
+    StringView text {};
+    u32 offset {};
+};
 
 static inline Clay_RectangleElementConfig rectangle(Clay_RectangleElementConfig config)
 {
@@ -44,13 +74,13 @@ static inline Clay_SizingAxis sizing_fit()
 }
 
 
-static inline Clay_ElementId id(StringView name)
+static inline Clay_ElementId id(ID name)
 {
     auto clay_name = Clay_String{
-        .length = (i32)name.size(),
-        .chars = name.data(),
+        .length = (i32)name.text.size(),
+        .chars = name.text.data(),
     };
-    auto id = Clay__HashString(clay_name, 0, 0);
+    auto id = Clay__HashString(clay_name, name.offset, 0);
     Clay__AttachId(id);
     return id;
 }
@@ -109,7 +139,7 @@ void vstack(F callback)
 }
 
 template <typename F>
-void vstack(StringView name, F callback)
+void vstack(ID name, F callback)
 {
     Element().config([=]{
         id(name);
@@ -131,7 +161,7 @@ void vstack(StringView name, F callback)
 }
 
 struct StackConfig {
-    StringView id;
+    ID id;
     Clay_Padding padding;
     u16 child_gap;
     Clay_ChildAlignment child_alignment;
@@ -222,7 +252,7 @@ void hstack(StackConfig config, F callback)
 }
 
 template <typename F>
-void hstack(StringView name, F callback)
+void hstack(ID name, F callback)
 {
     Element().config([=]{
         if (name) {
@@ -254,7 +284,7 @@ struct BoxConfig {
 };
 
 template <typename F>
-void box(StringView name, SmallCapture<BoxConfig()> build_config, F callback)
+void box(ID name, SmallCapture<BoxConfig()> build_config, F callback)
 {
     Element().config([&]{
         if (name) {
@@ -279,7 +309,7 @@ void box(StringView name, SmallCapture<BoxConfig()> build_config, F callback)
 }
 
 struct BoxConfig2 {
-    StringView id;
+    ID id;
     Clay_Padding padding;
     Clay_Sizing sizing;
     Clay_Color color;

@@ -1,54 +1,30 @@
-#include <Main/Main.h>
-#include <Core/Print.h>
+#include <AU/SoundIo.h>
 #include <CLI/ArgumentParser.h>
-#include <SoundIo/SoundIo.h>
+#include <Core/Print.h>
+#include <Core/Time.h>
 #include <FS/Bundle.h>
 #include <Fonts/Fonts.h>
-#include <Shaders/Shaders.h>
-#include <Debug/Instrumentation.h>
-#include <Ty/ArenaAllocator.h>
-#include <MS/Plugin.h>
-#include <MS/Project.h>
+#include <GL/GL.h>
 #include <MS/PluginManager.h>
+#include <MS/Project.h>
+#include <Main/Main.h>
+#include <SoundIo/SoundIo.h>
+#include <SoundIo/os.h>
+#include <Ty/ArenaAllocator.h>
 #include <UI/Application.h>
+#include <UI/KeyCode.h>
 #include <UI/Window.h>
-#include <Render/Render.h>
-#include <UI/UI.h>
-#include <time.h>
 
-template <typename T>
-void swap(T* a, T* b)
+#include "./Context.h"
+
+#include <math.h>
+#include <unistd.h>
+
+static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max);
+
+ErrorOr<int> Main::main(int argc, c_string* argv)
 {
-    T c = *a;
-    T d = *b;
-    *a = d;
-    *b = c;
-}
-
-Vec2f zero  = { 0.0, 0.0 };
-Vec4f cyan = { .r = 0.0f, .g = 1.0f, .b = 1.0f, .a = 1.0f };
-Vec4f magenta = { .r = 1.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f };
-Vec4f yellow = { .r = 1.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f };
-Vec4f white = { .r = 1.0f, .g = 1.0f, .b = 1.0f, .a = 1.0f };
-Vec4f red = { .r = 1.0f, .g = 0.0f, .b = 0.0f, .a = 1.0f };
-Vec4f green = { .r = 0.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f };
-Vec4f blue = { .r = 0.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f };
-Vec4f border_color = hex_to_vec4f(0x2C3337FF);
-Vec4f outline_color = hex_to_vec4f(0x4B5255FF);
-Vec4f background_color = hex_to_vec4f(0x181F23FF);
-Vec4f button_color = hex_to_vec4f(0x99A89FFF);
-Vec4f gray_background = hex_to_vec4f(0x646A71FF);
-Vec4f toolbar_color = hex_to_vec4f(0x5B6265FF);
-
-static void render_frame(UI* ui);
-f64 time(void);
-
-ErrorOr<int> Main::main(int argc, c_string *argv)
-{
-    auto bundle = FS::Bundle()
-        .add_pack(Fonts())
-        .add_pack(Shaders());
-
+    auto bundle = FS::Bundle().add_pack(Fonts());
     dprintln("resources:");
     for (auto resource : bundle.resources()) {
         dprintln("  {}", resource.resolved_path());
@@ -113,227 +89,232 @@ ErrorOr<int> Main::main(int argc, c_string *argv)
         manager.plugins[i].init();
     }
 
-    auto out_frames = TRY(arena.alloc<f32>(project.sample_rate * project.channels)).zero();
-    auto in_frames = TRY(arena.alloc<f32>(project.sample_rate * project.channels)).zero();
-    usize even = 0;
-    for (usize i = 0; i < plugin_count; i++) {
-        even = (even + 1) & 1;
-        manager.plugins[i].process_f32(out_frames.data(), in_frames.data(), project.sample_rate);
-        swap(&out_frames, &in_frames);
-    }
-    swap(&out_frames, &in_frames);
-    dprintln("{}", out_frames[0]);
-
-    auto* render = render_create(&bundle, &arena);
-    if (!render) {
-        return Error::from_string_literal("could not create renderer");
-    }
-    Defer destroy_render = [&] {
-        render_destroy(render);
+    Context context = TRY(context_create(bundle));
+    Defer destroy_context = [&]{
+        context_destroy(&context);
     };
-    auto ui = ui_create(window, render);
 
-    ui_window_set_resize_callback(window, &ui, [](UIWindow*, void* user) {
-        auto* ui = (UI*)user;
-        ui_begin_frame(ui);
-        render_frame(ui);
-        ui_end_frame(ui);
+    ui_window_set_resize_callback(window, &context, [](UIWindow* window, void* user) {
+        ui_window_gl_make_current_context(window);
+        context_window_did_resize((Context*)user, window);
+        ui_window_gl_flush(window);
     });
 
-    f64 average_frame_time = 0.0f;
-    for (usize frame = 0; !ui_window_should_close(window); frame++) {
+    ui_window_set_scroll_callback(window, &context, [](UIWindow* window, void* user) {
+        context_window_did_scroll((Context*)user, window);
+    });
+
+    SoundIo* soundio = soundio_create();
+    if (!soundio) {
+        return Error::from_string_literal("could not create soundio");
+    }
+    Defer destroy_soundio = [&] {
+        soundio_destroy(soundio);
+    };
+
+    if (int err = soundio_connect(soundio)) {
+        return Error::from_string_literal(soundio_strerror(err));
+    }
+    soundio_flush_events(soundio);
+    int output_device_id = soundio_default_output_device_index(soundio);
+    if (output_device_id < 0) {
+        return Error::from_string_literal("could not find default output device");
+    }
+    SoundIoDevice* output_device = soundio_get_output_device(soundio, output_device_id);
+    Defer unref_output_device = [&] {
+        soundio_device_unref(output_device);
+    };
+    SoundIoOutStream* outstream = soundio_outstream_create(output_device);
+    if (!outstream) {
+        return Error::from_string_literal("could not create out stream");
+    }
+    Defer destroy_outstream = [&] {
+        soundio_outstream_destroy(outstream);
+    };
+    outstream->write_callback = write_callback;
+    outstream->underflow_callback = [](SoundIoOutStream* outstream) {
+        auto* context = (Context*)outstream->userdata;
+        context->rt.underflow_count++;
+    };
+    outstream->error_callback = [](SoundIoOutStream*, int error) {
+        dprintln("SoundIo error: {}", StringView::from_c_string(soundio_strerror(error)));
+    };
+    outstream->name = "MusicStudio";
+    outstream->software_latency = 0;
+    outstream->sample_rate = project.sample_rate;
+
+    soundio->on_backend_disconnect = [](SoundIo*, int reason) {
+        dprintln("SoundIo backend disconnect {}", StringView::from_c_string(soundio_strerror(reason)));
+    };
+
+    soundio->on_devices_change = [](SoundIo*) {
+        dprintln("SoundIo device change");
+    };
+
+    auto device_format = TRY(AU::select_writer_for_device(output_device).or_error(Error::from_string_literal("no suitable device format available")));
+    outstream->format = device_format.format;
+    outstream->userdata = &context;
+    context.rt.write = device_format.writer;
+
+    if (int err = soundio_outstream_open(outstream)) {
+        return Error::from_string_literal(soundio_strerror(err));
+    }
+
+    if (outstream->layout_error) {
+        return Error::from_string_literal("unable to set channel layout");
+    }
+
+    if (int err = soundio_outstream_start(outstream)) {
+        return Error::from_string_literal(soundio_strerror(err));
+    }
+
+    {
+        ui_window_gl_make_current_context(window);
+        auto size = ui_window_size(window);
+        auto pixel_ratio = ui_window_pixel_ratio(window);
+        layout_set_size(context.layout, size, pixel_ratio);
+        glViewport(0, 0, (i32)(size.x * pixel_ratio), (i32)(size.y * pixel_ratio));
+    }
+
+    bool d_pressed_last_frame = false;
+    bool space_pressed_last_frame = false;
+    f64 start = soundio_os_get_time();
+    u32 target_fps = 60;
+    f64 target_frame_time = 1.0 / (f64)target_fps;
+    for (;!ui_window_should_close(window); context.frame++) {
         ui_application_poll_events(app);
+        soundio_flush_events(soundio);
+        ui_window_gl_make_current_context(window);
 
-        f64 begin = time();
-        ui_begin_frame(&ui);
-        render_frame(&ui);
-        ui_end_frame(&ui);
-        f64 frame_time = time() - begin;
-        average_frame_time = ((average_frame_time * frame) + frame_time) / (frame + 1);
-        if (frame % 500 == 0) {
-            dprintln("FPS: {}", (u32)(1 / (average_frame_time)));
+        u8 const* keymap = ui_window_keymap(window);
+        context_set_notes_from_keymap(&context, Midi::Note::C4, keymap);
+        if (keymap[UIKeyCode_7]) {
+            if (!d_pressed_last_frame) {
+                //Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
+                __builtin_memset(context.tracker, 0, sizeof(context.tracker));
+            }
+        }
+        d_pressed_last_frame = keymap[UIKeyCode_D];
+
+        if (keymap[UIKeyCode_SPACE]) {
+            if (!space_pressed_last_frame) {
+                context.is_playing = !context.is_playing;
+                if (context.is_playing) {
+                    context.rt.seconds_offset = 0.0;
+                    context.current_subdivision = 0;
+                }
+            }
+        }
+        space_pressed_last_frame = keymap[UIKeyCode_SPACE];
+
+        context_update(&context, window);
+
+        ui_window_gl_flush(window);
+
+        if (context.frame % target_fps == 0) {
+            dprintln("Layout time: {}us", (u32)(context.avg_layout * 1e6));
+            dprintln("Render time: {}us", (u32)(context.avg_render * 1e6));
+            dprintln("Update time: {}ms", (u32)(context.avg_update * 1e3));
+            dprintln("FPS: {}", (u32)(1.0 / context.delta_time));
+            dprintln("Audio latency: {}ms", context.rt.latency * 1e3);
+            dprintln("Audio process: {}us", context.rt.process_time * 1e6);
+        }
+
+        auto t = soundio_os_get_time();
+        context.delta_time = t - start;
+        start = t;
+        if (context.delta_time < target_frame_time) {
+            f64 t = (target_frame_time - context.delta_time) * 1e6;
+            usleep(t);
         }
     }
 
-    return 0;
+    return {};
 }
 
-static void file_browser(UI* ui);
-static void proj_browser(UI* ui);
-static void plug_browser(UI* ui);
-static void browser(UI* ui);
-static void toolbar(UI* ui);
-static void status_bar(UI* ui);
 
-static void render_frame(UI* ui)
+f64 note(f64 x);
+f64 note(f64 x)
 {
-    render_clear(ui->render, vec4f(0, 0, 0, 1));
-    auto window_size = ui_window_size(ui->window);
-
-    Vec4f color = toolbar_color;
-    if (ui_window_mouse_state(ui->window).left_down >= 2) {
-        color = red;
-    }
-
-    auto point = ui_current_point(ui);
-    ui_rect(ui, window_size, gray_background);
-    ui_move_point(ui, point);
-
-    auto titlebar_height = 28.0f;
-    if (!ui_window_is_fullscreen(ui->window)) {
-        ui_spacer(ui, vec2f(0, titlebar_height));
-    }
-
-    toolbar(ui);
-    browser(ui);
-    status_bar(ui);
-
-    if (!ui_window_is_fullscreen(ui->window)) {
-        ui_move_point(ui, point);
-        ui_rect(ui, vec2f(window_size.x, titlebar_height), color);
-    }
+    return abs(fmod(x, 1.0)) * (0.25 + fmod(x * 0.001, 1) * 0.5);
 }
 
-static void browser(UI* ui)
+static f64 gen_sample(Context* ctx, f64 time)
 {
-    constexpr usize browse_tabs_size = 3;
-    c_string browser_tabs[browse_tabs_size] = {
-        "file",
-        "proj",
-        "plug",
-    };
-    Vec4f tab_colors[browse_tabs_size] = {
-        background_color + vec4f(0, 0, 0.5, 0),
-        background_color + vec4f(0.5, 0, 0, 0),
-        background_color + vec4f(0, 0.5, 0, 0),
-    };
-    auto browser_point = ui_current_point(ui);
-    static usize selected_tab = 0;
-    auto old = ui_set_mode(ui, UIMode_Beside);
-    for (usize i = 0; i < browse_tabs_size; i++) {
-        Vec4f button_color = tab_colors[i] * vec4f(1.2, 1.2, 1.2, 1);
-        if (selected_tab == i) {
-            button_color *= vec4f(0.2, 0.2, 0.2, 1);
-        }
-        if (ui_button(ui, browser_tabs[i], button_color)) {
-            selected_tab = i;
+    u8 const _Atomic* piano_notes = ctx->notes;
+    f64 result = 0;
+
+    for (u8 i = 0; i < (u8)Midi::Note::__Size; i++) {
+        if (!piano_notes[i]) continue;
+        f64 pitch = Midi::note_frequency((Midi::Note)i);
+        result += (0.1 * note(time * pitch) * 1.0);
+    }
+
+    if (ctx->is_playing) {
+        f64 current_beat = fmod(time, ctx->beats_per_minute);
+        u32 current_subdivision = (u32)(fmod(current_beat, 1.0) * ctx->subdivisions);
+
+        ctx->current_subdivision = ((u32)current_beat) * ctx->subdivisions + current_subdivision;
+
+        auto const& notes = ctx->tracker[(u32)current_beat][current_subdivision];
+        for (u8 i = 0; i < (u8)Midi::Note::__Size; i++) {
+            if (!notes[i]) continue;
+            f64 pitch = Midi::note_frequency((Midi::Note)i);
+            result += (0.1 * note(time * pitch) * 1.0);
         }
     }
-    ui_set_mode(ui, old);
-    ui_move_point(ui, browser_point);
-    ui_spacer(ui, vec2f(0, 32));
-    switch (selected_tab) {
-    case 0:
-        file_browser(ui);
-        break;
-    case 1:
-        proj_browser(ui);
-        break;
-    case 2:
-        plug_browser(ui);
-        break;
-    }
+
+    return result;
 }
 
-static void toolbar(UI* ui)
-{
-    auto window_size = ui_window_size(ui->window);
-    ui_rect(ui, vec2f(window_size.x, 28), toolbar_color);
-    ui_rect(ui, vec2f(window_size.x, 2), outline_color);
-}
+static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max) {
+    (void)frame_count_min;
+    auto* ctx = (Context*)outstream->userdata;
+    f64 float_sample_rate = outstream->sample_rate;
+    f64 seconds_per_frame = 1.0 / float_sample_rate;
 
-static void status_bar(UI* ui)
-{
-    auto window_size = ui_window_size(ui->window);
-    ui_move_point(ui, vec2f(0, window_size.y - 30));
-    ui_rect(ui, vec2f(window_size.x, 2), outline_color);
-    ui_rect(ui, vec2f(window_size.x, 28), toolbar_color);
-}
+    f64 start = soundio_os_get_time();
 
-static void file_browser(UI* ui)
-{
-    auto window_size = ui_window_size(ui->window);
+    int frames_left = frame_count_max;
+    for (;;) {
+        int frame_count = frames_left;
+        SoundIoChannelArea* areas = nullptr;
+        if (int err = soundio_outstream_begin_write(outstream, &areas, &frame_count)) {
+            dprintln("unrecoverable stream error: {}", StringView::from_c_string(soundio_strerror(err)));
+            return;
+        }
 
-    auto pos = ui_current_point(ui);
-    ui_spacer(ui, vec2f(200, -2));
-    ui_rect(ui, vec2f(2, window_size.y), outline_color);
-    ui_move_point(ui, pos);
-    ui_rect(ui, vec2f(200, window_size.y), background_color);
-    ui_move_point(ui, pos);
-    ui_rect(ui, vec2f(8, window_size.y), border_color);
-    ui_move_point(ui, pos);
+        if (!frame_count)
+            break;
 
-    ui_spacer(ui, vec2f(12, 4));
-    if (ui_button(ui, "Button 1", button_color)) {
-        dprintln("Button 1");
+        const SoundIoChannelLayout *layout = &outstream->layout;
+
+        for (int frame = 0; frame < frame_count; frame += 1) {
+            f64 sample = gen_sample(ctx, ctx->rt.seconds_offset + frame * seconds_per_frame);
+            for (int channel = 0; channel < layout->channel_count; channel += 1) {
+                ctx->rt.write(areas[channel].ptr, sample);
+                areas[channel].ptr += areas[channel].step;
+            }
+        }
+        ctx->rt.seconds_offset = ctx->rt.seconds_offset + seconds_per_frame * frame_count;
+        // ctx->rt.seconds_offset = fmod(ctx->rt.seconds_offset + seconds_per_frame * frame_count, 1.0);
+
+        if (int err = soundio_outstream_end_write(outstream)) {
+            if (err == SoundIoErrorUnderflow)
+                return;
+            dprintln("unrecoverable stream error: {}", StringView::from_c_string(soundio_strerror(err)));
+            return;
+        }
+
+        f64 latency = 0.0;
+        if (soundio_outstream_get_latency(outstream, &latency) == 0) {
+            ctx->rt.latency = latency;
+        }
+
+        frames_left -= frame_count;
+        if (frames_left <= 0)
+            break;
     }
-    ui_spacer(ui, vec2f(0, 8));
-    if (ui_button(ui, "Button 2", button_color)) {
-        dprintln("Button 2");
-    }
-    ui_spacer(ui, vec2f(0, 8));
-    if (ui_button(ui, "Button 3", button_color)) {
-        dprintln("Button 3");
-    }
-}
 
-static void proj_browser(UI* ui)
-{
-    auto window_size = ui_window_size(ui->window);
-
-    auto pos = ui_current_point(ui);
-    ui_spacer(ui, vec2f(200, -2));
-    ui_rect(ui, vec2f(2, window_size.y), outline_color);
-    ui_move_point(ui, pos);
-    ui_rect(ui, vec2f(200, window_size.y), background_color + vec4f(0.1, 0, 0, 0));
-    ui_move_point(ui, pos);
-    ui_rect(ui, vec2f(8, window_size.y), border_color);
-    ui_move_point(ui, pos);
-
-    ui_spacer(ui, vec2f(12, 4));
-    if (ui_button(ui, "Button 1", button_color)) {
-        dprintln("Button 1");
-    }
-    ui_spacer(ui, vec2f(0, 8));
-    if (ui_button(ui, "Button 2", button_color)) {
-        dprintln("Button 2");
-    }
-    ui_spacer(ui, vec2f(0, 8));
-    if (ui_button(ui, "Button 3", button_color)) {
-        dprintln("Button 3");
-    }
-}
-
-static void plug_browser(UI* ui)
-{
-    auto window_size = ui_window_size(ui->window);
-
-    auto pos = ui_current_point(ui);
-    ui_spacer(ui, vec2f(200, -2));
-    ui_rect(ui, vec2f(2, window_size.y), outline_color);
-    ui_move_point(ui, pos);
-    ui_rect(ui, vec2f(200, window_size.y), background_color + vec4f(0, 0.1, 0, 0));
-    ui_move_point(ui, pos);
-    ui_rect(ui, vec2f(8, window_size.y), border_color);
-    ui_move_point(ui, pos);
-
-    ui_spacer(ui, vec2f(12, 4));
-    if (ui_button(ui, "Button 1", button_color)) {
-        dprintln("Button 1");
-    }
-    ui_spacer(ui, vec2f(0, 8));
-    if (ui_button(ui, "Button 2", button_color)) {
-        dprintln("Button 2");
-    }
-    ui_spacer(ui, vec2f(0, 8));
-    if (ui_button(ui, "Button 3", button_color)) {
-        dprintln("Button 3");
-    }
-}
-
-f64 time(void)
-{
-    struct timespec spec;
-    clock_gettime(CLOCK_REALTIME, &spec);
-    return ((f64)spec.tv_sec) + (spec.tv_nsec / 1.0e9);
+    ctx->rt.process_time = soundio_os_get_time() - start;
 }

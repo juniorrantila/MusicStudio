@@ -1,0 +1,20 @@
+#pragma once
+#include "../../bs.h"
+#include "../Ty/build.def"
+
+static auto const schedule = cc_library("Schedule", {
+    .srcs = {
+        "./Schedule.cpp",
+    },
+    .exported_headers = {
+        "./Schedule.h",
+    },
+    .header_namespace = "Schedule",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        ty,
+    },
+});

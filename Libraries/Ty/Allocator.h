@@ -25,6 +25,16 @@ struct Allocator {
     }
 
     template <typename T>
+    ErrorOr<T*> alloc_vla(
+        usize array_size,
+        c_string function = __builtin_FUNCTION(),
+        c_string file = __builtin_FILE(),
+        usize line = __builtin_LINE()
+    ) {
+        return (T*)TRY(raw_alloc(sizeof(T) + sizeof(typename T::VLA) * array_size, alignof(T), function, file, line));
+    }
+
+    template <typename T>
     ErrorOr<View<T>> alloc(
         usize size,
         c_string func = __builtin_FUNCTION(),
@@ -39,6 +49,12 @@ struct Allocator {
     void free(T* data)
     {
         raw_free(data, sizeof(T));
+    }
+
+    template <typename T>
+    void free_vla(T* data, usize array_size)
+    {
+        raw_free(data, sizeof(T) + sizeof(typename T::VLA) * array_size);
     }
 
     template <typename T>

@@ -43,7 +43,10 @@ _Static_assert(sizeof(uptr) == sizeof(void*), "");
 _Static_assert(sizeof(iptr) == sizeof(void*), "");
 
 typedef float f32;
+_Static_assert(sizeof(f32) == 4, "");
+
 typedef double f64;
+_Static_assert(sizeof(f64) == 8, "");
 
 typedef char const* c_string;
 
@@ -52,6 +55,42 @@ using nullptr_t = decltype(nullptr);
 #else
 #include <stdbool.h>
 #endif
+
+typedef i8 i8v2 __attribute__((ext_vector_type(2)));
+typedef i8 i8v4 __attribute__((ext_vector_type(4)));
+typedef u8 u8v2 __attribute__((ext_vector_type(2)));
+typedef u8 u8v4 __attribute__((ext_vector_type(4)));
+
+typedef i16 i16v2 __attribute__((ext_vector_type(2)));
+typedef i16 i16v4 __attribute__((ext_vector_type(4)));
+typedef u16 u16v2 __attribute__((ext_vector_type(2)));
+typedef u16 u16v4 __attribute__((ext_vector_type(4)));
+
+typedef i32 i32v2 __attribute__((ext_vector_type(2)));
+typedef i32 i32v4 __attribute__((ext_vector_type(4)));
+typedef u32 u32v2 __attribute__((ext_vector_type(2)));
+typedef u32 u32v4 __attribute__((ext_vector_type(4)));
+
+typedef i64 i64v2 __attribute__((ext_vector_type(2)));
+typedef i64 i64v4 __attribute__((ext_vector_type(4)));
+typedef u64 u64v2 __attribute__((ext_vector_type(2)));
+typedef u64 u64v4 __attribute__((ext_vector_type(4)));
+
+typedef isize isizev2 __attribute__((ext_vector_type(2)));
+typedef isize isizev4 __attribute__((ext_vector_type(4)));
+typedef usize usizev2 __attribute__((ext_vector_type(2)));
+typedef usize usizev4 __attribute__((ext_vector_type(4)));
+
+typedef iptr iptrv2 __attribute__((ext_vector_type(2)));
+typedef iptr iptrv4 __attribute__((ext_vector_type(4)));
+typedef uptr uptrv2 __attribute__((ext_vector_type(2)));
+typedef uptr uptrv4 __attribute__((ext_vector_type(4)));
+
+typedef bool bool2 __attribute__((ext_vector_type(2)));
+typedef bool bool4 __attribute__((ext_vector_type(4)));
+
+typedef bool bool256 __attribute__((ext_vector_type(256)));
+_Static_assert(sizeof(bool256) == 32, "Let's not waste our bytes");
 
 #define ty_offsetof(T, field) __builtin_offsetof(T, field)
 #ifdef __cplusplus

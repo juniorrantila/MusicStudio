@@ -695,7 +695,11 @@ static inline TargetRule reconfigure_rule = ninja_rule({
         (Variable) {
             .name = "configure",
             .default_value = 0,
-        }
+        },
+        (Variable) {
+            .name = "generator",
+            .default_value = "generator",
+        },
     }
 });
 

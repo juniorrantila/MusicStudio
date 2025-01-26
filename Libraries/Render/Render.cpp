@@ -39,7 +39,7 @@ enum Shader {
 };
 
 struct Render {
-    Ty::Allocator* gpa;
+    Allocator* gpa;
     FS::Bundle const* bundle;
 
     GLuint texture;
@@ -84,7 +84,7 @@ c_string render_strerror(int error)
     return "unknown error";
 }
 
-Render* render_create(FS::Bundle const* bundle, Ty::Allocator* gpa)
+Render* render_create(FS::Bundle const* bundle, Allocator* gpa)
 {
     Render* render = nullptr;
     {

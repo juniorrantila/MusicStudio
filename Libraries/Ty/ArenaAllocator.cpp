@@ -17,22 +17,24 @@ void ArenaAllocator::destroy()
 }
 
 
-ErrorOr<void*> ArenaAllocator::raw_alloc(usize size, usize align, c_string function, c_string file, usize line)
+void* ArenaAllocator::ialloc(Allocator* allocator, usize size, usize align)
 {
-    auto align_diff = ((uptr)m_head) % align;
-    if ((m_head + align_diff + size) > m_end) {
-        return Error::from_errno(ENOMEM, function, file, line);
+    auto* arena = ty_field_base(ArenaAllocator, m_allocator, allocator);
+    auto align_diff = ((uptr)arena->m_head) % align;
+    if ((arena->m_head + align_diff + size) > arena->m_end) {
+        return nullptr;
     }
-    m_head += align_diff;
-    auto* ptr = m_head;
-    m_head += size;
+    arena->m_head += align_diff;
+    auto* ptr = arena->m_head;
+    arena->m_head += size;
     return ptr;
 }
 
-void ArenaAllocator::raw_free(void* data, usize size)
+void ArenaAllocator::ifree(Allocator* allocator, void* data, usize size)
 {
-    if (m_head - size == data) {
-        m_head -= size;
+    auto* arena = ty_field_base(ArenaAllocator, m_allocator, allocator);
+    if (arena->m_head - size == data) {
+        arena->m_head -= size;
     }
 }
 

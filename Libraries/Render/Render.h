@@ -7,7 +7,7 @@
 #include <Rexim/LA.h>
 
 c_string render_strerror(int);
-Render* render_create(FS::Bundle const* bundle, Ty::Allocator* gpa);
+Render* render_create(FS::Bundle const* bundle, Allocator* gpa);
 void render_destroy(Render*);
 
 void render_set_time(Render*, f32 time);

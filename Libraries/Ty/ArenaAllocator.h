@@ -6,7 +6,7 @@
 
 namespace Ty {
 
-struct ArenaAllocator : public Allocator {
+struct ArenaAllocator {
     enum Kind {
         Borrow,
         Own,
@@ -52,12 +52,9 @@ struct ArenaAllocator : public Allocator {
         }
     }
 
-    ErrorOr<void*> raw_alloc(usize size, usize align,
-        c_string func = __builtin_FUNCTION(), 
-        c_string file = __builtin_FILE(),
-        usize line = __builtin_LINE()) override;
-
-    void raw_free(void* data, usize size) override;
+    constexpr Allocator* allocator() { return &m_allocator; }
+    operator Allocator*() { return allocator(); }
+    Allocator* operator->() { return allocator(); }
 
     constexpr void drain() { m_head = m_base; }
 
@@ -80,8 +77,15 @@ private:
     {
     }
 
+    static void* ialloc(Allocator*, usize size, usize align);
+    static void ifree(Allocator*, void* data, usize size);
+
     void destroy();
 
+    Allocator m_allocator {
+        .ialloc = ialloc,
+        .ifree = ifree,
+    };
     u8* m_base { nullptr };
     u8* m_head { nullptr };
     u8* m_end { nullptr };

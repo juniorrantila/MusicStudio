@@ -4,6 +4,7 @@
 #include <Ty/Optional.h>
 #include <Ty/Forward.h>
 #include <Ty/View.h>
+#include <Ty/Allocator.h>
 
 namespace AU {
 
@@ -30,8 +31,8 @@ struct Audio {
 
     static ErrorOr<usize> samples_byte_size(AudioFormat, Bytes);
 
-    static ErrorOr<Audio> decode(ArenaAllocator* arena, AudioFormat, Bytes);
-    static ErrorOr<Audio> decode_with_sample_rate(ArenaAllocator* arena, u32 sample_rate, AudioFormat, Bytes);
+    static ErrorOr<Audio> decode(Allocator* arena, AudioFormat, Bytes);
+    static ErrorOr<Audio> decode_with_sample_rate(Allocator* arena, u32 sample_rate, AudioFormat, Bytes);
 
     Optional<f64> sample(usize frame, usize channel) const
     {
@@ -45,7 +46,7 @@ struct Audio {
     u32 sample_rate() const { return m_sample_rate; }
     f64 duration() const { return (f64)frame_count() / (f64)sample_rate(); }
     View<f64 const> samples() const { return m_samples.as_const(); }
-    ErrorOr<void> resample(ArenaAllocator* arena, u32 sample_rate);
+    ErrorOr<void> resample(Allocator* arena, u32 sample_rate);
 
 private:
     View<f64> m_samples {};

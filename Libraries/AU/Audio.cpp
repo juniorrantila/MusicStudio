@@ -1,14 +1,14 @@
 #include "./Audio.h"
 
 #include <Math/Math.h>
-#include <Ty/ArenaAllocator.h>
+#include <Ty/Allocator.h>
 #include <Ty/Defer.h>
 
 #include "./WAV.h"
 
 namespace AU {
 
-static ErrorOr<Audio> transcode(ArenaAllocator* arena, u32 sample_rate, WAV wav);
+static ErrorOr<Audio> transcode(Allocator* arena, u32 sample_rate, WAV wav);
 static Optional<f64> sample_frac(View<f64> frames, usize channel_count, f64 frame, usize channel);
 
 ErrorOr<usize> Audio::samples_byte_size(AudioFormat format, Bytes bytes)
@@ -21,7 +21,7 @@ ErrorOr<usize> Audio::samples_byte_size(AudioFormat format, Bytes bytes)
     }
 }
 
-ErrorOr<Audio> Audio::decode(ArenaAllocator* arena, AudioFormat format, Bytes bytes)
+ErrorOr<Audio> Audio::decode(Allocator* arena, AudioFormat format, Bytes bytes)
 {
     switch (format) {
     case AudioFormat::WAV: {
@@ -31,7 +31,7 @@ ErrorOr<Audio> Audio::decode(ArenaAllocator* arena, AudioFormat format, Bytes by
     }
 }
 
-ErrorOr<Audio> Audio::decode_with_sample_rate(ArenaAllocator* arena, u32 sample_rate, AudioFormat format, Bytes bytes)
+ErrorOr<Audio> Audio::decode_with_sample_rate(Allocator* arena, u32 sample_rate, AudioFormat format, Bytes bytes)
 {
     switch (format) {
     case AudioFormat::WAV: {
@@ -40,7 +40,7 @@ ErrorOr<Audio> Audio::decode_with_sample_rate(ArenaAllocator* arena, u32 sample_
     }
 }
 
-static ErrorOr<Audio> transcode(ArenaAllocator* arena, u32 sample_rate, WAV wav)
+static ErrorOr<Audio> transcode(Allocator* arena, u32 sample_rate, WAV wav)
 {
     if (sample_rate == wav.sample_rate()) {
         auto out_samples = TRY(arena->alloc<f64>(wav.frame_count() * wav.channel_count()));
@@ -98,7 +98,7 @@ Optional<f64> Audio::sample_frac(f64 frame, usize channel) const
     return math_lerp_f64(left_sample.value(), right_sample, math_frac_f64(frame));
 }
 
-ErrorOr<void> Audio::resample(ArenaAllocator* arena, u32 new_sample_rate)
+ErrorOr<void> Audio::resample(Allocator* arena, u32 new_sample_rate)
 {
     if (m_sample_rate == new_sample_rate) {
         return {};

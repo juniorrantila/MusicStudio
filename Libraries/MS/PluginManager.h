@@ -13,7 +13,7 @@
 namespace MS {
 
 struct PluginManager {
-    static ErrorOr<PluginManager> create(ArenaAllocator* arena)
+    static ErrorOr<PluginManager> create(Allocator* arena)
     {
         auto manager = PluginManager();
         manager.arena = arena;
@@ -38,7 +38,7 @@ struct PluginManager {
     }
 
     SmallMap<StringView, View<u8>> mapped_files {};
-    ArenaAllocator* arena = nullptr;
+    Allocator* arena = nullptr;
     usize plugin_count = 0;
     View<Plugin> plugins {};
     View<Library*> libraries {};

@@ -1,19 +1,43 @@
 #pragma once
 #include "./Base.h"
+#ifdef __cplusplus
 #include "./ErrorOr.h"
 #include "./Try.h"
+#endif
 
-namespace Ty {
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-struct Allocator {
-    virtual ~Allocator() = default;
+typedef struct Allocator Allocator;
+static inline void* ty_alloc(Allocator* allocator, usize size, usize align);
+static inline void ty_free(Allocator* allocator, void* ptr, usize size);
 
-    virtual ErrorOr<void*> raw_alloc(usize size, usize align,
+#ifdef __cplusplus
+}
+#endif
+
+typedef struct Allocator {
+    void* (*ialloc)(struct Allocator*, usize size, usize align);
+    void (*ifree)(struct Allocator*, void* ptr, usize size);
+
+#ifdef __cplusplus
+    ErrorOr<void*> raw_alloc(usize size, usize align,
         c_string func = __builtin_FUNCTION(), 
         c_string file = __builtin_FILE(),
-        usize line = __builtin_LINE()) = 0;
+        usize line = __builtin_LINE())
+    {
+        void* res = ty_alloc(this, size, align);
+        if (!res) {
+            return Error::from_errno(ENOMEM, func, file, line);
+        }
+        return res;
+    }
 
-    virtual void raw_free(void* data, usize size) = 0;
+    void raw_free(void* data, usize size)
+    {
+        ty_free(this, data, size);
+    }
 
     template <typename T>
     ErrorOr<T*> alloc(
@@ -62,6 +86,8 @@ struct Allocator {
     {
         raw_free(view.data(), view.size() * sizeof(T));
     }
-};
+#endif
+} Allocator;
 
-}
+static inline void* ty_alloc(Allocator* allocator, usize size, usize align) { return allocator->ialloc(allocator, size, align); }
+static inline void ty_free(Allocator* allocator, void* ptr, usize size) { allocator->ifree(allocator, ptr, size); }

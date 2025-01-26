@@ -63,7 +63,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
     auto arena = TRY(ArenaAllocator::create(1024ULL * 1024ULL * 1024ULL));
 
     auto wav_file = TRY(Core::MappedFile::open(wav_path));
-    auto audio = TRY(AU::Audio::decode(&arena, AU::AudioFormat::WAV, wav_file.bytes()));
+    auto audio = TRY(AU::Audio::decode(arena.allocator(), AU::AudioFormat::WAV, wav_file.bytes()));
 
     auto project = MS::Project {
         .sample_rate = audio.sample_rate(),
@@ -144,8 +144,8 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         .write_sample = stream_writer.writer,
         .played_frames = &played_frames,
         .frame_count = audio.frame_count(),
-        .scratch = TRY(arena.alloc<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.sample_rate())),
-        .scratch2 = TRY(arena.alloc<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.sample_rate())),
+        .scratch = TRY(arena->alloc<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.sample_rate())),
+        .scratch2 = TRY(arena->alloc<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.sample_rate())),
     };
 
     SoundIoOutStream *outstream = soundio_outstream_create(device);

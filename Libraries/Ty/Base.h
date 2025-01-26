@@ -42,6 +42,9 @@ typedef isize iptr;
 _Static_assert(sizeof(uptr) == sizeof(void*), "");
 _Static_assert(sizeof(iptr) == sizeof(void*), "");
 
+typedef _Float16 f16;
+_Static_assert(sizeof(f16) == 2, "");
+
 typedef float f32;
 _Static_assert(sizeof(f32) == 4, "");
 

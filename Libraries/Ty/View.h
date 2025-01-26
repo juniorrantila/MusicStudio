@@ -39,6 +39,20 @@ struct View {
         return m_data[index];
     }
 
+    constexpr bool operator==(View<T> other) const
+    {
+        if (size() != other.size())
+            return false;
+        if (data() == other.data())
+            return true;
+        if (data() == nullptr || other.data() == nullptr)
+            return false;
+        for (usize i = 0; i < size(); i++) {
+            if (data()[i] != other.data()[i]) return false;
+        }
+        return true;
+    }
+
     constexpr bool is_empty() const { return size() == 0; }
 
     constexpr T* begin()
@@ -147,10 +161,10 @@ private:
 }
 
 template <typename T>
-struct Ty::Formatter<Ty::View<const T>> {
+struct Ty::Formatter<Ty::View<T const>> {
     template <typename U>
     requires Ty::Writable<U>
-    static constexpr ErrorOr<u32> write(U& to, Ty::View<T> view)
+    static constexpr ErrorOr<u32> write(U& to, Ty::View<T const> view)
     {
         auto size = TRY(to.write("[ "sv));
         for (auto const& e : view)

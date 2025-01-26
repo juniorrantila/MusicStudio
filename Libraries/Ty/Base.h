@@ -96,6 +96,8 @@ typedef bool bool256 __attribute__((ext_vector_type(256)));
 _Static_assert(sizeof(bool256) == 32, "Let's not waste our bytes");
 
 #define ty_offsetof(T, field) __builtin_offsetof(T, field)
+#define ty_field_base(T, field, value) ((T*) (((u8*)(value)) - ty_offsetof(T, field)))
+
 #ifdef __cplusplus
 #define ty_static_assert static_assert
 #else

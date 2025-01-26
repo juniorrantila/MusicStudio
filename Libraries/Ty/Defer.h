@@ -34,4 +34,8 @@ private:
 
 }
 
-using namespace Ty;
+using Ty::Defer;
+
+#define TY_DEFER_CAT2(a, b) a ## b
+#define TY_DEFER_CAT(a, b) TY_DEFER_CAT2(a, b)
+#define defer Defer TY_DEFER_CAT(defer_at_line_, __LINE__) =

@@ -1,119 +1,113 @@
 #include "./Tar.h"
 
-#include <stdlib.h>
+#include <Ty/Allocator.h>
+
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
-typedef struct Tar {
-    TarFile arena;
-    isize* headers;
-    usize header_count;
-} Tar;
 
+#define TAR_PATH_MAX (100)
+#define TAR_FILE_SIZE_MAX (077777777777)
 #define NULL_FILE ((TarFile){ 0 })
 #define NULL_HEADER ((TarHeader){ 0 })
 
-static TarHeader* header_ptr(Tar* tar, isize index);
 
-Tar* tar_create(void)
+typedef struct TarHeader {
+    char path[TAR_PATH_MAX];
+    char mode[8];           // octal
+    char owner[8];          // octal
+    char group[8];          // octal
+    char file_size[12];     // octal
+    char mtime[12];         // octal UNIX time
+    char checksum[8];       // octal
+    char link_indicator;    // 0 => normal file, 1 => hard link, 2 => symlink
+    char link_path[TAR_PATH_MAX];
+    char pad[255];
+} TarHeader;
+ty_static_assert(ty_offsetof(TarHeader, path) == 0);
+ty_static_assert(ty_offsetof(TarHeader, mode) == 100);
+ty_static_assert(ty_offsetof(TarHeader, owner) == 108);
+ty_static_assert(ty_offsetof(TarHeader, group) == 116);
+ty_static_assert(ty_offsetof(TarHeader, file_size) == 124);
+ty_static_assert(ty_offsetof(TarHeader, mtime) == 136);
+ty_static_assert(ty_offsetof(TarHeader, checksum) == 148);
+ty_static_assert(ty_offsetof(TarHeader, link_indicator) == 156);
+ty_static_assert(ty_offsetof(TarHeader, link_path) == 157);
+ty_static_assert(sizeof(TarHeader) == 512);
+
+
+typedef struct TarEntry {
+    TarHeader header;
+    TarFile file;
+    bool owns_file;
+} TarEntry;
+
+
+typedef struct Tar {
+    Allocator* gpa;
+
+    TarEntry* items;
+
+    usize count;
+    usize capacity;
+} Tar;
+
+
+Tar* tar_create(Allocator* gpa)
 {
-    Tar* tar = (Tar*)malloc(sizeof(Tar));
+    usize capacity = 16;
+    TarEntry* items = 0;
+
+    Tar* tar = ty_alloc(gpa, sizeof(Tar), alignof(Tar));
     if (!tar) {
-        return NULL;
+        return 0;
     }
     memset(tar, 0, sizeof(*tar));
-    tar->arena = (TarFile){
-        .bytes = calloc(1, sizeof(NULL_HEADER)),
-        .size = sizeof(NULL_HEADER),
+
+    items = ty_alloc(gpa, capacity * sizeof(TarEntry), alignof(TarEntry));
+    if (!items) {
+        ty_free(gpa, tar, sizeof(Tar));
+        return 0;
+    }
+
+    *tar = (Tar) {
+        .gpa = gpa,
+        .items = items,
+        .capacity = capacity,
     };
     return tar;
 }
 
+
 void tar_destroy(Tar* tar)
 {
-    if (tar->arena.bytes) {
-        free(tar->arena.bytes);
-    }
-    if (tar->headers) {
-        free(tar->headers);
-    }
-}
-
-int tar_collect_garbage(Tar* tar)
-{
-    if (tar->header_count == 0) return 0;
-
-    usize new_header_count = tar->header_count;
-    for (usize i = 0; i < tar->header_count; i++) {
-        isize header = tar->headers[i];
-        if (header < 0) continue;
-        isize swap = tar->headers[new_header_count - 1];
-        tar->headers[new_header_count - 1] = header;
-        tar->headers[i] = swap;
-        new_header_count -= 1;
-    }
-    if (tar->header_count == new_header_count) return 0;
-    tar->header_count = new_header_count;
-
-    u8* new_arena = (u8*)calloc(tar->arena.size, 1);
-    if (!new_arena) return -1;
-    usize new_arena_size = 0;
-    for (usize i = 0; i < tar->header_count; i++) {
-        unsigned size = 0;
-        TarHeader* header = header_ptr(tar, tar->headers[i]);
-        if (sscanf(header->file_size, "%011o", &size) < 0) {
-            free(new_arena);
-            return -1;
+    for (usize i = 0; i < tar->count; i++) {
+        TarEntry* entry = &tar->items[i];
+        if (entry->owns_file) {
+            ty_free(tar->gpa, (void*)entry->file.bytes, entry->file.size);
         }
-        memcpy(new_arena + new_arena_size, header, sizeof(*header));
-        new_arena_size += sizeof(TarHeader);
-        memcpy(new_arena + new_arena_size, header->file_content, size);
-        new_arena_size += size;
     }
-    tar->arena = (TarFile) {
-        .bytes = new_arena,
-        .size = new_arena_size,
-    };
-
-    return 0;
+    if (tar->items) {
+        ty_free(tar->gpa, tar->items, sizeof(TarEntry) * tar->capacity);
+    }
+    ty_free(tar->gpa, tar, sizeof(Tar));
 }
 
-isize tar_add(Tar* tar, c_string path, void const* content, usize content_size)
+
+static e_tar header_init(c_string path, usize content_size, TarHeader* header)
 {
     usize path_len = strlen(path);
     if (path_len >= TAR_PATH_MAX) {
-        return -1;
+        return e_tar_invalid_path;
     }
     if (content_size > TAR_FILE_SIZE_MAX) {
-        return -1;
+        return e_tar_invalid_file_size;
     }
 
-    usize header_index = tar->header_count;
-    void* new_headers = realloc(tar->headers, (tar->header_count + 1) * sizeof(TarHeader*));
-    if (!new_headers) {
-        return -1;
-    }
-    tar->headers = (isize*)new_headers;
-    tar->headers[header_index] = -1;
-    tar->header_count += 1;
-
-    usize new_size = tar->arena.size + sizeof(TarHeader) + content_size;
-    void* new_bytes = realloc(tar->arena.bytes, new_size);
-    if (!new_bytes) {
-        return -1;
-    }
-    memset(new_bytes + tar->arena.size, 0, new_size - tar->arena.size);
-    usize last_header_index = tar->arena.size - sizeof(NULL_HEADER);
-    tar->arena = (TarFile) {
-        .bytes = (u8*)new_bytes,
-        .size = new_size,
-    };
-    tar->headers[header_index] = last_header_index;
-    TarHeader* header = header_ptr(tar, last_header_index);
-    memset(header, 0, sizeof(TarHeader));
     memcpy(header->path, path, path_len);
 
-    snprintf(header->mode, sizeof(header->mode), "%060o ", 0666);
+    snprintf(header->mode, sizeof(header->mode), "%06o ", 0666);
 
     snprintf(header->file_size, sizeof(header->file_size), "%010o ", (unsigned)content_size);
     memset(header->checksum, ' ', sizeof(header->checksum));
@@ -123,10 +117,106 @@ isize tar_add(Tar* tar, c_string path, void const* content, usize content_size)
     }
     checksum %= 0777777;
     snprintf(header->checksum, sizeof(header->checksum), "%06o ", checksum);
-    memcpy(header->file_content, content, content_size);
-
-    return header_index;
+    return e_tar_none;
 }
+
+
+static e_tar expand_if_needed(Tar* tar)
+{
+    if (tar->count < tar->capacity) {
+        return e_tar_none;
+    }
+    usize new_capacity = tar->capacity * 2;
+    TarEntry* entries = ty_alloc(tar->gpa, new_capacity * sizeof(TarEntry), alignof(TarEntry));
+    if (!entries) {
+        return e_tar_no_mem;
+    }
+    memcpy(entries, tar->items, tar->capacity * sizeof(TarEntry));
+    ty_free(tar->gpa, tar->items, tar->capacity * sizeof(TarEntry));
+    tar->items = entries;
+    tar->capacity = new_capacity;
+
+    return e_tar_none;
+}
+
+
+isize tar_add(Tar* tar, c_string path, void const* content, usize content_size)
+{
+    e_tar error;
+    TarHeader header = { 0 };
+    error = header_init(path, content_size, &header);
+    if (error != e_tar_none) {
+        return -error;
+    }
+
+    if (tar->count + 1 >= SIZE_MAX / 2) {
+        return -e_tar_no_mem;
+    }
+
+    u8* copy = ty_alloc(tar->gpa, content_size, 16);
+    if (!copy) {
+        return -e_tar_no_mem;
+    }
+    memcpy(copy, content, content_size);
+
+    error = expand_if_needed(tar);
+    if (error != e_tar_none) {
+        ty_free(tar->gpa, copy, content_size);
+        return -error;
+    }
+    usize index = tar->count++;
+    tar->items[index] = (TarEntry) {
+        .header = header,
+        .file = (TarFile) {
+            .bytes = copy,
+            .size = content_size,
+        },
+        .owns_file = true,
+    };
+    return (isize)index;
+}
+
+
+isize tar_add_borrowed(Tar* tar, c_string path, void const* content, usize content_size)
+{
+    e_tar error;
+    TarHeader header = { 0 };
+    error = header_init(path, content_size, &header);
+    if (error != e_tar_none) {
+        return -error;
+    }
+
+    if (tar->count + 1 >= SIZE_MAX / 2) {
+        return -e_tar_no_mem;
+    }
+
+    error = expand_if_needed(tar);
+    if (error != e_tar_none) {
+        return -error;
+    }
+    usize index = tar->count++;
+    tar->items[index] = (TarEntry) {
+        .header = header,
+        .file = (TarFile) {
+            .bytes = (u8 const*)content,
+            .size = content_size,
+        },
+        .owns_file = true,
+    };
+    return (isize)index;
+}
+
+
+void tar_remove_at_index(Tar* tar, usize index)
+{
+    if (index >= tar->count)
+        return;
+    if (tar->count > 1) {
+        tar->items[index] = tar->items[tar->count - 1];
+    }
+    tar->count -= 1;
+}
+
 
 void tar_remove(Tar* tar, c_string path)
 {
@@ -139,64 +229,116 @@ void tar_remove(Tar* tar, c_string path)
     if (index < 0) {
         return;
     }
-    tar->headers[index] = -1;
+    tar_remove_at_index(tar, index);
 }
 
-isize tar_find(Tar* tar, c_string path)
+
+usize tar_file_count(Tar const* tar)
+{
+    return tar->count;
+}
+
+
+c_string tar_file_path(Tar const* tar, usize index)
+{
+    if (index >= tar->count) {
+        return 0;
+    }
+    return tar->items[index].header.path;
+}
+
+
+isize tar_find(Tar const* tar, c_string path)
 {
     usize path_len = strlen(path);
     if (path_len >= TAR_PATH_MAX) {
-        return -1;
+        return -e_tar_invalid_path;
     }
-    if (!tar->headers) {
-        return -1;
+    if (!tar->items) {
+        return -e_tar_no_ent;
     }
 
-    for (usize i = 0; i < tar->header_count; i++) {
-        TarHeader* header = header_ptr(tar, tar->headers[i]);
-        if (!header) continue;
+    for (usize i = 0; i < tar->count; i++) {
+        TarHeader* header = &tar->items[i].header;
         if (strcmp(path, header->path) == 0) {
-            return i;
+            return (isize)i;
         }
     }
 
-    return -1;
+    return -e_tar_no_ent;
 }
 
-TarHeader* tar_header(Tar* tar, usize index)
-{
-    if (index >= tar->header_count) {
-        return NULL;
-    }
-    return header_ptr(tar, tar->headers[index]);
-}
 
-TarFile tar_file(Tar* tar, usize index)
+TarFile tar_file_at_index(Tar const* tar, usize index)
 {
-    if (index >= tar->header_count) {
+    if (index >= tar->count) {
         return NULL_FILE;
     }
-    TarHeader* header = header_ptr(tar, tar->headers[index]);
-    unsigned size = 0;
-    int res = sscanf(header->file_size, "%011o", &size);
-    if (res < 0) {
-        return NULL_FILE;
-    }
-    return (TarFile){
-        .bytes = header->file_content,
-        .size = size,
-    };
+    return tar->items[index].file;
 }
 
-TarFile tar_as_file(Tar* tar)
-{
-    return tar->arena;
-}
 
-static TarHeader* header_ptr(Tar* tar, isize index)
+TarFile tar_file(Tar const* tar, c_string path)
 {
+    isize index = tar_find(tar, path);
     if (index < 0) {
-        return NULL;
+        return NULL_FILE;
     }
-    return (TarHeader*)tar->arena.bytes + index;
+    return tar_file_at_index(tar, index);
+}
+
+
+usize tar_buffer_size(Tar const* tar)
+{
+    usize size = sizeof(TarHeader);
+    for (usize i = 0; i < tar->count; i++) {
+        size += sizeof(TarHeader);
+        size += tar->items[i].file.size;
+        size += (512 - (size % 512));
+    }
+    return size;
+}
+
+
+isize tar_buffer(Tar const* tar, u8* buffer, usize buffer_size)
+{
+    usize size = tar_buffer_size(tar);
+    if (size > buffer_size) {
+        return -e_tar_invalid_buffer_size;
+    }
+    memset(buffer, 0, buffer_size);
+    usize cursor = 0;
+    for (usize i = 0; i < tar->count; i++) {
+        TarEntry* entry = &tar->items[i];
+        memcpy(&buffer[cursor], &entry->header, sizeof(entry->header));
+        cursor += sizeof(TarHeader);
+
+        memcpy(&buffer[cursor], entry->file.bytes, entry->file.size);
+        cursor += (512 - (cursor % 512));
+    }
+
+    return (isize)size;
+}
+
+
+c_string tar_strerror(e_tar error)
+{
+    if (((isize)error) < 0) {
+        error = (e_tar)-(isize)error;
+    }
+    switch (error) {
+    case e_tar_none:
+        return "no error";
+    case e_tar_no_mem:
+        return "out of memory";
+    case e_tar_no_ent:
+        return "no entry found";
+    case e_tar_invalid_path:
+        return "invalid path";
+    case e_tar_invalid_file_size:
+        return "invalid path size";
+    case e_tar_invalid_buffer_size:
+        return "invalid buffer size";
+    }
+    return "unknown";
 }

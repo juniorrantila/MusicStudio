@@ -129,6 +129,7 @@ struct View {
     constexpr operator View<const T>() { return as_const(); }
 
     constexpr Bytes as_bytes() const { return Bytes(data(), size()); }
+    constexpr StringView as_string() const { return StringView((char const*)data(), size()); }
 
     View<T> shrink(usize size) const
     {

@@ -61,8 +61,14 @@ ErrorOr<u32> File::write(void const* data, usize size)
 
 ErrorOr<u32> File::write(StringView string)
 {
-    if (m_fd == STDERR_FILENO) {
-        return TRY(System::write(m_fd, string.data(), string.size()));
+    if (is_tty()) {
+        for (u32 i = 0; i < string.size(); i++) {
+            if (string[i] == 0) {
+                continue;
+            }
+            TRY(System::write(m_fd, string.data() + i, 1));
+        }
+        return string.size();
     }
     if (string.size() > m_buffer.size_left()) {
         TRY(flush());

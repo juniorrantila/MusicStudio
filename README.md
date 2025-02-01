@@ -28,4 +28,4 @@
 
 ### Run:
 
-    ./build/<system-architecture>/bin/music-studio
+    ./build/bin/music-studio

@@ -204,6 +204,8 @@ static inline void setup(c_string, c_string file = __builtin_FILE());
 static inline void dyn_targets_add(DynTargets* targets, Target target);
 static inline void dyn_targets_add_g(void* targets, Target target);
 
+static inline void mkdir_p(char* path, mode_t mode);
+
 template <typename T, usize Count>
 static inline usize len(T const (& items)[Count])
 {
@@ -710,6 +712,24 @@ static inline void setup(c_string build_dir, c_string file)
     g_root_file = file;
     g_build_dir = build_dir;
     mkdir(build_dir, 0777);
+
+    c_string triple = target_triple_string(system_target_triple());
+
+    char* lib_dir = 0;
+    assert(asprintf(&lib_dir, "%s/lib", build_dir) > 0);
+    char* system_lib = 0;
+    assert(asprintf(&system_lib, "%s/lib", triple) > 0);
+
+    char* bin_dir = 0;
+    assert(asprintf(&bin_dir, "%s/bin", build_dir) > 0);
+    char* system_bin = 0;
+    assert(asprintf(&system_bin, "%s/bin", triple) > 0);
+
+    (void)remove(bin_dir);
+    symlink(system_bin, bin_dir);
+
+    (void)remove(lib_dir);
+    symlink(system_lib, lib_dir);
 }
 
 static inline void emit_ninja_rule(FILE* output, TargetRule const* rule)

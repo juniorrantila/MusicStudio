@@ -32,7 +32,7 @@ struct [[nodiscard]] Optional {
         if (m_has_value) {
             new (storage()) T(other.release_value());
         } else {
-            new (storage()) T();
+            new (storage()) Optional();
         }
     }
 

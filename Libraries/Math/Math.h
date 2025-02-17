@@ -41,6 +41,27 @@ inline double math_round_f64(double t) { return math_abs_f64(math_frac_f64(t)) <
 inline float math_lerp_f32(float v0, float v1, float t) { return (v0 * (1.0f - t) + v1 * t); }
 inline double math_lerp_f64(double v0, double v1, double t) { return (v0 * (1.0 - t) + v1 * t); }
 
+inline float math_sqrtf(float v) { return __builtin_sqrtf(v); }
+inline double math_sqrt(double v) { return __builtin_sqrt(v); }
+
+inline float math_cbrtf(float x) { return __builtin_cbrtf(x); }
+inline double math_cbrt(double x) { return __builtin_cbrt(x); }
+
+inline float math_sinf(float x) { return __builtin_sinf(x); }
+inline double math_sin(double x) { return __builtin_sin(x); }
+
+inline float math_cosf(float x) { return __builtin_cosf(x); }
+inline double math_cos(double x) { return __builtin_cos(x); }
+
+inline float math_atanf(float x) { return __builtin_atanf(x); }
+inline double math_atan(double x) { return __builtin_atan(x); }
+
+inline float math_atan2f(float y, float x) { return __builtin_atan2f(y, x); }
+inline double math_atan2(double y, double x) { return __builtin_atan2(y, x); }
+
+inline float math_powf(float x, float y) { return __builtin_powf(x, y); }
+inline double math_pow(double x, double y) { return __builtin_pow(x, y); }
+
 #ifdef __cplusplus
 }
 #endif

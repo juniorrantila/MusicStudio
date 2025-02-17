@@ -19,3 +19,12 @@
             __LINE__);                      \
         __builtin_trap();                   \
     } while (0)
+
+#define UNREACHABLE()                       \
+    do {                                    \
+        __builtin_printf(                   \
+            "UNREACHABLE: %s [%s:%d]\n",    \
+            __PRETTY_FUNCTION__, __FILE__,  \
+            __LINE__);                      \
+        __builtin_trap();                   \
+    } while (0)

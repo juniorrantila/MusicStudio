@@ -4,9 +4,11 @@
 static auto const math = cc_library("Math", {
     .srcs = {
         "./Math.cpp",
+        "./Color.cpp",
     },
     .exported_headers = {
         "./Math.h",
+        "./Color.h",
     },
     .header_namespace = "math",
     .compile_flags = {},

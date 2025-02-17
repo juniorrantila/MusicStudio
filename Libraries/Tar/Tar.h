@@ -29,6 +29,10 @@ void tar_destroy(Tar* tar);
 
 isize tar_add(Tar* tar, c_string path, void const* content, usize content_size);
 isize tar_add_borrowed(Tar* tar, c_string path, void const* content, usize content_size);
+
+isize tar_add2(Tar* tar, char const* path, usize path_size, void const* content, usize content_size);
+isize tar_add_borrowed2(Tar* tar, char const* path, usize path_size, void const* content, usize content_size);
+
 void tar_remove(Tar* tar, c_string path);
 void tar_remove_at_index(Tar* tar, usize index);
 

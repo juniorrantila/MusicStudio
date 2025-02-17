@@ -95,17 +95,16 @@ void tar_destroy(Tar* tar)
 }
 
 
-static e_tar header_init(c_string path, usize content_size, TarHeader* header)
+static e_tar header_init(char const* path, usize path_size, usize content_size, TarHeader* header)
 {
-    usize path_len = strlen(path);
-    if (path_len >= TAR_PATH_MAX) {
+    if (path_size >= TAR_PATH_MAX) {
         return e_tar_invalid_path;
     }
     if (content_size > TAR_FILE_SIZE_MAX) {
         return e_tar_invalid_file_size;
     }
 
-    memcpy(header->path, path, path_len);
+    memcpy(header->path, path, path_size);
 
     snprintf(header->mode, sizeof(header->mode), "%06o ", 0666);
 
@@ -142,9 +141,21 @@ static e_tar expand_if_needed(Tar* tar)
 
 isize tar_add(Tar* tar, c_string path, void const* content, usize content_size)
 {
+    return tar_add2(tar, path, strlen(path), content, content_size);
+}
+
+
+isize tar_add_borrowed(Tar* tar, c_string path, void const* content, usize content_size)
+{
+    return tar_add_borrowed2(tar, path, strlen(path), content, content_size);
+}
+
+
+isize tar_add2(Tar* tar, char const* path, usize path_size, void const* content, usize content_size)
+{
     e_tar error;
     TarHeader header = { 0 };
-    error = header_init(path, content_size, &header);
+    error = header_init(path, path_size, content_size, &header);
     if (error != e_tar_none) {
         return -error;
     }
@@ -177,11 +188,11 @@ isize tar_add(Tar* tar, c_string path, void const* content, usize content_size)
 }
 
 
-isize tar_add_borrowed(Tar* tar, c_string path, void const* content, usize content_size)
+isize tar_add_borrowed2(Tar* tar, char const* path, usize path_size, void const* content, usize content_size)
 {
     e_tar error;
     TarHeader header = { 0 };
-    error = header_init(path, content_size, &header);
+    error = header_init(path, path_size, content_size, &header);
     if (error != e_tar_none) {
         return -error;
     }

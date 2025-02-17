@@ -16,7 +16,7 @@ struct [[nodiscard]] Optional {
     constexpr Optional(T value) requires is_trivially_copyable<T>
         : m_has_value(true)
     {
-        new (storage()) T(value);
+        new (storage()) T(move(value));
     }
 
     constexpr Optional(T&& value) requires(
@@ -60,7 +60,7 @@ struct [[nodiscard]] Optional {
         Optional value) requires is_trivially_copyable<T>
     {
         clear_if_needed();
-        new (this) Optional(value);
+        new (this) Optional(move(value));
         return *this;
     }
 

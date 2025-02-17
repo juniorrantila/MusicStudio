@@ -89,6 +89,15 @@ typedef iptr iptrv4 __attribute__((ext_vector_type(4)));
 typedef uptr uptrv2 __attribute__((ext_vector_type(2)));
 typedef uptr uptrv4 __attribute__((ext_vector_type(4)));
 
+typedef f32 f32v2 __attribute__((ext_vector_type(2)));
+typedef f32 f32v4 __attribute__((ext_vector_type(4)));
+typedef f64 f64v2 __attribute__((ext_vector_type(2)));
+typedef f64 f64v4 __attribute__((ext_vector_type(4)));
+
+
+typedef double f64;
+_Static_assert(sizeof(f64) == 8, "");
+
 typedef bool bool2 __attribute__((ext_vector_type(2)));
 typedef bool bool4 __attribute__((ext_vector_type(4)));
 

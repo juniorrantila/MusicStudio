@@ -123,6 +123,22 @@ struct SmallVector {
         m_size = 0;
     }
 
+    Optional<T> pop()
+    {
+        if (m_size == 0) {
+            return Optional<T>{};
+        }
+        m_size -= 1;
+        return move(at(m_size));
+    }
+
+    void shrink(u32 count)
+    {
+        for (u32 i = 0; i < count; i++) {
+            (void)pop();
+        }
+    }
+
 private:
     constexpr void destroy_elements() const
         requires(!is_trivially_destructible<T>)

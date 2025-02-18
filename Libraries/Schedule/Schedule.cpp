@@ -3,6 +3,7 @@
 #include <Ty/SmallCapture.h>
 
 #include <mach/mach_init.h>
+#include <mach/task.h>
 #include <mach/thread_act.h>
 #include <pthread.h>
 #include <sys/sysctl.h>
@@ -14,7 +15,9 @@ struct Schedule {
     };
 
     Allocator* arena;
-    SmallCapture<void(u32 thread_id)> runner;
+
+    void* runner_context;
+    void (*runner)(void*, u32 thread_id);
 
     pthread_mutex_t threads_done;
     _Atomic u32 thread_done;
@@ -49,6 +52,7 @@ e_schedule schedule_create(Schedule** out_schedule, Allocator* arena)
     }
     *schedule = Schedule {
         .arena = arena,
+        .runner_context = nullptr,
         .runner = nullptr,
         .threads_done = PTHREAD_MUTEX_INITIALIZER,
         .thread_done = 0u,
@@ -101,38 +105,71 @@ void schedule_chunked_for(
 ) {
     const usize work_size = items / schedule->thread_count;
     const usize last_thread_size = work_size + (items - (work_size * schedule->thread_count));
-    schedule->runner = [=](u32 thread_id) {
-        usize size = work_size;
-        if (thread_id == schedule->thread_count - 1) {
-            size = last_thread_size;
+
+    struct Context {
+        void* user;
+        void(*callback)(void* user, usize begin, usize end, u32 thread_id);
+        usize work_size;
+        usize last_thread_size;
+        u32 thread_count;
+    } context = {
+        .user = user,
+        .callback = callback,
+        .work_size = work_size,
+        .last_thread_size = last_thread_size,
+        .thread_count = schedule->thread_count,
+    };
+    schedule->runner_context = &context;
+    schedule->runner = [](void* user, u32 thread_id) {
+        auto* ctx = (Context*)user;
+        usize size = ctx->work_size;
+        if (thread_id == ctx->thread_count - 1) {
+            size = ctx->last_thread_size;
         }
-        const usize start = work_size * thread_id;
+        const usize start = ctx->work_size * thread_id;
         const usize end = start + size;
-        callback(user, start, end, thread_id);
+        ctx->callback(ctx->user, start, end, thread_id);
     };
 
-    schedule->thread_done = 0;
     resume(schedule);
     pthread_mutex_lock(&schedule->threads_done);
 }
 
-void schedule_parallel_for(Schedule* schedule, usize items, void* user, void(* callback)(void* user, usize index, u32 thread_id))
-{
+void schedule_parallel_for(
+    Schedule* schedule,
+    usize items,
+    void* user,
+    void(* callback)(void* user, usize index, u32 thread_id)
+) {
     const usize work_size = items / schedule->thread_count;
     const usize last_thread_size = work_size + (items - (work_size * schedule->thread_count));
-    schedule->runner = [=](u32 thread_id) {
-        usize size = work_size;
-        if (thread_id == schedule->thread_count - 1) {
-            size = last_thread_size;
+    struct Context {
+        void* user;
+        void(*callback)(void* user, usize index, u32 thread_id);
+        usize work_size;
+        usize last_thread_size;
+        u32 thread_count;
+    } context = {
+        .user = user,
+        .callback = callback,
+        .work_size = work_size,
+        .last_thread_size = last_thread_size,
+        .thread_count = schedule->thread_count,
+    };
+    schedule->runner_context = &context;
+    schedule->runner = [](void* context, u32 thread_id) {
+        auto* ctx = (Context*)context;
+        usize size = ctx->work_size;
+        if (thread_id == ctx->thread_count - 1) {
+            size = ctx->last_thread_size;
         }
-        const usize start = work_size * thread_id;
+        const usize start = ctx->work_size * thread_id;
         const usize end = start + size;
         for (usize i = start; i < end; i++) {
-            callback(user, i, thread_id);
+            ctx->callback(ctx->user, i, thread_id);
         }
     };
 
-    schedule->thread_done = 0;
     resume(schedule);
     pthread_mutex_lock(&schedule->threads_done);
 }
@@ -143,14 +180,15 @@ static void* thread_proc(void* context)
     Schedule* schedule = th->schedule;
     usize id = ((uptr)th - (uptr)schedule->threads) / sizeof(Schedule::VLA);
     while (true) {
+        thread_suspend(mach_thread_self());
         if (schedule->should_die) {
             break;
         }
-        schedule->runner(id);
+        schedule->runner(schedule->runner_context, id);
         if (++schedule->thread_done == schedule->thread_count) {
+            schedule->thread_done = 0;
             pthread_mutex_unlock(&schedule->threads_done);
         }
-        thread_suspend(mach_thread_self());
     }
     return nullptr;
 }

@@ -144,7 +144,7 @@ Render* render_create(FS::Bundle const* bundle, Allocator* gpa)
             sizeof(Vertex),
             (GLvoid *) offsetof(Vertex, uv));
 
-        // uv
+        // flags
         glEnableVertexAttribArray(VertexAttr_Flags);
         glVertexAttribPointer(
             VertexAttr_Flags,
@@ -154,7 +154,7 @@ Render* render_create(FS::Bundle const* bundle, Allocator* gpa)
             sizeof(Vertex),
             (GLvoid *) offsetof(Vertex, flags));
 
-              glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE0);
 
         glGenTextures(1, &render->texture);
         glBindTexture(GL_TEXTURE_2D, render->texture);

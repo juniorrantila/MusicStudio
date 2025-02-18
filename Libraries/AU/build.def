@@ -3,10 +3,12 @@
 #include "../Ty/build.def"
 #include "../Math/build.def"
 #include "../Vendor/SoundIo/build.def"
+#include "../Schedule/build.def"
 
 static auto const au = cc_library("AU", {
     .srcs = {
         "./Audio.cpp",
+        "./AudioDecoder.cpp",
         "./WAV.cpp",
         "./SoundIo.cpp",
         "./Pipeline.cpp",
@@ -14,6 +16,7 @@ static auto const au = cc_library("AU", {
     .exported_headers = {
         "./Forward.h",
         "./Audio.h",
+        "./AudioDecoder.h",
         "./SoundIo.h",
         "./Pipeline.h",
     },
@@ -28,5 +31,6 @@ static auto const au = cc_library("AU", {
         ty,
         soundio,
         math,
+        schedule,
     },
 });

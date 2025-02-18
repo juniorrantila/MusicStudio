@@ -3,7 +3,8 @@
 #include <CLI/ArgumentParser.h>
 #include <Main/Main.h>
 #include <Tar/Tar.h>
-#include <Ty/ArenaAllocator.h>
+#include <Ty/SegmentedArena.h>
+#include <Ty/PageAllocator.h>
 #include <Core/Print.h>
 
 ErrorOr<int> Main::main(int argc, char const* argv[])
@@ -28,9 +29,10 @@ ErrorOr<int> Main::main(int argc, char const* argv[])
     auto output = TRY(Core::File::open_for_writing(output_path));
 
     // FIXME: Don't use an arena for this.
-    auto arena = TRY(ArenaAllocator::create(4ULL * 1024ULL * 1024ULL));
+    auto arena_allocator = segmented_arena_create(page_allocator());
+    auto* arena = &arena_allocator.allocator;
 
-    Tar* tar = tar_create(arena.allocator());
+    Tar* tar = tar_create(arena);
     if (!tar) {
         dprintln("could not create tar: out of memory");
         return -1;

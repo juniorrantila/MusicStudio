@@ -10,7 +10,6 @@
 #include <Main/Main.h>
 #include <SoundIo/SoundIo.h>
 #include <SoundIo/os.h>
-#include <Ty/ArenaAllocator.h>
 #include <UI/Application.h>
 #include <UI/KeyCode.h>
 #include <UI/Window.h>
@@ -74,7 +73,8 @@ ErrorOr<int> Main::main(int argc, c_string* argv)
         ui_window_destroy(window);
     };
 
-    auto arena = TRY(ArenaAllocator::create(1024ULL * 1024ULL));
+    auto arena_allocator = segmented_arena_create(page_allocator());
+    auto* arena = &arena_allocator.allocator;
     auto project = MS::Project();
     auto manager = TRY(MS::PluginManager::create(&arena)).init(&project);
     auto plugins = TRY(arena.alloc<Id<MS::Plugin>>(1024));

@@ -27,7 +27,6 @@ struct Bundle {
     void unsafe_add_resource(ResourceView resource);
 
     View<ResourceView const> resources() const { return m_unsafe_resources.view(); }
-    ErrorOr<Bytes> bytes();
 
     template <typename T>
     Bundle add_pack(T pack) && {
@@ -42,7 +41,6 @@ struct Bundle {
     }
 
 private:
-    ErrorOr<void> saturate_zip_buffer();
     ErrorOr<ResourceView> saturate_resource_file(StringView fs_path, StringView mount_point) const;
 
     mutable Vector<ResourceView> m_unsafe_resources {};
@@ -51,9 +49,6 @@ private:
     mutable LinearMap<MountPoint, Resource> m_cached_resources {};
     LinearMap<MountPoint, StringBuffer> m_file_mounts {};
     LinearMap<MountPoint, StringBuffer> m_directory_mounts {};
-    LinearMap<MountPoint, StringBuffer> m_zip_mounts {};
-
-    StringBuffer m_combined_zip_buffer {};
 };
 
 }

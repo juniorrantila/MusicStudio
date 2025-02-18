@@ -6,7 +6,6 @@
 #include <Ty/Defer.h>
 #include <Ty/StringBuffer.h>
 #include <Ty/System.h>
-#include <Zip/Zip.h>
 #include <unistd.h>
 
 namespace FS {
@@ -54,19 +53,10 @@ ErrorOr<void> Bundle::mount_bytes(Bytes, StringView mount_point)
     return Error::unimplemented();
 }
 
-static ErrorOr<bool> is_zip(StringView path);
 ErrorOr<void> Bundle::mount(StringView file, StringView mount_point)
 {
     if (TRY(Core::File::is_directory(file))) {
         TRY(m_directory_mounts.set(
-            TRY(StringBuffer::create_fill(mount_point, "\0"sv)),
-            TRY(StringBuffer::create_fill(file, "\0"sv))
-        ));
-        return {};
-    }
-
-    if (TRY(is_zip(file))) {
-        TRY(m_zip_mounts.set(
             TRY(StringBuffer::create_fill(mount_point, "\0"sv)),
             TRY(StringBuffer::create_fill(file, "\0"sv))
         ));
@@ -79,68 +69,6 @@ ErrorOr<void> Bundle::mount(StringView file, StringView mount_point)
     ));
 
     return {};
-}
-
-ErrorOr<Bytes> Bundle::bytes()
-{
-    TRY(saturate_zip_buffer());
-    return m_combined_zip_buffer.view().as_bytes();
-}
-
-// FIXME: Modify zip library to operate on buffers.
-ErrorOr<void> Bundle::saturate_zip_buffer()
-{
-    m_combined_zip_buffer.clear();
-    char tmp_filename[] = "/tmp/XXXXXX";
-    if (mkstemp(tmp_filename) < 0) {
-        return Error::from_errno();
-    }
-
-    int error = 0;
-    zip_t* zip = zip_openwitherror(tmp_filename, 0, 'w', &error);
-    if (!zip) {
-        c_string message = zip_strerror(error);
-        return Error::from_string_literal(message);
-    }
-    Defer close_zip = [&] {
-        zip_close(zip);
-    };
-
-    for (usize raw_entry = 0; raw_entry < m_file_mounts.size(); raw_entry++) {
-        auto id = Id<StringBuffer>(raw_entry);
-        auto file_path = m_file_mounts.keys()[raw_entry].view().data();
-        auto mount_name = m_file_mounts[id].view().data();
-        if (int res = zip_entry_open(zip, file_path); res < 0) {
-            c_string message = zip_strerror(res);
-            return Error::from_string_literal(message);
-        }
-        Defer close_entry = [&] {
-            zip_entry_close(zip);
-        };
-
-        if (int res = zip_entry_fwrite(zip, mount_name); res < 0) {
-            c_string message = zip_strerror(res);
-            return Error::from_string_literal(message);
-        }
-    }
-    close_zip.run();
-
-    auto file = TRY(Core::MappedFile::open(tmp_filename));
-    TRY(m_combined_zip_buffer.expand_if_needed_for_write(file.size()));
-    TRY(m_combined_zip_buffer.write(file.view()));
-    TRY(System::unlink(tmp_filename));
-
-    return {};
-}
-
-static ErrorOr<bool> is_zip(StringView path)
-{
-    auto path_buf = TRY(StringBuffer::create_fill(path, "\0"sv));
-    int error = 0;
-    zip_close(zip_openwitherror(path_buf.data(), 0, 'w', &error));
-
-    // FIXME: Technically speaking it could be a zip file error.
-    return error != 0;
 }
 
 }

@@ -10,7 +10,6 @@
 #include <Core/Time.h>
 #include <AU/SoundIo.h>
 #include <AU/Pipeline.h>
-#include <Ty/ArenaAllocator.h>
 #include <MS/VstPlugin.h>
 #include <UI/Application.h>
 #include <UI/Window.h>
@@ -19,6 +18,9 @@
 #include <MS/Project.h>
 #include <string.h>
 #include <unistd.h>
+#include <AU/AudioDecoder.h>
+#include <Ty/SegmentedArena.h>
+#include <Ty/PageAllocator.h>
 
 struct PartTime {
     u32 hours;
@@ -60,14 +62,15 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         return 1;
     }
 
-    auto arena = TRY(ArenaAllocator::create(1024ULL * 1024ULL * 1024ULL));
+    auto arena_allocator = segmented_arena_create(page_allocator());
+    auto* arena = &arena_allocator.allocator;
 
     auto wav_file = TRY(Core::MappedFile::open(wav_path));
-    auto audio = TRY(AU::Audio::decode(arena.allocator(), AU::AudioFormat::WAV, wav_file.bytes()));
+    auto audio = TRY(AUAudioRef::decode(arena, AUFormat_WAV, wav_file.bytes()));
 
     auto project = MS::Project {
-        .sample_rate = audio.sample_rate(),
-        .channels = audio.channel_count(),
+        .sample_rate = audio.raw.sample_rate,
+        .channels = audio.raw.channel_count,
     };
     auto plugin_manager = MS::WASMPluginManager(Ref(project));
     for (auto path : plugin_paths) {
@@ -82,8 +85,10 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
     };
 
     dprintln("\n----------------------");
-    dprintln("Sample rate: {}", audio.sample_rate());
-    dprintln("Channels: {}", audio.channel_count());
+    dprintln("Layout: {}", (u64)audio.raw.sample_layout);
+    dprintln("Format: {}", (u64)audio.raw.sample_format);
+    dprintln("Sample rate: {}", audio.raw.sample_rate);
+    dprintln("Channels: {}", audio.raw.channel_count);
     dprintln("Duration: {}", part_time((u32)audio.duration()));
     dprintln("----------------------\n");
 
@@ -121,7 +126,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         usize played = played_frames;
         for (usize frame = 0; frame < frames; frame++) {
             for (usize channel = 0; channel < channels; channel++) {
-                f64 sample = audio.sample(played + frame, channel).or_default(0.0);
+                f64 sample = audio.sample_f64(channel, played + frame);
                 out[frame * channels + channel] = sample;
             }
         }
@@ -143,9 +148,9 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         .pipeline = &audio_pipeline,
         .write_sample = stream_writer.writer,
         .played_frames = &played_frames,
-        .frame_count = audio.frame_count(),
-        .scratch = TRY(arena->alloc<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.sample_rate())),
-        .scratch2 = TRY(arena->alloc<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.sample_rate())),
+        .frame_count = audio.raw.frame_count,
+        .scratch = TRY(arena->alloc<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.raw.sample_rate)),
+        .scratch2 = TRY(arena->alloc<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.raw.sample_rate)),
     };
 
     SoundIoOutStream *outstream = soundio_outstream_create(device);
@@ -155,7 +160,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
 
     outstream->write_callback = write_callback;
     outstream->underflow_callback = underflow_callback;
-    outstream->sample_rate = (i32)audio.sample_rate();
+    outstream->sample_rate = (i32)audio.raw.sample_rate;
     outstream->userdata = &context;
     outstream->format = stream_writer.format;
 
@@ -171,9 +176,9 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
 
     auto duration = part_time((u32)audio.duration());
     dprint("Time: {} / {}", part_time(0), duration);
-    while (played_frames < audio.frame_count()) {
+    while (played_frames < audio.raw.frame_count) {
         soundio_flush_events(soundio);
-        auto current_time = part_time(played_frames / audio.sample_rate());
+        auto current_time = part_time(played_frames / audio.raw.sample_rate);
         dprint("\r\033[KTime: {} / {}", current_time, duration);
         sleep(1);
     }

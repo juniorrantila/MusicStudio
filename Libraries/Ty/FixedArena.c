@@ -50,7 +50,6 @@ static void* ialloc(Allocator* allocator, usize size, usize align)
     arena->head += align_diff;
     void* ptr = arena->head;
     arena->head += size;
-    __builtin_memset(ptr, 0xAB, size);
     return ptr;
 }
 
@@ -59,7 +58,6 @@ static void ifree(Allocator* allocator, void* ptr, usize size)
     FixedArena* arena = ty_field_base(FixedArena, allocator, allocator);
     VERIFY(fixed_arena_owns(arena, ptr));
     VERIFY(arena->base <= (arena->head - size));
-    __builtin_memset(ptr, 0xAB, size);
     if (arena->head - size == ptr) {
         arena->head -= size;
     }

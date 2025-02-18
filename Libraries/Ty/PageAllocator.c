@@ -29,7 +29,6 @@ static void* ialloc(Allocator*, usize size, usize align)
     if (ptr == MAP_FAILED) {
         return 0;
     }
-    __builtin_memset(ptr, 0xAB, size);
     return ptr;
 }
 

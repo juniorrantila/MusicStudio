@@ -108,7 +108,6 @@ static void* ialloc(Allocator* allocator, usize size, usize align)
     arena->current->next = seg;
     arena->current = seg;
     void* ptr = ty_alloc(&seg->arena.allocator, size, align);
-    if (ptr) __builtin_memset(ptr, 0xAB, size);
     return ptr;
 }
 
@@ -119,7 +118,6 @@ static void ifree(Allocator* allocator, void* ptr, usize size)
         return;
     VERIFY(segmented_arena_owns(arena, ptr));
     VERIFY(segmented_arena_owns(arena, ((u8*)ptr) + size));
-    __builtin_memset(ptr, 0xAB, size);
     if (fixed_arena_owns(&arena->current->arena, ptr)) {
         ty_free(&arena->current->arena.allocator, ptr, size);
     }

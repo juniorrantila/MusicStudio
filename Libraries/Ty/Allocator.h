@@ -89,5 +89,15 @@ typedef struct Allocator {
 #endif
 } Allocator;
 
-static inline void* ty_alloc(Allocator* allocator, usize size, usize align) { return allocator->ialloc(allocator, size, align); }
-static inline void ty_free(Allocator* allocator, void* ptr, usize size) { allocator->ifree(allocator, ptr, size); }
+static inline void* ty_alloc(Allocator* allocator, usize size, usize align)
+{
+    void* ptr = allocator->ialloc(allocator, size, align);
+    if (ptr) __builtin_memset(ptr, 0xAB, size);
+    return ptr;
+}
+
+static inline void ty_free(Allocator* allocator, void* ptr, usize size)
+{
+    if (ptr) __builtin_memset(ptr, 0xAB, size);
+    allocator->ifree(allocator, ptr, size);
+}

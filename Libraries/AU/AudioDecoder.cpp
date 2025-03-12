@@ -3,11 +3,13 @@
 #include <Schedule/Schedule.h>
 #include <Ty/ByteDecoder.h>
 #include <Ty/Verify.h>
-
+#include <Ty/Try.h>
 #include <Ty/Limits.h>
 #include <Ty/Defer.h>
 
 #include <string.h>
+
+constexpr usize sample_align = 16;
 
 u64 au_audio_sample_count(AUAudio const* audio)
 {
@@ -32,7 +34,7 @@ u64 au_audio_byte_size(AUAudio const* audio)
 void au_audio_destroy(AUAudio* audio)
 {
     auto size = au_audio_byte_size(audio);
-    audio->gpa->raw_free(audio->samples.i8, size);
+    audio->gpa->free(audio->samples.i8, size);
 }
 
 static usize sample_index(AUAudio const* audio, usize channel, usize frame)
@@ -237,7 +239,7 @@ e_au_transcode au_transcode(Schedule* schedule, Allocator* gpa, AUAudio input, A
         }
     };
     auto byte_size = au_audio_byte_size(&output);
-    output.samples.i8 = (i8*)gpa->raw_alloc(byte_size, 16).or_default(nullptr);
+    output.samples.i8 = (i8*)gpa->alloc(byte_size, sample_align);
     if (!output.samples.i8) {
         return e_au_transcode_out_of_memory;
     }
@@ -396,7 +398,7 @@ e_au_decode au_audio_decode(Allocator* gpa, AUFormat format, Bytes bytes, AUAudi
     }
     (void)gpa;
     usize byte_size = au_audio_byte_size(&audio);
-    auto* samples = (i8*)gpa->raw_alloc(byte_size, 16).or_default(nullptr);
+    auto* samples = (i8*)gpa->alloc(byte_size, sample_align);
     if (!samples) {
         return e_au_decode_out_of_memory;
     }

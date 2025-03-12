@@ -43,9 +43,9 @@ ErrorOr<Audio> Audio::decode_with_sample_rate(Allocator* arena, u32 sample_rate,
 static ErrorOr<Audio> transcode(Allocator* arena, u32 sample_rate, WAV wav)
 {
     if (sample_rate == wav.sample_rate()) {
-        auto out_samples = TRY(arena->alloc<f64>(wav.frame_count() * wav.channel_count()));
+        auto out_samples = TRY(arena->alloc_many<f64>(wav.frame_count() * wav.channel_count()).or_error(Error::from_errno(ENOMEM)));
         Defer free_out_samples = [&]{
-            arena->free(out_samples);
+            arena->free_many(out_samples);
         };
         TRY(wav.write_into(out_samples));
         free_out_samples.disarm();
@@ -57,13 +57,13 @@ static ErrorOr<Audio> transcode(Allocator* arena, u32 sample_rate, WAV wav)
     }
     f64 sample_ratio = (f64)sample_rate / (f64)wav.sample_rate();
     usize frame_count = (usize)(((f64)wav.frame_count()) * sample_ratio);
-    auto out_samples = TRY(arena->alloc<f64>(sample_ratio * (wav.frame_count() + wav.frame_count() % 16 + 1) * wav.channel_count()));
+    auto out_samples = TRY(arena->alloc_many<f64>(sample_ratio * (wav.frame_count() + wav.frame_count() % 16 + 1) * wav.channel_count()).or_error(Error::from_errno(ENOMEM)));
     Defer free_out_samples = [&]{
-        arena->free(out_samples);
+        arena->free_many(out_samples);
     };
-    auto in_samples = TRY(arena->alloc<f64>((wav.frame_count() + wav.frame_count() % 16 + 1) * wav.channel_count()));
+    auto in_samples = TRY(arena->alloc_many<f64>((wav.frame_count() + wav.frame_count() % 16 + 1) * wav.channel_count()).or_error(Error::from_errno(ENOMEM)));
     Defer free_in_samples = [&]{
-        arena->free(in_samples);
+        arena->free_many(in_samples);
     };
 
     TRY(wav.write_into(in_samples));
@@ -106,7 +106,7 @@ ErrorOr<void> Audio::resample(Allocator* arena, u32 new_sample_rate)
 
     f64 sample_ratio = (f64)new_sample_rate / (f64)sample_rate();
     usize new_frame_count = (usize)(((f64)frame_count()) * sample_ratio);
-    auto new_samples = TRY(arena->alloc<f64>(new_frame_count * channel_count()));
+    auto new_samples = TRY(arena->alloc_many<f64>(new_frame_count * channel_count()).or_error(Error::from_errno(ENOMEM)));
 
     for (usize new_frame = 0; new_frame < new_frame_count; new_frame++) {
         f64 source_frame = ((f64)new_frame) * (1.0 / sample_ratio);

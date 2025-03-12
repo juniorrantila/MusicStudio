@@ -45,7 +45,7 @@ e_schedule schedule_create(Schedule** out_schedule, Allocator* arena)
     }
     thread_count = (u32)physical_cpu;
 
-    schedule = arena->alloc_vla<Schedule>(thread_count).or_default(nullptr);
+    schedule = (Schedule*)arena->alloc(sizeof(Schedule) + sizeof(Schedule::VLA) * thread_count, alignof(Schedule));
     if (!schedule) {
         error = e_sched_out_of_memory;
         goto fi_1;
@@ -80,7 +80,7 @@ fi_2:
         pthread_join(schedule->threads[i].thread, nullptr);
     }
 fi_1:
-    arena->free_vla(schedule, thread_count);
+    arena->free(schedule, sizeof(Schedule) + sizeof(Schedule::VLA) * thread_count, alignof(Schedule));
 fi_0:
     return error;
 }
@@ -93,7 +93,7 @@ void schedule_destroy(Schedule* schedule)
     for (usize i = 0; i < schedule->thread_count; i++) {
         pthread_join(schedule->threads[i].thread, nullptr);
     }
-    schedule->arena->free_vla(schedule, schedule->thread_count);
+    schedule->arena->free(schedule, sizeof(Schedule) + sizeof(Schedule::VLA) * schedule->thread_count, alignof(Schedule));
 }
 
 

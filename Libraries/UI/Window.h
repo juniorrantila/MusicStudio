@@ -48,6 +48,8 @@ UIMouseState ui_window_mouse_state(UIWindow*);
 void ui_window_gl_make_current_context(UIWindow*);
 void ui_window_gl_flush(UIWindow*);
 
+void ui_window_autosave(UIWindow*, c_string name);
+
 #ifdef __cplusplus
 }
 #endif

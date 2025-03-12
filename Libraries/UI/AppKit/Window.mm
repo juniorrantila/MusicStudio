@@ -185,6 +185,12 @@ bool ui_window_is_fullscreen(UIWindow const* window)
     return win->is_fullscreen;
 }
 
+void ui_window_autosave(UIWindow* window, c_string name)
+{
+    auto* win = (__bridge UIAppKitWindow const*)window;
+    win.frameAutosaveName = [NSString stringWithUTF8String:name];
+}
+
 @implementation UIAppKitWindow
 
 - (instancetype)initWithContentRect:(NSRect)contentRect

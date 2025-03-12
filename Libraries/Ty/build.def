@@ -1,5 +1,6 @@
 #pragma once
 #include "../../bs.h"
+#include "../Ty2/build.def"
 
 static auto const ty = cc_library("Ty", {
     .srcs = {
@@ -8,12 +9,9 @@ static auto const ty = cc_library("Ty", {
         "./Bytes.cpp",
         "./Endian.cpp",
         "./Error.cpp",
-        "./FixedArena.c",
         "./Json.cpp",
         "./Memory.cpp",
-        "./PageAllocator.c",
         "./Parse.cpp",
-        "./SegmentedArena.c",
         "./StringBuffer.cpp",
         "./StringView.cpp",
         "./System.cpp",
@@ -79,5 +77,7 @@ static auto const ty = cc_library("Ty", {
     .linker_flags = {},
     .target_triple = {},
     .link_style = "static",
-    .deps = {},
+    .deps = {
+        ty2,
+    },
 });

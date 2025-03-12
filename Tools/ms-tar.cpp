@@ -3,8 +3,8 @@
 #include <CLI/ArgumentParser.h>
 #include <Main/Main.h>
 #include <Tar/Tar.h>
-#include <Ty/SegmentedArena.h>
-#include <Ty/PageAllocator.h>
+#include <Ty2/Arena.h>
+#include <Ty2/PageAllocator.h>
 #include <Core/Print.h>
 
 ErrorOr<int> Main::main(int argc, char const* argv[])
@@ -29,7 +29,7 @@ ErrorOr<int> Main::main(int argc, char const* argv[])
     auto output = TRY(Core::File::open_for_writing(output_path));
 
     // FIXME: Don't use an arena for this.
-    auto arena_allocator = segmented_arena_create(page_allocator());
+    auto arena_allocator = arena_create(page_allocator());
     auto* arena = &arena_allocator.allocator;
 
     Tar* tar = tar_create(arena);
@@ -51,12 +51,14 @@ ErrorOr<int> Main::main(int argc, char const* argv[])
         }
         content.invalidate(); // Leak :)
     }
-    auto buffer = TRY(arena->alloc<u8>(tar_buffer_size(tar)));
-    if (auto size = tar_buffer(tar, buffer.data(), buffer.size()); size < 0) {
+    auto buf_size = tar_buffer_size(tar);
+    u8* buf = arena->alloc<u8>(buf_size);
+    if (!buf) return Error::from_string_literal("could not create tar buffer");
+    if (auto size = tar_buffer(tar, buf, buf_size); size < 0) {
         dprintln("could not create tar file: {}", StringView::from_c_string(tar_strerror((e_tar)-size)));
         return -1;
     }
-    TRY(output.write(buffer.as_string()));
+    TRY(output.write(StringView::from_parts((char*)buf, buf_size)));
 
     return 0;
 }

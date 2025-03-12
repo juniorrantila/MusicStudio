@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#define TAR_FILE_CONTENT_ALIGN (16)
 
 #define TAR_PATH_MAX (100)
 #define TAR_FILE_SIZE_MAX (077777777777)
@@ -59,15 +60,15 @@ Tar* tar_create(Allocator* gpa)
     usize capacity = 16;
     TarEntry* items = 0;
 
-    Tar* tar = ty_alloc(gpa, sizeof(Tar), alignof(Tar));
+    Tar* tar = memalloc(gpa, sizeof(Tar), alignof(Tar));
     if (!tar) {
         return 0;
     }
     memset(tar, 0, sizeof(*tar));
 
-    items = ty_alloc(gpa, capacity * sizeof(TarEntry), alignof(TarEntry));
+    items = memalloc(gpa, capacity * sizeof(TarEntry), alignof(TarEntry));
     if (!items) {
-        ty_free(gpa, tar, sizeof(Tar));
+        memfree(gpa, tar, sizeof(Tar), alignof(Tar));
         return 0;
     }
 
@@ -85,13 +86,13 @@ void tar_destroy(Tar* tar)
     for (usize i = 0; i < tar->count; i++) {
         TarEntry* entry = &tar->items[i];
         if (entry->owns_file) {
-            ty_free(tar->gpa, (void*)entry->file.bytes, entry->file.size);
+            memfree(tar->gpa, (void*)entry->file.bytes, entry->file.size, TAR_FILE_CONTENT_ALIGN);
         }
     }
     if (tar->items) {
-        ty_free(tar->gpa, tar->items, sizeof(TarEntry) * tar->capacity);
+        memfree(tar->gpa, tar->items, sizeof(TarEntry) * tar->capacity, alignof(TarEntry));
     }
-    ty_free(tar->gpa, tar, sizeof(Tar));
+    memfree(tar->gpa, tar, sizeof(Tar), alignof(Tar));
 }
 
 
@@ -126,12 +127,12 @@ static e_tar expand_if_needed(Tar* tar)
         return e_tar_none;
     }
     usize new_capacity = tar->capacity * 2;
-    TarEntry* entries = ty_alloc(tar->gpa, new_capacity * sizeof(TarEntry), alignof(TarEntry));
+    TarEntry* entries = memalloc(tar->gpa, new_capacity * sizeof(TarEntry), alignof(TarEntry));
     if (!entries) {
         return e_tar_no_mem;
     }
     memcpy(entries, tar->items, tar->capacity * sizeof(TarEntry));
-    ty_free(tar->gpa, tar->items, tar->capacity * sizeof(TarEntry));
+    memfree(tar->gpa, tar->items, tar->capacity * sizeof(TarEntry), alignof(TarEntry));
     tar->items = entries;
     tar->capacity = new_capacity;
 
@@ -164,15 +165,14 @@ isize tar_add2(Tar* tar, char const* path, usize path_size, void const* content,
         return -e_tar_no_mem;
     }
 
-    u8* copy = ty_alloc(tar->gpa, content_size, 16);
+    u8* copy = memclone(tar->gpa, content, content_size, TAR_FILE_CONTENT_ALIGN);
     if (!copy) {
         return -e_tar_no_mem;
     }
-    memcpy(copy, content, content_size);
 
     error = expand_if_needed(tar);
     if (error != e_tar_none) {
-        ty_free(tar->gpa, copy, content_size);
+        memfree(tar->gpa, copy, content_size, TAR_FILE_CONTENT_ALIGN);
         return -error;
     }
     usize index = tar->count++;

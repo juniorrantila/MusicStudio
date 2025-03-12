@@ -4,6 +4,7 @@
 #include "Forward.h"
 #include "Optional.h"
 #include "Traits.h"
+#include "./StringSlice.h"
 
 namespace Ty {
 
@@ -170,6 +171,8 @@ struct StringView {
     constexpr u32 size() const { return m_size; }
 
     ErrorOr<StringBuffer> resolve_path(StringView root = ""sv) const;
+
+    constexpr operator StringSlice() const { return { data(), size() }; }
 
 private:
     [[gnu::flatten]] static constexpr u32 strncpy(

@@ -14,6 +14,7 @@ static auto const ty = cc_library("Ty", {
         "./Parse.cpp",
         "./StringBuffer.cpp",
         "./StringView.cpp",
+        "./StringSlice.cpp",
         "./System.cpp",
     },
     .exported_headers = {
@@ -62,6 +63,7 @@ static auto const ty = cc_library("Ty", {
         "./StaticVector.h",
         "./StringBuffer.h",
         "./StringView.h",
+        "./StringSlice.h",
         "./Swap.h",
         "./System.h",
         "./Traits.h",

@@ -816,7 +816,7 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
                     continue;
                 }
                 string_set_add(&seen_deps, n);
-                fprintf(output, " -Ins/%s", dep->name);
+                fprintf(output, " -Ins/%s -Ins/%s/%s", dep->name, triple, dep->name);
             }
         }
         fprintf(output, "\n");
@@ -965,7 +965,7 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
             for (usize dep_index = 1; dep_index < deps_len; dep_index++) {
                 Target const* dep = &deps.entries[dep_index];
                 if (dep->kind == TargetKind_Library) {
-                    fprintf(output, " -Ins/%s", dep->name);
+                    fprintf(output, " -Ins/%s -Ins/%s/%s", dep->name, triple, dep->name);
                 }
             }
             fprintf(output, "\n");
@@ -982,6 +982,7 @@ static inline void emit_ninja(FILE* output, Target target)
 
     fprintf(output, "bin = ../Toolchain/Tools/bin\n");
     fprintf(output, "odin_root = ../Toolchain/Vendor/odin\n");
+    fprintf(output, "uni_bin = universal-apple-darwin/bin\n");
     fprintf(output, "\n");
 
     fprintf(output, "default_cxx_args =");

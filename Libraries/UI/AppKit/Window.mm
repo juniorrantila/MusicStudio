@@ -191,6 +191,32 @@ void ui_window_autosave(UIWindow* window, c_string name)
     win.frameAutosaveName = [NSString stringWithUTF8String:name];
 }
 
+void ui_window_set_resizable(UIWindow* window, bool resizable)
+{
+    auto* win = (__bridge UIAppKitWindow const*)window;
+    if (resizable) {
+        win.styleMask |= NSWindowStyleMaskResizable;
+    } else {
+        win.styleMask &= ~NSWindowStyleMaskResizable;
+    }
+}
+
+void ui_window_set_size(UIWindow* window, Vec2f size)
+{
+    auto* win = (__bridge UIAppKitWindow const*)window;
+    NSRect frame = win.frame;
+    frame.size.width = size.x;
+    frame.size.height = size.y;
+    [win setFrame:frame display:YES animate:NO];
+    [win.contentView setFrame:NSRect({
+        .origin = { 0, 0 },
+        .size = {
+            .width = frame.size.width,
+            .height = frame.size.height,
+        },
+    })];
+}
+
 @implementation UIAppKitWindow
 
 - (instancetype)initWithContentRect:(NSRect)contentRect
@@ -285,8 +311,15 @@ void ui_window_autosave(UIWindow* window, c_string name)
 {
     self->size = proposedFrameSize;
     if (self->resize_callback) {
-        self->resize_callback((UIWindow*)self, self->resize_user);
+        self->resize_callback((__bridge UIWindow*)self, self->resize_user);
     }
+    [self.contentView setFrame:NSRect({
+        .origin = { 0, 0 },
+        .size = {
+            .width = self.frame.size.width,
+            .height = self.frame.size.height,
+        },
+    })];
     return proposedFrameSize;
 }
 

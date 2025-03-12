@@ -50,6 +50,9 @@ void ui_window_gl_flush(UIWindow*);
 
 void ui_window_autosave(UIWindow*, c_string name);
 
+void ui_window_set_resizable(UIWindow*, bool);
+void ui_window_set_size(UIWindow*, Vec2f);
+
 #ifdef __cplusplus
 }
 #endif

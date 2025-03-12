@@ -527,7 +527,7 @@ iptr Host::vendor_specific(i32 index, iptr value, void* ptr, f32 opt)
 bool Host::can_do(char const* thing)
 {
     if ("sizeWindow"sv == StringView::from_c_string(thing))
-        return true;
+        return bool(on_resize);
     return false;
 }
 

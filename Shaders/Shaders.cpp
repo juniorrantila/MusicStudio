@@ -1,5 +1,6 @@
 #include "./Shaders.h"
 
+#include <FS/FSVolume.h>
 #include <FS/Resource.h>
 #include <FS/Bundle.h>
 
@@ -31,4 +32,31 @@ void Shaders::add_to_bundle(FS::Bundle& bundle)
 {
     bundle.unsafe_add_resource(simple_vert);
     bundle.unsafe_add_resource(simple_color_frag);
+}
+
+bool Shaders::add_to_volume(FSVolume* volume, UseBakedShaders use_baked_shaders)
+{
+    FSFile vert {};
+    FSFile frag {};
+
+    switch (use_baked_shaders) {
+    case UseBakedShaders_Yes:
+        vert = fs_virtual_open(simple_vert.resolved_path(), simple_vert.view());
+        frag = fs_virtual_open(simple_color_frag.resolved_path(), simple_color_frag.view());
+        break;
+    case UseBakedShaders_No:
+        if (!fs_system_open(volume->gpa, simple_vert.resolved_path(), &vert))
+            return false;
+        if (!fs_system_open(volume->gpa, simple_color_frag.resolved_path(), &frag))
+            return false;
+        break;
+    }
+
+    if (!fs_volume_mount(volume, vert, nullptr))
+        return false;
+
+    if (!fs_volume_mount(volume, frag, nullptr))
+        return false;
+
+    return true;
 }

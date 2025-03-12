@@ -1,5 +1,6 @@
 #include "./Render.h"
 
+#include <FS/FSVolume.h>
 #include <GL/GL.h>
 #include <FS/Bundle.h>
 #include <Ty/Allocator.h>
@@ -40,7 +41,7 @@ enum Shader {
 
 struct Render {
     Allocator* gpa;
-    FS::Bundle const* bundle;
+    FSVolume const* volume;
 
     GLuint texture;
     GLuint vao;
@@ -60,7 +61,7 @@ static int compile_shader_source(StringView, GLenum type);
 static int link_program(GLuint program);
 static void uniform_location(GLuint program, GLuint locations[UniformSlot__Count]);
 
-static void transact(Render* render, usize verticies);
+static void transact(Render* render, usize vertices);
 static void vertex(Render* render, Vec2f position, Vec4f color, Vec2f uv, u32 flags);
 static void triangle(Render* render,
     Vec2f p0, Vec4f c0, Vec2f uv0, u32 f0,
@@ -78,33 +79,27 @@ static void quad(Render* render,
     Vec2f p3, Vec4f c3, Vec2f uv3, u32 f3
 );
 
-c_string render_strerror(int error)
+C_API c_string render_strerror(int error)
 {
     if (error == 0) return "no error";
     return "unknown error";
 }
 
-Render* render_create(FS::Bundle const* bundle, Allocator* gpa)
+C_API Render* render_create(FSVolume const* volume, Allocator* gpa)
 {
-    Render* render = nullptr;
-    {
-        auto result = gpa->alloc<Render>();
-        if (result.is_error()) {
-            return nullptr;
-        }
-        render = result.release_value();
-    }
+    Render* render = gpa->alloc<Render>(1);
+    if (!render) return nullptr;
     memset(render, 0, sizeof(*render));
     render->gpa = gpa;
-    render->bundle = bundle;
-    {
-        auto result = gpa->alloc<Vertex>(4096);
-        if (result.is_error()) {
-            gpa->free(render);
-            return nullptr;
-        }
-        render->vertices = result.release_value();
+    render->volume = volume;
+
+    usize vertex_count = 4096;
+    auto* vertices = gpa->alloc<Vertex>(vertex_count);
+    if (!vertices) {
+        gpa->free(render, 1);
+        return nullptr;
     }
+    render->vertices = View(vertices, vertex_count);
 
     {
         glGenVertexArrays(1, &render->vao);
@@ -177,29 +172,22 @@ Render* render_create(FS::Bundle const* bundle, Allocator* gpa)
             NULL);
     }
     if (render_reload_shaders(render) < 0) return 0;
-
-    glUseProgram(render->shader_program);
-    uniform_location(render->shader_program, render->uniforms);
-    glUniform1f(render->uniforms[UniformSlot_Time], render->time);
-    glUniform2f(render->uniforms[UniformSlot_Resolution], render->resolution.x, render->resolution.y);
-    glUniform2f(render->uniforms[UniformSlot_MousePosition], render->mouse_position.x, render->mouse_position.y);
-
     return render;
 }
 
-void render_destroy(Render* render)
+C_API void render_destroy(Render* render)
 {
-    render->gpa->free(render->vertices);
-    render->gpa->free(render);
+    render->gpa->free(render->vertices.data(), render->vertices.size());
+    render->gpa->free(render, 1);
 }
 
-void render_set_time(Render* render, f32 time)
+C_API void render_set_time(Render* render, f32 time)
 {
     render->time = time;
     glUniform1f(render->uniforms[UniformSlot_Time], time);
 }
 
-void render_set_resolution(Render* render, Vec2f resolution)
+C_API void render_set_resolution(Render* render, Vec2f resolution)
 {
     if (render->resolution != resolution) {
         render->resolution = resolution;
@@ -208,28 +196,28 @@ void render_set_resolution(Render* render, Vec2f resolution)
     }
 }
 
-void render_set_mouse_position(Render* render, Vec2f position)
+C_API void render_set_mouse_position(Render* render, Vec2f position)
 {
     render->mouse_position = position;
     glUniform2f(render->uniforms[UniformSlot_MousePosition], position.x, position.y);
 }
 
-int render_reload_shaders(Render* render)
+C_API int render_reload_shaders(Render* render)
 {
-    auto vert = render->bundle->open("Shaders/simple.vert");
-    if (!vert) {
-        fprintf(stderr, "could not open 'Shaders/simple.vert'\n");
+    auto vert = render->volume->open("Shaders/simple.vert"s);
+    if (!vert.has_value()) {
+        (void)fprintf(stderr, "could not open 'Shaders/simple.vert'\n");
         return -1;
     }
-    auto vs = compile_shader_source(vert->view(), GL_VERTEX_SHADER);
+    auto vs = compile_shader_source(vert->as_view(), GL_VERTEX_SHADER);
     if (vs < 0) return -1;
 
-    auto frag = render->bundle->open("Shaders/color.frag");
-    if (!frag) {
-        fprintf(stderr, "could not open 'Shaders/color.frag'\n");
+    auto frag = render->volume->open("Shaders/color.frag"s);
+    if (!frag.has_value()) {
+        (void)fprintf(stderr, "could not open 'Shaders/color.frag'\n");
         return -1;
     }
-    auto fs = compile_shader_source(frag->view(), GL_FRAGMENT_SHADER);
+    auto fs = compile_shader_source(frag->as_view(), GL_FRAGMENT_SHADER);
     if (fs < 0) return -1;
 
     auto program = glCreateProgram();
@@ -238,11 +226,27 @@ int render_reload_shaders(Render* render)
     if (link_program(program) < 0) return -1;
 
     render->shader_program = program;
+    glUseProgram(render->shader_program);
+    uniform_location(render->shader_program, render->uniforms);
+    glUniform1f(render->uniforms[UniformSlot_Time], render->time);
+    glUniform2f(render->uniforms[UniformSlot_Resolution], render->resolution.x, render->resolution.y);
+    glUniform2f(render->uniforms[UniformSlot_MousePosition], render->mouse_position.x, render->mouse_position.y);
 
     return 0;
 }
 
-void render_flush(Render* render)
+C_API int render_handle_events(Render* render, FSEvents events)
+{
+    for (usize i = 0; i < events.count; i++) {
+        auto event = events.items[i];
+        if (event.kind == FSEventKind_Modify) {
+            return render_reload_shaders(render);
+        }
+    }
+    return 0;
+}
+
+C_API void render_flush(Render* render)
 {
     if (render->vertex_index != 0) {
         glBufferSubData(GL_ARRAY_BUFFER,
@@ -254,9 +258,9 @@ void render_flush(Render* render)
     }
 }
 
-void render_clear(Render* render, Vec4f color)
+C_API void render_clear(Render* render, Vec4f color)
 {
-    glViewport(0, 0, render->resolution.x, render->resolution.y);
+    (void)render;
     glClearColor(color.r, color.g, color.b, color.a);
     glClear(GL_COLOR_BUFFER_BIT);
 }
@@ -311,7 +315,7 @@ static void quad(Render* render,
     );
 }
 
-void render_triangle(Render* render,
+C_API void render_triangle(Render* render,
     Vec2f p0, Vec4f c0, Vec2f uv0,
     Vec2f p1, Vec4f c1, Vec2f uv1,
     Vec2f p2, Vec4f c2, Vec2f uv2)
@@ -326,7 +330,7 @@ void render_triangle(Render* render,
 // 0-1
 // |/|
 // 2-3
-void render_quad(Render* render,
+C_API void render_quad(Render* render,
     Vec2f p0, Vec4f c0, Vec2f uv0,
     Vec2f p1, Vec4f c1, Vec2f uv1,
     Vec2f p2, Vec4f c2, Vec2f uv2,
@@ -344,7 +348,7 @@ void render_quad(Render* render,
     );
 }
 
-void render_cursor(Render* render, Vec4f color)
+C_API void render_cursor(Render* render, Vec4f color)
 {
     quad(render,
         vec2f(0.0f, 0.0f), color, vec2fs(0), Shader_Cursor,

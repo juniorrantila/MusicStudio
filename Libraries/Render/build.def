@@ -11,7 +11,7 @@ static auto const render = cc_library("Render", {
     },
     .exported_headers = {
         "./Forward.h",
-        "./Render.h"
+        "./Render.h",
     },
     .header_namespace = "Render",
     .compile_flags = {},

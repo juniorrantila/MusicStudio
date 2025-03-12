@@ -23,6 +23,7 @@ void ui_application_poll_events(UIApplication*);
 UICursor ui_application_cursor(UIApplication*);
 void ui_application_cursor_push(UIApplication*, UICursor);
 void ui_application_cursor_pop(UIApplication*);
+void ui_application_cursor_set(UIApplication*, UICursor);
 
 #ifdef __cplusplus
 }

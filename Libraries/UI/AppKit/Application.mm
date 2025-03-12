@@ -76,6 +76,22 @@ void ui_application_cursor_push(UIApplication* app, UICursor cursor)
     }
 }
 
+void ui_application_cursor_set(UIApplication* app, UICursor cursor)
+{
+    (void)app;
+    switch (cursor) {
+    case UICursor_Arrow:
+        [NSCursor.arrowCursor set];
+        break;
+    case UICursor_Pointer:
+        [NSCursor.pointingHandCursor set];
+        break;
+    case UICursor_ClosedHand:
+        [NSCursor.closedHandCursor set];
+        break;
+    }
+}
+
 void ui_application_cursor_pop(UIApplication* app)
 {
     (void)app;

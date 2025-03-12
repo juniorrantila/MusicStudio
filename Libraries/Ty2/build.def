@@ -1,0 +1,42 @@
+#pragma once
+#include "../../bs.h"
+
+static auto const ty2 = cc_library("Ty2", {
+    .srcs = {
+        "Allocator.cpp",
+        "Arena.cpp",
+        "FileLogger.cpp",
+        "FixedArena.cpp",
+        "FixedPool.cpp",
+        "Logger.cpp",
+        "PageAllocator.cpp",
+        "Pool.cpp",
+        "RopeString.cpp",
+        "Slab.cpp",
+        "StringView.cpp",
+    },
+    .exported_headers = {
+        "Allocator.h",
+        "Arena.h",
+        "Base.h",
+        "BitSet.h",
+        "EventQueue.h",
+        "FileLogger.h",
+        "FixedArena.h",
+        "FixedPool.h",
+        "Forward.h",
+        "Logger.h",
+        "PageAllocator.h",
+        "Pool.h",
+        "RopeString.h",
+        "Slab.h",
+        "StringView.h",
+        "Verify.h",
+    },
+    .header_namespace = "Ty2",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {},
+});

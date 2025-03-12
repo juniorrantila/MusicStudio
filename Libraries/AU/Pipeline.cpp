@@ -2,6 +2,7 @@
 
 #include <Ty/ErrorOr.h>
 #include <Ty/Swap.h>
+#include <string.h>
 
 namespace AU {
 
@@ -17,7 +18,10 @@ f64* Pipeline::run(f64* out, f64* in, usize frames, usize channels)
         pipe(out, in, frames, channels);
         swap(&out, &in);
     }
-    return in;
+    if (m_pipeline.size() % 2 == 0) {
+        memcpy(out, in, sizeof(f64) * frames * channels);
+    }
+    return out;
 }
 
 }

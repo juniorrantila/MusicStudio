@@ -1,26 +1,29 @@
+#include <AU/Audio.h>
+#include <AU/AudioDecoder.h>
+#include <AU/Pipeline.h>
+#include <AU/SoundIo.h>
+#include <AU/Transcoder.h>
 #include <CLI/ArgumentParser.h>
+#include <Core/MappedFile.h>
+#include <Core/Print.h>
+#include <Core/Time.h>
+#include <MS/Project.h>
+#include <MS/VstPlugin.h>
+#include <MS/WASMPluginManager.h>
 #include <MacTypes.h>
 #include <Main/Main.h>
 #include <SoundIo/SoundIo.h>
-#include <Ty/Optional.h>
-#include <AU/Audio.h>
 #include <Ty/Limits.h>
-#include <Core/Print.h>
-#include <Core/MappedFile.h>
-#include <Core/Time.h>
-#include <AU/SoundIo.h>
-#include <AU/Pipeline.h>
-#include <MS/VstPlugin.h>
+#include <Ty/Optional.h>
+#include <Ty/Swap.h>
+#include <Ty2/Arena.h>
+#include <Ty2/PageAllocator.h>
 #include <UI/Application.h>
 #include <UI/Window.h>
-#include <MS/WASMPluginManager.h>
-#include <Ty/Swap.h>
-#include <MS/Project.h>
+#include <Vst/Rectangle.h>
+
 #include <string.h>
 #include <unistd.h>
-#include <AU/AudioDecoder.h>
-#include <Ty/SegmentedArena.h>
-#include <Ty/PageAllocator.h>
 
 struct PartTime {
     u32 hours;
@@ -43,6 +46,7 @@ struct Context {
     View<f64> scratch2;
 };
 
+static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_audio(Arena* arena, MS::Plugin* plugin);
 
 ErrorOr<int> Main::main(int argc, c_string argv[]) {
     auto argument_parser = CLI::ArgumentParser();
@@ -52,9 +56,14 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         wav_path = StringView::from_c_string(arg);
     }));
 
-    auto plugin_paths = Vector<StringView>();
-    TRY(argument_parser.add_option("--plugin", "-p", "wasm-plugin", "pass audio through WASM plugin", [&](c_string arg) {
-        MUST(plugin_paths.append(StringView::from_c_string(arg)));
+    auto wasm_plugin_paths = Vector<StringView>();
+    TRY(argument_parser.add_option("--wasm-plugin", "-wp", "wasm-plugin", "pass audio through WASM plugin", [&](c_string arg) {
+        MUST(wasm_plugin_paths.append(StringView::from_c_string(arg)));
+    }));
+
+    auto vst2_plugin_paths = Vector<c_string>();
+    TRY(argument_parser.add_option("--vst2-plugin", "-v2p", "vst2-plugin", "pass audio through VST2 plugin", [&](c_string arg) {
+        MUST(vst2_plugin_paths.append(arg));
     }));
 
     if (auto result = argument_parser.run(argc, argv); result.is_error()) {
@@ -62,8 +71,12 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         return 1;
     }
 
-    auto arena_allocator = segmented_arena_create(page_allocator());
+    auto arena_allocator = arena_create(page_allocator());
     auto* arena = &arena_allocator.allocator;
+
+    auto pipe_arena = arena_create(page_allocator());
+    pipe_arena.alloc(1024ULL * 1024ULL * 1024ULL, 16); // Reserve memory to make it unlikely that we allocate in the audio thread.
+    pipe_arena.drain();
 
     auto wav_file = TRY(Core::MappedFile::open(wav_path));
     auto audio = TRY(AUAudioRef::decode(arena, AUFormat_WAV, wav_file.bytes()));
@@ -72,25 +85,62 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         .sample_rate = audio.raw.sample_rate,
         .channels = audio.raw.channel_count,
     };
-    auto plugin_manager = MS::WASMPluginManager(Ref(project));
-    for (auto path : plugin_paths) {
-        TRY(plugin_manager.add_plugin(path));
+    auto wasm_plugin_manager = MS::WASMPluginManager(Ref(project));
+    for (auto path : wasm_plugin_paths) {
+        TRY(wasm_plugin_manager.add_plugin(path));
     }
-    TRY(plugin_manager.link());
-    TRY(plugin_manager.init());
+    TRY(wasm_plugin_manager.link());
+    TRY(wasm_plugin_manager.init());
     Defer deinit_plugin_manager = [&] {
-        plugin_manager.deinit().or_else([](Error error){
+        wasm_plugin_manager.deinit().or_else([](Error error){
             dprintln("Error: could not deinit plugin manager: ", error);
         });
     };
 
-    dprintln("\n----------------------");
-    dprintln("Layout: {}", (u64)audio.raw.sample_layout);
-    dprintln("Format: {}", (u64)audio.raw.sample_format);
-    dprintln("Sample rate: {}", audio.raw.sample_rate);
-    dprintln("Channels: {}", audio.raw.channel_count);
-    dprintln("Duration: {}", part_time((u32)audio.duration()));
-    dprintln("----------------------\n");
+    auto vst2_plugins = Vector<MS::Plugin>();
+    for (c_string path : vst2_plugin_paths) {
+        TRY(vst2_plugins.append(TRY(MS::Plugin::create_from(path))));
+    }
+
+    auto* app = ui_application_create(0);
+    if (!app) return Error::from_string_literal("could not create app");
+
+    auto* root_window = ui_window_create(app, {
+        .parent = nullptr,
+        .title = "play audio",
+        .x = 0,
+        .y = 0,
+        .width = 0,
+        .height = 0,
+    });
+    if (!root_window) return Error::from_string_literal("could not create root window");
+    for (auto& plugin : vst2_plugins) {
+        if (!plugin.has_editor()) continue;
+        auto rect = plugin.editor_rectangle().or_default({
+            .y = 0,
+            .x = 0,
+            .height = 600,
+            .width = 800
+        });
+        auto plugin_name = plugin.name().or_default("VST2 Plugin");
+        auto* name = (char*)memclone_zero_extend(arena, plugin_name.data(), plugin_name.size(), 1, 1);
+        UIWindow* window = ui_window_create(app, {
+            .parent = root_window,
+            .title = name,
+            .x = rect.x,
+            .y = rect.y,
+            .width = rect.width,
+            .height = rect.height,
+        });
+        (void)plugin.vst->set_process_precision(Vst::Precision::F64);
+        ui_window_set_resizable(window, false);
+        plugin.on_editor_resize = [=](i32 width, i32 height) {
+            ui_window_set_size(window, vec2f((float)width, (float)height));
+        };
+        if (!plugin.open_editor(ui_window_native_handle(window))) {
+            dprintln("could not open editor for {}", plugin_name);
+        }
+    }
 
     SoundIo *soundio = soundio_create();
     if (!soundio) {
@@ -108,7 +158,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         return Error::from_string_literal("Output device not found");
     }
 
-    SoundIoDevice *device = soundio_get_output_device(soundio, selected_device_index);
+    SoundIoDevice* device = soundio_get_output_device(soundio, selected_device_index);
     if (!device) {
         return Error::from_errno(ENOMEM);
     }
@@ -119,9 +169,10 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         return Error::from_string_literal("could find suitable stream format");
     }));
 
+    auto audio_pipeline = AU::Pipeline();
+
     _Atomic usize played_frames = 0;
 
-    auto audio_pipeline = AU::Pipeline();
     TRY(audio_pipeline.pipe([&](f64* out, f64*, usize frames, usize channels) {
         usize played = played_frames;
         for (usize frame = 0; frame < frames; frame++) {
@@ -135,22 +186,26 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
     TRY(audio_pipeline.pipe([&](f64* const out, f64* const in, usize frames, usize channels) {
         f64* a = out;
         f64* b = in;
-        for (auto& plugin : plugin_manager.plugins()) {
+        for (auto& plugin : wasm_plugin_manager.plugins()) {
             MUST(plugin.process_f64(a, b, frames, channels));
             swap(&a, &b);
         }
-        if (plugin_manager.plugins().size() % 2 == 0) {
+        if (wasm_plugin_manager.plugins().size() % 2 == 0) {
             memcpy(out, in, frames * channels * sizeof(f64));
         }
     }));
+
+    for (auto& plugin : vst2_plugins) {
+        TRY(audio_pipeline.pipe(vst2_process_audio(&pipe_arena, &plugin)));
+    }
 
     auto context = Context {
         .pipeline = &audio_pipeline,
         .write_sample = stream_writer.writer,
         .played_frames = &played_frames,
         .frame_count = audio.raw.frame_count,
-        .scratch = TRY(arena->alloc<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.raw.sample_rate)),
-        .scratch2 = TRY(arena->alloc<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.raw.sample_rate)),
+        .scratch = TRY(arena->alloc_many<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.raw.sample_rate).or_error(Error::from_string_literal("could not create scratch buffer"))),
+        .scratch2 = TRY(arena->alloc_many<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.raw.sample_rate).or_error(Error::from_string_literal("could not create scratch buffer 2"))),
     };
 
     SoundIoOutStream *outstream = soundio_outstream_create(device);
@@ -174,13 +229,30 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         return Error::from_string_literal(soundio_strerror(err));
     }
 
+    dprintln("\n----------------------");
+    dprintln("Layout: {}", (u64)audio.raw.sample_layout);
+    dprintln("Format: {}", (u64)audio.raw.sample_format);
+    dprintln("Sample rate: {}", audio.raw.sample_rate);
+    dprintln("Channels: {}", audio.raw.channel_count);
+    dprintln("Duration: {}", part_time((u32)audio.duration()));
+    dprintln("----------------------\n");
+
     auto duration = part_time((u32)audio.duration());
     dprint("Time: {} / {}", part_time(0), duration);
-    while (played_frames < audio.raw.frame_count) {
+    while (!ui_window_should_close(root_window)) {
+        ui_application_poll_events(app);
+        if (played_frames >= audio.raw.frame_count) {
+            break;
+        }
         soundio_flush_events(soundio);
+        for (auto& plugin : vst2_plugins) {
+            (void)plugin.vst->editor_idle();
+        }
+
         auto current_time = part_time(played_frames / audio.raw.sample_rate);
         dprint("\r\033[KTime: {} / {}", current_time, duration);
-        sleep(1);
+
+        usleep(16000);
     }
     dprintln("\r\033[KTime: {} / {}", duration, duration);
 
@@ -242,6 +314,70 @@ static void underflow_callback(SoundIoOutStream *outstream) {
     (void)outstream;
     static usize count = 0;
     dprintln("underflow {}", count++);
+}
+
+static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_f64(Arena* arena_instance, MS::Plugin* plugin);
+static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_f32(Arena* arena_instance, MS::Plugin* plugin);
+static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_audio(Arena* arena_instance, MS::Plugin* plugin)
+{
+    if (plugin->supports_f64()) {
+        return vst2_process_f64(arena_instance, plugin);
+    }
+    return vst2_process_f32(arena_instance, plugin);
+}
+
+static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_f64(Arena* arena_instance, MS::Plugin* plugin)
+{
+    return [=](f64* out, f64* in, usize frames, usize channels){
+        arena_instance->drain();
+        auto* arena = &arena_instance->allocator;
+
+        f64* deinterlaced_out = au_deinterlace_f64(arena, out, frames, channels);
+        if (!deinterlaced_out) return; // FIXME: Report error maybe?
+        f64* deinterlaced_in = au_deinterlace_f64(arena, in, frames, channels);
+        if (!deinterlaced_in) return; // FIXME: Report error maybe?
+
+        f64** outputs = au_shallow_split_channels_f64(arena, plugin->number_of_outputs(), deinterlaced_out, frames, channels);
+        if (!outputs) return; // FIXME: Report error maybe?
+        f64** inputs = au_shallow_split_channels_f64(arena, plugin->number_of_inputs(), deinterlaced_in, frames, channels);
+        if (!inputs) return; // FIXME: Report error maybe?
+
+        plugin->process_f64(outputs, inputs, (i32)frames);
+
+        f64* interlaced_out = au_interlace_f64(arena, deinterlaced_out, frames, channels);
+        if (!interlaced_out) return; // FIXME: Report error maybe?
+        for (usize i = 0; i < frames * channels; i++) {
+            out[i] = interlaced_out[i];
+        }
+    };
+}
+
+static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_f32(Arena* arena_instance, MS::Plugin* plugin)
+{
+    return [=](f64* out, f64* in, usize frames, usize channels){
+        arena_instance->drain();
+        auto* arena = &arena_instance->allocator;
+
+        f32* deinterlaced_out = au_deinterlace_f32_from_f64(arena, out, frames, channels);
+        if (!deinterlaced_out) return; // FIXME: Report error maybe?
+
+        f32* deinterlaced_in = au_deinterlace_f32_from_f64(arena, in, frames, channels);
+        if (!deinterlaced_in) return; // FIXME: Report error maybe?
+
+        f32** outputs = au_shallow_split_channels_f32(arena, plugin->number_of_outputs(), deinterlaced_out, frames, channels);
+        if (!outputs) return; // FIXME: Report error maybe?
+
+        f32** inputs = au_shallow_split_channels_f32(arena, plugin->number_of_inputs(), deinterlaced_in, frames, channels);
+        if (!inputs) return; // FIXME: Report error maybe?
+
+        plugin->process_f32(outputs, inputs, (i32)frames);
+
+        f64* interlaced_out = au_interlace_f64_from_f32(arena, deinterlaced_out, frames, channels);
+        if (!interlaced_out) return; // FIXME: Report error maybe?
+        for (usize i = 0; i < frames * channels; i++) {
+            out[i] = interlaced_out[i];
+        }
+    };
 }
 
 static PartTime part_time(u32 seconds)

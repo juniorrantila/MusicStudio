@@ -12,6 +12,7 @@ static auto const au = cc_library("AU", {
         "./WAV.cpp",
         "./SoundIo.cpp",
         "./Pipeline.cpp",
+        "./Transcoder.cpp",
     },
     .exported_headers = {
         "./Forward.h",
@@ -19,6 +20,7 @@ static auto const au = cc_library("AU", {
         "./AudioDecoder.h",
         "./SoundIo.h",
         "./Pipeline.h",
+        "./Transcoder.h",
     },
     .header_namespace = "AU",
     .compile_flags = {

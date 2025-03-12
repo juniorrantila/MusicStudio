@@ -4,7 +4,9 @@
 #include <Foundation/Foundation.h>
 
 @interface UIApplicationDelegate : NSObject<NSApplicationDelegate>
++(UIApplicationDelegate*) sharedInstance;
 @end
+
 
 UIApplication* ui_application_create(u32 hints)
 {
@@ -12,7 +14,7 @@ UIApplication* ui_application_create(u32 hints)
     if (hints & UIApplicationHint_NativeLike) {
         [application setActivationPolicy:NSApplicationActivationPolicyRegular];
     }
-    application.delegate = [[UIApplicationDelegate alloc] init];
+    application.delegate = UIApplicationDelegate.sharedInstance;
     auto* app = (UIApplication*)CFBridgingRetain(application);
     [application run];
     return app;
@@ -39,7 +41,7 @@ void ui_application_destroy(UIApplication* app)
 {
     auto* application = (__bridge NSApplication*)app;
     [application terminate:nil];
-    CFBridgingRelease(application);
+    CFBridgingRelease(app);
 }
 
 UICursor ui_application_cursor(UIApplication* app)
@@ -82,6 +84,15 @@ void ui_application_cursor_pop(UIApplication* app)
 
 
 @implementation UIApplicationDelegate
+static UIApplicationDelegate* sharedInstance = nil;
+
++(UIApplicationDelegate*) sharedInstance
+{
+    if (sharedInstance == nil) {
+        sharedInstance = [[UIApplicationDelegate alloc] init];
+    }
+    return sharedInstance;
+}
 
 -(BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication*)theApplication
 {

@@ -77,12 +77,13 @@ UIApplication* ui_window_application(UIWindow* win)
 void ui_window_destroy(UIWindow* win)
 {
     ui_window_close(win);
+    CFBridgingRelease(win);
 }
 
 void* ui_window_native_handle(UIWindow* win)
 {
     auto* window = (__bridge UIAppKitWindow*)win;
-    return (__bridge NSView*)window.contentView;
+    return (void*)(__bridge void const*)window.glView;
 }
 
 void ui_window_close(UIWindow* win)
@@ -303,7 +304,7 @@ void ui_window_set_size(UIWindow* window, Vec2f size)
         .y = (f32)event.scrollingDeltaY,
     };
     if (self->scroll_callback) {
-        self->scroll_callback((UIWindow*)self, self->scroll_user);
+        self->scroll_callback((__bridge UIWindow*)self, self->scroll_user);
     }
 }
 

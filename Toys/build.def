@@ -58,3 +58,18 @@ auto const swap_stack = cc_binary("swap-stack", {
         libraries.async,
     },
 });
+
+auto const fs_volume_file_watch_example = cc_binary("fs-volume-file-watch-example", {
+    .srcs = {
+        "./fs-volume-file-watch-example.cpp",
+    },
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .deps = {
+        libraries.main,
+        libraries.ty2,
+        libraries.fs,
+        libraries.cli,
+    }
+});

@@ -88,27 +88,29 @@ struct [[nodiscard]] ErrorOr {
 
     constexpr T release_value()
     {
-        VERIFY(m_state != State::Moved);
+        VERIFY(m_state == State::Value);
         m_state = State::Moved;
         return move(m_value);
     }
 
     constexpr E release_error()
     {
-        VERIFY(m_state != State::Moved);
+        VERIFY(m_state == State::Error);
         m_state = State::Moved;
         return move(m_error);
     }
 
+    T const* operator->() const { return &value(); }
+
     constexpr T const& value() const
     {
-        VERIFY(m_state != State::Moved);
+        VERIFY(m_state == State::Value);
         return m_value;
     }
 
     constexpr E const& error() const
     {
-        VERIFY(m_state != State::Moved);
+        VERIFY(m_state == State::Error);
         return m_error;
     }
 

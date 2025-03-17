@@ -33,7 +33,6 @@ exit 0
 #include <stdio.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <sys/stat.h>
 #include <stdbool.h>
 
 #define MAX_ENTRIES 256
@@ -88,7 +87,8 @@ static inline void string_set_add(StringSet* set, StringView item);
 
 typedef enum {
     TargetKind_Binary,
-    TargetKind_Library,
+    TargetKind_SharedLibrary,
+    TargetKind_StaticLibrary,
     TargetKind_Targets,
     TargetKind_UniversalBinary,
     TargetKind_UniversalLibrary,
@@ -305,8 +305,16 @@ static inline Target cc_binary(c_string name, BinaryArgs args, c_string file)
     return target;
 }
 
+static inline TargetKind parse_link_style(c_string link_style)
+{
+    if (strcmp(link_style, "dynamic") == 0)
+        return TargetKind_SharedLibrary;
+    return TargetKind_StaticLibrary;
+}
+
 static inline Target cc_library(c_string name, LibraryArgs args, c_string file)
 {
+    TargetKind link_style = parse_link_style(args.link_style);
     c_string base_dir = strdup(dirname(strdup(file)));
     LibraryArgs* res = (LibraryArgs*)malloc(sizeof(args));
     *res = args;
@@ -330,14 +338,14 @@ static inline Target cc_library(c_string name, LibraryArgs args, c_string file)
             .file = file,
             .base_dir = base_dir,
             .library = res,
-            .kind = TargetKind_Library,
+            .kind = link_style,
         };
         Target x86_target = {
             .name = name,
             .file = file,
             .base_dir = base_dir,
             .library = x86,
-            .kind = TargetKind_Library,
+            .kind = link_style,
         };
         assert(all_targets_count < MAX_ENTRIES - 1);
         all_targets_deps.entries[all_targets_count++] = arm_target;
@@ -357,7 +365,7 @@ static inline Target cc_library(c_string name, LibraryArgs args, c_string file)
         .file = file,
         .base_dir = base_dir,
         .library = res,
-        .kind = TargetKind_Library,
+        .kind = link_style,
     };
     assert(all_targets_count < MAX_ENTRIES - 1);
     all_targets_deps.entries[all_targets_count++] = target;
@@ -389,14 +397,14 @@ static inline Target odin_library(c_string name, LibraryArgs args, c_string file
             .file = file,
             .base_dir = base_dir,
             .library = res,
-            .kind = TargetKind_Library,
+            .kind = TargetKind_StaticLibrary,
         };
         Target x86_target = {
             .name = name,
             .file = file,
             .base_dir = base_dir,
             .library = x86,
-            .kind = TargetKind_Library,
+            .kind = TargetKind_StaticLibrary,
         };
         assert(all_targets_count < MAX_ENTRIES - 1);
         all_targets_deps.entries[all_targets_count++] = arm_target;
@@ -416,7 +424,7 @@ static inline Target odin_library(c_string name, LibraryArgs args, c_string file
         .file = file,
         .base_dir = base_dir,
         .library = res,
-        .kind = TargetKind_Library,
+        .kind = TargetKind_StaticLibrary,
     };
     assert(all_targets_count < MAX_ENTRIES - 1);
     all_targets_deps.entries[all_targets_count++] = target;
@@ -472,7 +480,7 @@ typedef struct TargetRule {
 
 static inline usize all_rules_count = 0;
 static inline TargetRule all_rules[64];
-static TargetRule ninja_rule(TargetRule rule)
+static inline TargetRule ninja_rule(TargetRule rule)
 {
     assert(all_rules_count < 64);
     all_rules[all_rules_count++] = rule;
@@ -642,6 +650,30 @@ static inline TargetRule merge_object_rule = ninja_rule({
     },
 });
 
+static inline TargetRule link_shared_rule = ninja_rule({
+    .name = "link-shared",
+    .command = "$ld $extra_flags $link_args -o $out $in",
+    .description = "Linking shared target $out",
+    .variables = {
+        (Variable){
+            .name = "out",
+            .default_value = nullptr,
+        },
+        (Variable){
+            .name = "in",
+            .default_value = nullptr,
+        },
+        (Variable){
+            .name = "link_args",
+            .default_value = nullptr,
+        },
+        (Variable){
+            .name = "extra_flags",
+            .default_value = nullptr,
+        },
+    },
+});
+
 static inline TargetRule binary_link_rule = ninja_rule({
     .name = "link-binary",
     .command = "$bin/clang++ -target $target -o $out $in $link_args",
@@ -704,6 +736,21 @@ static inline TargetRule reconfigure_rule = ninja_rule({
         },
     }
 });
+
+static inline bool is_library(TargetKind kind)
+{
+    switch (kind) {
+    case TargetKind_SharedLibrary:
+    case TargetKind_StaticLibrary:
+    case TargetKind_GUILibrary:
+        return true;
+    case TargetKind_Binary:
+    case TargetKind_Targets:
+    case TargetKind_UniversalBinary:
+    case TargetKind_UniversalLibrary:
+        return false;
+    }
+}
 
 static inline c_string g_root_file;
 static inline c_string g_build_dir;
@@ -810,7 +857,7 @@ static inline void emit_ninja_build_binary(FILE* output, Target const* target)
         }
         for (usize dep_index = 1; dep_index < deps_len; dep_index++) {
             Target const* dep = &deps.entries[dep_index];
-            if (dep->kind == TargetKind_Library) {
+            if (is_library(dep->kind)) {
                 StringView n = string_view(dep->name);
                 if (string_set_has(&seen_deps, n)) {
                     continue;
@@ -851,7 +898,7 @@ static inline void emit_ninja_build_universal_library(FILE* output, Target const
     auto bins_len = len(universal->libs.entries);
     for (usize i = 0; i < bins_len; i++) {
         Target bin = universal->libs.entries[i];
-        assert(bin.kind == TargetKind_Library);
+        assert(is_library(bin.kind));
         c_string triple = target_triple_string(target_triple(bin));
         fprintf(output, " %s/lib/%s.o", triple, bin.name);
     }
@@ -871,7 +918,79 @@ static inline void mkdir_p(char* path, mode_t mode)
     mkdir(path, mode);
 }
 
-static inline void emit_ninja_build_library(FILE* output, Target const* target)
+
+static inline c_string os_shared_library_extension(c_string os)
+{
+    if (strcmp(os, "native") == 0) os = system_os();
+    if (strcmp(os, "windows") == 0) return "dll";
+    if (strcmp(os, "darwin") == 0) return "dylib";
+    return "so";
+}
+
+static inline c_string os_shared_library_prefix(c_string os)
+{
+    if (strcmp(os, "native") == 0) os = system_os();
+    if (strcmp(os, "windows") == 0) return "";
+    return "lib";
+}
+
+static inline void emit_ninja_build_static_library(FILE* output, Target const* target);
+static inline void emit_ninja_build_shared_library(FILE* output, Target const* target)
+{
+    emit_ninja_build_static_library(output, target);
+
+    LibraryArgs* library = target->library;
+    c_string triple = target_triple_string(library->target_triple);
+    c_string base_dir = target->base_dir;
+    usize srcs_len = len(library->srcs.entries);
+    usize headers_len = len(library->exported_headers.entries);
+    c_string name = target->name;
+
+    char* dir = 0;
+    asprintf(&dir, "%s/ns/%s/%s", g_build_dir, name, library->header_namespace);
+    mkdir_p(dir, 0777);
+    for (usize i = 0; i < headers_len; i++) {
+        c_string header = library->exported_headers.entries[i];
+        char* out = 0;
+        asprintf(&out, "%s/%s", base_dir, header);
+        c_string header_path = realpath(out, 0);
+        if (!header_path) {
+            (void)fprintf(stderr, "Error: Could not find '%s'\n", out);
+            exit(1);
+        }
+        char* output_path = 0;
+        asprintf(&output_path, "%s/%s", dir, header);
+        mkdir_p(dirname(strdup(output_path)), 0777);
+        symlink(header_path, output_path);
+    }
+
+    (void)fprintf(output, "build %s/lib/%s%s.%s: link-shared %s/lib/%s.o\n", triple, os_shared_library_prefix(library->target_triple.os), name, os_shared_library_extension(library->target_triple.os), triple, name);
+    usize link_args_len = len(library->linker_flags.entries);
+    if (link_args_len > 0) {
+        (void)fprintf(output, "    link_args =");
+        for (usize i = 0; i < link_args_len; i++) {
+            (void)fprintf(output, " %s", library->linker_flags.entries[i]);
+        }
+        (void)fprintf(output, " --shared\n");
+    }
+    if (strcmp(target_triple_string(library->target_triple), target_triple_string(wasm_target_triple())) == 0) {
+        (void)fprintf(output, "    ld = $bin/wasm-ld\n");
+        (void)fprintf(output, "    extra_flags = --strip-all\n");
+    } else {
+        // FIXME: Get linker from target triple.
+#ifdef __APPLE__
+        (void)fprintf(output, "    ld = ld\n"); // FIXME: This is system ld
+#elif _WIN32
+        (void)fprintf(output, "    ld = $bin/lld-link\n");
+#else
+        (void)fprintf(output, "    ld = $bin/ld.lld\n");
+#endif
+        (void)fprintf(output, "    extra_flags = -r\n");
+    }
+    (void)fprintf(output, "\n");
+}
+
+static inline void emit_ninja_build_static_library(FILE* output, Target const* target)
 {
     LibraryArgs* library = target->library;
     c_string triple = target_triple_string(library->target_triple);
@@ -897,7 +1016,7 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
         mkdir_p(dirname(strdup(output_path)), 0777);
         symlink(header_path, output_path);
     }
-    
+
     fprintf(output, "build %s/lib/%s.o: merge-object ", triple, name);
     for (usize i = 0; i < srcs_len; i++) {
         c_string src = library->srcs.entries[i];
@@ -964,7 +1083,7 @@ static inline void emit_ninja_build_library(FILE* output, Target const* target)
             }
             for (usize dep_index = 1; dep_index < deps_len; dep_index++) {
                 Target const* dep = &deps.entries[dep_index];
-                if (dep->kind == TargetKind_Library) {
+                if (is_library(dep->kind)) {
                     fprintf(output, " -Ins/%s -Ins/%s/%s", dep->name, triple, dep->name);
                 }
             }
@@ -1030,8 +1149,11 @@ static inline void emit_ninja(FILE* output, Target target)
         case TargetKind_Binary:
             emit_ninja_build_binary(output, target);
             break;
-        case TargetKind_Library:
-            emit_ninja_build_library(output, target);
+        case TargetKind_SharedLibrary:
+            emit_ninja_build_shared_library(output, target);
+            break;
+        case TargetKind_StaticLibrary:
+            emit_ninja_build_static_library(output, target);
             break;
         case TargetKind_UniversalBinary:
             emit_ninja_build_universal_binary(output, target);
@@ -1056,7 +1178,8 @@ static inline Targets const* target_deps(Target const* target)
 {
     switch (target->kind) {
     case TargetKind_Binary: return &target->binary->deps;
-    case TargetKind_Library: return &target->library->deps;
+    case TargetKind_SharedLibrary:
+    case TargetKind_StaticLibrary: return &target->library->deps;
     case TargetKind_Targets: return target->targets;
     case TargetKind_UniversalBinary: return &target->universal_binary->bins;
     case TargetKind_UniversalLibrary: return &target->universal_library->libs;
@@ -1234,7 +1357,8 @@ static inline TargetTriple target_triple(Target target)
     switch (target.kind) {
     case TargetKind_Binary:
         return target.binary->target_triple;
-    case TargetKind_Library:
+    case TargetKind_SharedLibrary:
+    case TargetKind_StaticLibrary:
         return target.library->target_triple;
     case TargetKind_Targets:
         return (TargetTriple){};

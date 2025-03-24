@@ -63,3 +63,13 @@ typedef char const* c_string;
 #else
 #define C_API
 #endif
+
+#define RETURNS_SIZED_BY(size_parameter_index) \
+    __attribute__((alloc_size(size_parameter_index)))
+
+#define RETURNS_ALIGNED_BY(align_parameter_index) \
+    __attribute__((alloc_size(align_parameter_index)))
+
+#define RETURNS_SIZED_AND_ALIGNED_BY(size_parameter_index, align_parameter_index) \
+    RETURNS_SIZED_BY(size_parameter_index) \
+    RETURNS_ALIGNED_BY(align_parameter_index)

@@ -32,7 +32,7 @@ typedef struct Allocator {
     void* (*dispatch)(struct Allocator*, AllocatorEvent event);
 
 #ifdef __cplusplus
-    void* alloc(usize byte_count, usize align);
+    void* alloc(usize byte_count, usize align) RETURNS_SIZED_AND_ALIGNED_BY(2, 3);
     void free(void*, usize byte_count, usize align);
 
     template <typename T>
@@ -56,7 +56,8 @@ typedef struct Allocator {
     }
 
     bool owns(void*);
-    void* clone(void const* data, usize byte_count, usize align);
+
+    void* clone(void const* data, usize byte_count, usize align) RETURNS_SIZED_AND_ALIGNED_BY(3, 4);
 #endif
 } Allocator;
 
@@ -67,6 +68,7 @@ C_API inline Allocator make_allocator(void* (*dispatch)(struct Allocator*, Alloc
     };
 }
 
+RETURNS_SIZED_AND_ALIGNED_BY(2, 3)
 C_API inline void* memalloc(Allocator* a, usize byte_count, usize align)
 {
     return a->dispatch(a, (AllocatorEvent){
@@ -97,7 +99,9 @@ C_API inline bool memowns(Allocator* a, void* ptr)
     }) != 0;
 }
 
+RETURNS_SIZED_AND_ALIGNED_BY(3, 4)
 C_API void* memclone(Allocator*, void const* data, usize byte_count, usize align);
 C_API void* memclone_zero_extend(Allocator*, void const* data, usize byte_count, usize align, usize extend_bytes);
 
+RETURNS_SIZED_AND_ALIGNED_BY(4, 5)
 C_API void* memrealloc(Allocator*, void const* data, usize old_byte_count, usize new_byte_count, usize align);

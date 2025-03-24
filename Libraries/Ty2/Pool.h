@@ -29,6 +29,7 @@ typedef struct Pool {
     usize bytes_used() const;
     void drain();
 
+    RETURNS_SIZED_BY(2)
     void* alloc(usize bytes);
     void free(void* ptr, usize byte_size);
     bool owns(void* ptr) const;
@@ -41,6 +42,7 @@ C_API void pool_destroy(Pool*);
 C_API usize pool_bytes_used(Pool const*);
 C_API void pool_drain(Pool*);
 
-C_API void* pool_alloc(Pool*, usize bytes);
+RETURNS_SIZED_BY(2)
+C_API void* pool_alloc(Pool*, usize byte_size);
 C_API void pool_free(Pool*, void* ptr, usize byte_size);
 C_API bool pool_owns(Pool const*, void* ptr);

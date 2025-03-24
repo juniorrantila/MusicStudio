@@ -2,6 +2,7 @@
 #include "./Allocator.h"
 
 #include "./FixedArena.h"
+#include "./Base.h"
 
 typedef struct ArenaSegment {
     struct ArenaSegment* previous;
@@ -32,6 +33,8 @@ typedef struct Arena {
     void sweep(ArenaMark mark);
 
     bool owns(void* ptr) const;
+
+    RETURNS_SIZED_AND_ALIGNED_BY(2, 3)
     void* alloc(usize size, usize align);
     void free(void* ptr, usize size, usize align);
 #endif
@@ -47,5 +50,8 @@ C_API ArenaMark arena_mark(Arena const*);
 C_API void arena_sweep(Arena*, ArenaMark);
 
 C_API bool arena_owns(Arena const*, void* ptr);
+
+RETURNS_SIZED_AND_ALIGNED_BY(2, 3)
 C_API void* arena_alloc(Arena*, usize size, usize align);
+
 C_API void arena_free(Arena*, void* ptr, usize size, usize align);

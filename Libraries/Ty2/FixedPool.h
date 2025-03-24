@@ -15,6 +15,7 @@ typedef struct FixedPool {
     usize bytes_used() const;
     void drain();
 
+    RETURNS_SIZED_BY(2)
     void* alloc(usize byte_size);
     void free(void* ptr, usize byte_size);
     bool owns(void* ptr) const;
@@ -26,6 +27,7 @@ C_API FixedPool fixed_pool_from_slice(usize object_size, usize object_align, u8*
 C_API usize fixed_pool_bytes_used(FixedPool const*);
 C_API void fixed_pool_drain(FixedPool*);
 
+RETURNS_SIZED_BY(2)
 C_API void* fixed_pool_alloc(FixedPool*, usize byte_size);
 C_API void fixed_pool_free(FixedPool*, void* ptr, usize byte_size);
 C_API bool fixed_pool_owns(FixedPool const*, void* ptr);

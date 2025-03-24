@@ -20,6 +20,8 @@ typedef struct FixedArena {
     void sweep(FixedMark mark);
 
     bool owns(void* ptr) const;
+
+    RETURNS_SIZED_AND_ALIGNED_BY(2, 3)
     void* alloc(usize size, usize align);
     void free(void* ptr, usize size, usize align);
 #endif
@@ -34,5 +36,7 @@ C_API FixedMark fixed_arena_mark(FixedArena const*);
 C_API void fixed_arena_sweep(FixedArena*, FixedMark mark);
 
 C_API bool fixed_arena_owns(FixedArena const*, void* ptr);
+
+RETURNS_SIZED_AND_ALIGNED_BY(2, 3)
 C_API void* fixed_arena_alloc(FixedArena*, usize size, usize align);
 C_API void fixed_arena_free(FixedArena*, void* ptr, usize size, usize align);

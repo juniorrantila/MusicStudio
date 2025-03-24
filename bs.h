@@ -307,7 +307,7 @@ static inline Target cc_binary(c_string name, BinaryArgs args, c_string file)
 
 static inline TargetKind parse_link_style(c_string link_style)
 {
-    if (strcmp(link_style, "dynamic") == 0)
+    if (strcmp(link_style, "both") == 0)
         return TargetKind_SharedLibrary;
     return TargetKind_StaticLibrary;
 }
@@ -547,6 +547,22 @@ static inline TargetRule odin_rule = ninja_rule({
         (Variable){
             .name = "depfile",
             .default_value = "$out.o.d",
+        },
+    },
+});
+
+static inline auto send_file_rule = ninja_rule({
+    .name = "send-file",
+    .command = "$uni_bin/send-file $in $out",
+    .description = "Moving $in => $out",
+    .variables = {
+        (Variable){
+            .name = "out",
+            .default_value = nullptr,
+        },
+        (Variable){
+            .name = "in",
+            .default_value = nullptr,
         },
     },
 });
@@ -964,14 +980,14 @@ static inline void emit_ninja_build_shared_library(FILE* output, Target const* t
         symlink(header_path, output_path);
     }
 
-    (void)fprintf(output, "build %s/lib/%s%s.%s: link-shared %s/lib/%s.o\n", triple, os_shared_library_prefix(library->target_triple.os), name, os_shared_library_extension(library->target_triple.os), triple, name);
+    (void)fprintf(output, "build %s/lib/%s.hotlib: send-file  %s/lib/%s.hotlib.shadow\n\n", triple, name, triple, name);
+    (void)fprintf(output, "build %s/lib/%s.hotlib.shadow: link-shared %s/lib/%s.o\n", triple, name, triple, name);
     usize link_args_len = len(library->linker_flags.entries);
     if (link_args_len > 0) {
         (void)fprintf(output, "    link_args =");
         for (usize i = 0; i < link_args_len; i++) {
             (void)fprintf(output, " %s", library->linker_flags.entries[i]);
         }
-        (void)fprintf(output, " --shared\n");
     }
     if (strcmp(target_triple_string(library->target_triple), target_triple_string(wasm_target_triple())) == 0) {
         (void)fprintf(output, "    ld = $bin/wasm-ld\n");
@@ -985,7 +1001,7 @@ static inline void emit_ninja_build_shared_library(FILE* output, Target const* t
 #else
         (void)fprintf(output, "    ld = $bin/ld.lld\n");
 #endif
-        (void)fprintf(output, "    extra_flags = -r\n");
+        (void)fprintf(output, "    extra_flags = -dylib -undefined dynamic_lookup\n");
     }
     (void)fprintf(output, "\n");
 }

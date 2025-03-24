@@ -26,7 +26,7 @@ C_API inline StringSlice string_slice(char const* items, usize count) { return (
 C_API bool string_clone(Allocator*, StringSlice s, StringSlice*);
 
 C_API bool string_resolve_path(StringSlice, Allocator*, StringSlice*);
-bool string_slice_equal(StringSlice, StringSlice);
+C_API bool string_slice_equal(StringSlice, StringSlice);
 
 #ifdef __cplusplus
 constexpr StringSlice operator""s (char const* data, unsigned long size)

@@ -12,6 +12,7 @@
 #include "./MS/build.def"
 #include "./Midi/build.def"
 #include "./Vst/build.def"
+#include "./Vst2/build.def"
 #include "./Library/build.def"
 #include "./UI/build.def"
 #include "./Render/build.def"
@@ -52,6 +53,7 @@ typedef struct {
     Target async;
 
     Target vst;
+    Target vst2;
     Target vst_host;
     Target midi;
 
@@ -89,6 +91,7 @@ static auto const libraries = target([] {
         .ms = ms,
         .async = async,
         .vst = vst,
+        .vst2 = vst2,
         .vst_host = vst_host,
         .midi = midi,
         .library = library,

@@ -16,8 +16,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include <string.h>
-
 static bool expand_if_needed(FSVolume* volume);
 
 
@@ -41,7 +39,7 @@ C_API Tar* fs_volume_as_tar(FSVolume const*, Allocator*)
 }
 
 
-static StringSlice* file_content(FSFile* file)
+static StringSlice const* file_content(FSFile const* file)
 {
     switch (file->kind) {
     case FSFileMount_VirtualMount:
@@ -52,24 +50,54 @@ static StringSlice* file_content(FSFile* file)
 }
 
 
-Optional<StringSlice*> FSVolume::open(StringSlice path) const { return fs_volume_open(this, path); }
-C_API StringSlice* fs_volume_open(FSVolume const* volume, StringSlice path)
+Optional<StringSlice const*> FSVolume::open(StringSlice path) const { return fs_volume_open(this, path); }
+C_API StringSlice const* fs_volume_open(FSVolume const* volume, StringSlice path)
+{
+    auto id = volume->find(path);
+    if (!id.has_value()) {
+        return nullptr;
+    }
+    return file_content(volume->use_ref(id.value()));
+}
+
+
+FSFile FSVolume::use(FileID id) const { return fs_volume_use(this, id); }
+C_API FSFile fs_volume_use(FSVolume const* volume, FileID id)
+{
+    return *fs_volume_use_ref(volume, id);
+}
+
+FSFile* FSVolume::use_ref(FileID id) const { return fs_volume_use_ref(this, id); }
+C_API FSFile* fs_volume_use_ref(FSVolume const* volume, FileID id)
+{
+    VERIFY(id.index < volume->count);
+    return &volume->items[id.index];
+}
+
+Optional<FileID> FSVolume::find(StringSlice path) const
+{
+    FileID id;
+    if (!fs_volume_find(this, path, &id))
+        return {};
+    return id;
+}
+C_API bool fs_volume_find(FSVolume const* volume, StringSlice path, FileID* id)
 {
     auto resolved_path = path.resolve_path(volume->gpa);
     if (!resolved_path.has_value()) {
-        return nullptr;
+        return false;
     }
     defer [&] {
         volume->gpa->free((char*)resolved_path->items, resolved_path->count);
     };
     for (usize i = 0; i < volume->count; i++) {
-        auto* item = &volume->items[i];
-        auto path = fs_virtual_path(*item);
-        if (path.equal(resolved_path.value())) {
-            return file_content(item);
+        auto other = fs_virtual_path(volume->items[i]);
+        if (resolved_path->equal(other)) {
+            if (id) *id = (FileID){ .index = i };
+            return true;
         }
     }
-    return nullptr;
+    return false;
 }
 
 
@@ -85,6 +113,9 @@ Optional<FileID> FSVolume::mount(FSFile file)
 
 C_API bool fs_volume_mount(FSVolume* volume, FSFile file, FileID* out)
 {
+    auto path = fs_virtual_path(file);
+    if (fs_volume_find(volume, path, out))
+        return true;
     if (!expand_if_needed(volume)) return false;
     usize id = volume->count++;
     volume->items[id] = file;
@@ -102,7 +133,8 @@ C_API FSEvents fs_volume_poll_events(FSVolume* volume, struct timespec* timeout)
         int fd = kqueue();
         if (fd < 0) return {};
         volume->watch_fd = fd;
-        *arena = arena_create(volume->gpa);
+        volume->event_arena = arena_create(volume->gpa);
+        arena = &volume->event_arena;
     }
     arena->drain();
     FSEvents* events = &volume->events;
@@ -158,6 +190,7 @@ C_API FSEvents fs_volume_poll_events(FSVolume* volume, struct timespec* timeout)
         }
         if (out_events[i].fflags & NOTE_WRITE) {
             VERIFY(file->kind == FSFileMount_SystemMount);
+            file->system_mount.stale = true;
             usize id = events->count++;
             events->items[id] = (FSEvent) {
                 .file = file,
@@ -198,6 +231,7 @@ C_API bool fs_system_open(Allocator* gpa, StringSlice path, FSFile* out)
             .content = string_slice(mapped_file, st.st_size),
             .path = string_slice(path_cstr, path.count),
             .fd = fd,
+            .stale = false,
         },
         .kind = FSFileMount_SystemMount,
     };
@@ -257,6 +291,7 @@ C_API bool fs_file_reload(FSFile* file)
         munmap(old_ptr, old_size);
     }
 
+    mount->stale = false;
     return true;
 }
 
@@ -271,19 +306,38 @@ C_API StringSlice fs_content(FSFile file)
     }
 }
 
+C_API bool fs_volume_needs_reload(FSVolume const* volume)
+{
+    for (usize i = 0; i < volume->count; i++) {
+        if (fs_file_needs_reload(&volume->items[i]))
+            return true;
+    }
+    return false;
+}
 
-C_API bool fs_reload_needed(FSEvents events)
+C_API bool fs_volume_reload(FSVolume* volume)
 {
     bool all_ok = true;
-    for (usize i = 0; i < events.count; i++) {
-        FSEvent* event = &events.items[i];
-        if (event->kind == FSEventKind_Modify) {
-            all_ok &= fs_file_reload(event->file);
+    for (usize i = 0; i < volume->count; i++) {
+        FSFile* file = &volume->items[i];
+        if (fs_file_needs_reload(file)) {
+            all_ok &= fs_file_reload(file);
         }
     }
     return all_ok;
 }
 
+C_API bool fs_file_needs_reload(FSFile const* file)
+{
+    switch (file->kind) {
+    case FSFileMount_VirtualMount:
+        return false;
+    case FSFileMount_SystemMount:
+        break;
+    }
+    FSSystemMount const* mount = &file->system_mount;
+    return mount->stale;
+}
 
 static bool expand_if_needed(FSVolume* volume)
 {

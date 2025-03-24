@@ -100,7 +100,7 @@ void Logger::warning(c_string fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    vinfo(fmt, args);
+    vwarning(fmt, args);
     va_end(args);
 }
 void Logger::vwarning(c_string fmt, va_list args) { vlog_warning(this, fmt, args); }

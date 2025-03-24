@@ -180,7 +180,6 @@ static inline auto target(F callback, c_string file = __builtin_FILE());
 
 static inline Target cc_binary(c_string name, BinaryArgs args, c_string file = __builtin_FILE());
 static inline Target cc_library(c_string name, LibraryArgs args, c_string file = __builtin_FILE());
-static inline Target odin_library(c_string name, LibraryArgs args, c_string file = __builtin_FILE());
 
 static inline Target universal_binary(c_string name, UniversalBinaryArgs args, c_string file = __builtin_FILE());
 static inline Target universal_library(c_string name, UniversalLibraryArgs args, c_string file = __builtin_FILE());
@@ -203,7 +202,6 @@ static inline c_string target_triple_string(TargetTriple triple);
 static inline TargetTriple target_triple(Target target);
 static inline TargetTriple apple_arm_target_triple(void);
 static inline TargetTriple apple_x86_target_triple(void);
-static inline c_string odin_arch(c_string);
 
 static inline void setup(c_string, c_string file = __builtin_FILE());
 
@@ -430,65 +428,6 @@ static inline Target cc_library(c_string name, LibraryArgs args, c_string file)
     return target;
 }
 
-static inline Target odin_library(c_string name, LibraryArgs args, c_string file)
-{
-    c_string base_dir = strdup(dirname(strdup(file)));
-    LibraryArgs* res = (LibraryArgs*)malloc(sizeof(*res));
-    *res = args;
-
-    if (res->target_triple.abi == 0) {
-        res->target_triple.abi = system_abi();
-    }
-    if (res->target_triple.os == 0) {
-        res->target_triple.os = system_os();
-    }
-    if (res->target_triple.arch == 0) {
-#ifndef __APPLE__
-        res->target_triple.arch = system_arch();
-#else
-        res->target_triple.arch = "arm64";
-        LibraryArgs* x86 = (LibraryArgs*)malloc(sizeof(args));
-        *x86 = *res;
-        x86->target_triple.arch = "x86_64";
-        Target arm_target = {
-            .name = name,
-            .file = file,
-            .base_dir = base_dir,
-            .library = res,
-            .kind = TargetKind_StaticLibrary,
-        };
-        Target x86_target = {
-            .name = name,
-            .file = file,
-            .base_dir = base_dir,
-            .library = x86,
-            .kind = TargetKind_StaticLibrary,
-        };
-        assert(all_targets_count < MAX_ENTRIES - 1);
-        all_targets_deps.entries[all_targets_count++] = arm_target;
-        assert(all_targets_count < MAX_ENTRIES - 1);
-        all_targets_deps.entries[all_targets_count++] = x86_target;
-        return universal_library(name, {
-            .libs = {
-                arm_target,
-                x86_target,
-            },
-        }, file);
-#endif
-    }
-
-    Target target = {
-        .name = name,
-        .file = file,
-        .base_dir = base_dir,
-        .library = res,
-        .kind = TargetKind_StaticLibrary,
-    };
-    assert(all_targets_count < MAX_ENTRIES - 1);
-    all_targets_deps.entries[all_targets_count++] = target;
-    return target;
-}
-
 static inline Target universal_binary(c_string name, UniversalBinaryArgs args, c_string file)
 {
     c_string base_dir = strdup(dirname(strdup(file)));
@@ -581,34 +520,6 @@ static inline TargetRule cxx_rule = ninja_rule({
     },
 });
 
-static inline TargetRule odin_rule = ninja_rule({
-    .name = "odin",
-    .command = "ODIN_ROOT=$odin_root $bin/odin build $in -target=$target -warnings-as-errors -vet-unused -o:speed -no-entry-point -export-dependencies:make -export-dependencies-file:$out.d -debug -build-mode=object -out=$out",
-    .description = "Compiling odin object $out.o",
-    .variables = {
-        (Variable){
-            .name = "out",
-            .default_value = nullptr,
-        },
-        (Variable){
-            .name = "in",
-            .default_value = nullptr,
-        },
-        (Variable){
-            .name = "target",
-            .default_value = nullptr,
-        },
-        (Variable){
-            .name = "deps",
-            .default_value = "gcc",
-        },
-        (Variable){
-            .name = "depfile",
-            .default_value = "$out.o.d",
-        },
-    },
-});
-
 static inline auto send_file_rule = ninja_rule({
     .name = "send-file",
     .command = "$uni_bin/send-file $in $out",
@@ -678,11 +589,6 @@ static inline Language* language_from_filename(c_string name)
             .name = "asm",
             .pretty_name = "i386 assembly",
             .extension = ".i386",
-        },
-        {
-            .name = "odin",
-            .pretty_name = "odin",
-            .extension = ".odin",
         },
     };
     usize name_len = strlen(name);
@@ -816,8 +722,6 @@ static inline bool is_library(TargetKind kind)
     switch (kind) {
     case TargetKind_SharedLibrary:
     case TargetKind_StaticLibrary:
-    case TargetKind_GUILibrary:
-        return true;
     case TargetKind_Binary:
     case TargetKind_Targets:
     case TargetKind_UniversalBinary:
@@ -992,22 +896,6 @@ static inline void mkdir_p(char* path, mode_t mode)
     mkdir(path, mode);
 }
 
-
-static inline c_string os_shared_library_extension(c_string os)
-{
-    if (strcmp(os, "native") == 0) os = system_os();
-    if (strcmp(os, "windows") == 0) return "dll";
-    if (strcmp(os, "darwin") == 0) return "dylib";
-    return "so";
-}
-
-static inline c_string os_shared_library_prefix(c_string os)
-{
-    if (strcmp(os, "native") == 0) os = system_os();
-    if (strcmp(os, "windows") == 0) return "";
-    return "lib";
-}
-
 static inline void emit_ninja_build_static_library(FILE* output, Target const* target);
 static inline void emit_ninja_build_shared_library(FILE* output, Target const* target)
 {
@@ -1142,28 +1030,21 @@ static inline void emit_ninja_build_static_library(FILE* output, Target const* t
             fprintf(stderr, "Error: unknown language for %s\n", src);
             exit(1);
         }
-        if (strcmp(language->name, "odin") == 0) {
-            fprintf(output, "build %s/%s/%s.o: odin ../%s\n", triple, base_dir, src, base_dir);
-            fprintf(output, "    target = %s_%s\n", library->target_triple.os, odin_arch(library->target_triple.arch));
-            fprintf(output, "\n");
-            break;
-        } else {
-            fprintf(output, "build %s/%s/%s.o: cxx ../%s/%s\n", triple, base_dir, src, base_dir, src);
-            fprintf(output, "    language = %s\n", language->pretty_name);
-            fprintf(output, "    target = %s\n", triple);
-            fprintf(output, "    args = $default_%s_args", language->name);
-            for (usize arg = 0; arg < args_len; arg++) {
-                fprintf(output, " %s", args->entries[arg]);
-            }
-            for (usize dep_index = 1; dep_index < deps_len; dep_index++) {
-                Target const* dep = &deps.entries[dep_index];
-                if (is_library(dep->kind)) {
-                    fprintf(output, " -Ins/%s -Ins/%s/%s", dep->name, triple, dep->name);
-                }
-            }
-            fprintf(output, "\n");
-            fprintf(output, "\n");
+        fprintf(output, "build %s/%s/%s.o: cxx ../%s/%s\n", triple, base_dir, src, base_dir, src);
+        fprintf(output, "    language = %s\n", language->pretty_name);
+        fprintf(output, "    target = %s\n", triple);
+        fprintf(output, "    args = $default_%s_args", language->name);
+        for (usize arg = 0; arg < args_len; arg++) {
+            fprintf(output, " %s", args->entries[arg]);
         }
+        for (usize dep_index = 1; dep_index < deps_len; dep_index++) {
+            Target const* dep = &deps.entries[dep_index];
+            if (is_library(dep->kind)) {
+                fprintf(output, " -Ins/%s -Ins/%s/%s", dep->name, triple, dep->name);
+            }
+        }
+        fprintf(output, "\n");
+        fprintf(output, "\n");
     }
 }
 
@@ -1174,7 +1055,6 @@ static inline void emit_ninja(FILE* output, Target target)
     fprintf(output, "ninja_required_version = 1.8.2\n\n");
 
     fprintf(output, "bin = ../Toolchain/Tools/bin\n");
-    fprintf(output, "odin_root = ../Toolchain/Vendor/odin\n");
     fprintf(output, "uni_bin = universal-apple-darwin/bin\n");
     fprintf(output, "\n");
 
@@ -1498,17 +1378,6 @@ static inline void dyn_targets_add(DynTargets* dyn, Target target)
 static inline void dyn_targets_add_g(void* targets, Target target)
 {
     dyn_targets_add(((DynTargets*)targets), target);
-}
-
-static inline c_string odin_arch(c_string arch)
-{
-    if (strcmp(arch, "x86_64") == 0) {
-        return "amd64";
-    }
-    if (strcmp(arch, "i386") == 0) {
-        return "i386";
-    }
-    return arch;
 }
 
 #include "./build.def"

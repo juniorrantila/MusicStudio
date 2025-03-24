@@ -176,6 +176,32 @@ auto const play_pipe = cc_binary("play-pipe", {
 });
 
 
+auto const shadertoy = cc_binary("shadertoy", {
+    .srcs = {
+        "./shadertoy.cpp",
+    },
+    .compile_flags = {},
+    .linker_flags = {
+#ifdef __APPLE__
+    "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
+    "-framework", "AppKit",
+    "-framework", "OpenGL",
+    "-framework", "CoreFoundation",
+#endif
+    },
+    .target_triple = {},
+    .deps = {
+        libraries.main,
+        libraries.ty,
+        libraries.cli,
+        libraries.ui,
+        libraries.gl,
+        libraries.render,
+        libraries.fs,
+    }
+});
+
+
 auto const send_file = cc_binary("send-file", {
     .srcs = {
         "./send-file.cpp",

@@ -29,6 +29,7 @@ C_API void* memclone_zero_extend(Allocator* a, void const* data, usize byte_coun
     return n;
 }
 
+// FIXME: Add optimization for arena allocators.
 C_API void* memrealloc(Allocator* a, void const* data, usize old_byte_count, usize new_byte_count, usize align)
 {
     if (old_byte_count == new_byte_count) return (void*)data;
@@ -36,14 +37,15 @@ C_API void* memrealloc(Allocator* a, void const* data, usize old_byte_count, usi
         VERIFY(old_byte_count == 0);
         return memalloc(a, new_byte_count, align);
     }
-    // FIXME: What if alloc after this fails?
-    memfree(a, (void*)data, old_byte_count, align);
     if (new_byte_count == 0) {
+        memfree(a, (void*)data, old_byte_count, align);
         return nullptr;
     }
+
     void* n = memalloc(a, new_byte_count, align);
-    if (n == data) return n;
-    memmove(n, data, old_byte_count);
+    usize min = new_byte_count < old_byte_count ? new_byte_count : old_byte_count;
+    memcpy(n, data, min);
+    memfree(a, (void*)data, old_byte_count, align);
     return n;
 }
 

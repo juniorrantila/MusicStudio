@@ -1,3 +1,5 @@
+#include "./Context.h"
+
 #include <AU/SoundIo.h>
 #include <CLI/ArgumentParser.h>
 #include <Core/Print.h>
@@ -6,20 +8,19 @@
 #include <Fonts/Fonts.h>
 #include <GL/GL.h>
 #include <MS/PluginManager.h>
-#include <MS/Project.h>
 #include <Main/Main.h>
+#include <Math/Math.h>
 #include <SoundIo/SoundIo.h>
 #include <SoundIo/os.h>
+#include <Ty2/Arena.h>
+#include <Ty2/PageAllocator.h>
 #include <UI/Application.h>
 #include <UI/KeyCode.h>
 #include <UI/Window.h>
 
-#include "./Context.h"
-
-#include <math.h>
 #include <unistd.h>
 
-static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max);
+static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max) noexcept [[clang::nonblocking]];
 
 ErrorOr<int> Main::main(int argc, c_string* argv)
 {
@@ -57,7 +58,7 @@ ErrorOr<int> Main::main(int argc, c_string* argv)
     }
 
     auto* app = ui_application_create(app_hints);
-    Defer destroy_app = [&]{
+    defer [&] {
         ui_application_destroy(app);
     };
 
@@ -69,15 +70,15 @@ ErrorOr<int> Main::main(int argc, c_string* argv)
         .width = 900,
         .height = 600,
     });
-    Defer destroy_window = [&]{
+    defer [&] {
         ui_window_destroy(window);
     };
 
-    auto arena_allocator = segmented_arena_create(page_allocator());
+    auto arena_allocator = arena_create(page_allocator());
     auto* arena = &arena_allocator.allocator;
     auto project = MS::Project();
-    auto manager = TRY(MS::PluginManager::create(&arena)).init(&project);
-    auto plugins = TRY(arena.alloc<Id<MS::Plugin>>(1024));
+    auto manager = TRY(MS::PluginManager::create(arena)).init(&project);
+    auto plugins = TRY(arena->alloc_many<Id<MS::Plugin>>(1024).or_error(Error::from_errno(ENOMEM)));
 
     usize plugin_count = 0;
     for (usize i = 0; i < plugin_paths.size(); i++) {
@@ -90,7 +91,7 @@ ErrorOr<int> Main::main(int argc, c_string* argv)
     }
 
     Context context = TRY(context_create(bundle));
-    Defer destroy_context = [&]{
+    defer [&] {
         context_destroy(&context);
     };
 
@@ -108,7 +109,7 @@ ErrorOr<int> Main::main(int argc, c_string* argv)
     if (!soundio) {
         return Error::from_string_literal("could not create soundio");
     }
-    Defer destroy_soundio = [&] {
+    defer [&] {
         soundio_destroy(soundio);
     };
 
@@ -121,14 +122,14 @@ ErrorOr<int> Main::main(int argc, c_string* argv)
         return Error::from_string_literal("could not find default output device");
     }
     SoundIoDevice* output_device = soundio_get_output_device(soundio, output_device_id);
-    Defer unref_output_device = [&] {
+    defer [&] {
         soundio_device_unref(output_device);
     };
     SoundIoOutStream* outstream = soundio_outstream_create(output_device);
     if (!outstream) {
         return Error::from_string_literal("could not create out stream");
     }
-    Defer destroy_outstream = [&] {
+    defer [&] {
         soundio_outstream_destroy(outstream);
     };
     outstream->write_callback = write_callback;
@@ -141,6 +142,7 @@ ErrorOr<int> Main::main(int argc, c_string* argv)
     };
     outstream->name = "MusicStudio";
     outstream->software_latency = 0;
+
     outstream->sample_rate = project.sample_rate;
 
     soundio->on_backend_disconnect = [](SoundIo*, int reason) {
@@ -236,7 +238,7 @@ ErrorOr<int> Main::main(int argc, c_string* argv)
 f64 note(f64 x);
 f64 note(f64 x)
 {
-    return abs(fmod(x, 1.0)) * (0.25 + fmod(x * 0.001, 1) * 0.5);
+    return math_abs_f64(math_mod_f64(x, 1.0)) * (0.25 + math_mod_f64(x * 0.001, 1) * 0.5) * 1.5;
 }
 
 static f64 gen_sample(Context* ctx, f64 time)
@@ -251,8 +253,8 @@ static f64 gen_sample(Context* ctx, f64 time)
     }
 
     if (ctx->is_playing) {
-        f64 current_beat = fmod(time, ctx->beats_per_minute);
-        u32 current_subdivision = (u32)(fmod(current_beat, 1.0) * ctx->subdivisions);
+        f64 current_beat = math_mod_f64(time, ctx->beats_per_minute);
+        u32 current_subdivision = (u32)(math_mod_f64(current_beat, 1.0) * ctx->subdivisions);
 
         ctx->current_subdivision = ((u32)current_beat) * ctx->subdivisions + current_subdivision;
 
@@ -267,7 +269,8 @@ static f64 gen_sample(Context* ctx, f64 time)
     return result;
 }
 
-static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max) {
+static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max) noexcept [[clang::nonblocking]]
+{
     (void)frame_count_min;
     auto* ctx = (Context*)outstream->userdata;
     f64 float_sample_rate = outstream->sample_rate;

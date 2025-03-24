@@ -214,6 +214,11 @@ C_API void render_set_resolution(Render* render, Vec2f resolution)
     }
 }
 
+C_API Vec2f render_resolution(Render const* render)
+{
+    return render->resolution;
+}
+
 C_API void render_set_mouse_position(Render* render, Vec2f position)
 {
     render->mouse_position = position;

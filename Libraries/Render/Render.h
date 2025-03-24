@@ -18,6 +18,7 @@ C_API void render_destroy(Render*);
 
 C_API void render_set_time(Render*, f32 time);
 C_API void render_set_resolution(Render*, Vec2f);
+C_API Vec2f render_resolution(Render const*);
 C_API void render_set_mouse_position(Render*, Vec2f);
 C_API bool render_use_shader(Render*, RenderShader);
 C_API void render_update(Render*);

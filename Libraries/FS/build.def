@@ -8,12 +8,14 @@ static auto const fs = cc_library("FS", {
     .srcs = {
         "./Bundle.cpp",
         "./FSVolume.cpp",
+        "./OS.cpp",
     },
     .exported_headers = {
         "./Bundle.h",
         "./Forward.h",
         "./Resource.h",
         "./FSVolume.h",
+        "./OS.h",
     },
     .header_namespace = "FS",
     .compile_flags = {},

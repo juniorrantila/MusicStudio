@@ -8,43 +8,6 @@ on:
       - main
 
 jobs:
-  Ubuntu:
-    if: github.event_name != 'schedule' || github.repository == 'juniorrantila/MusicStudio'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Fetch tags and unshallow
-        run: git fetch --unshallow --tags
-
-      - name: Install packages
-        run: |
-          sudo apt-get update
-          sudo apt-get -y install build-essential freeglut3-dev libglew-dev libjack-jackd2-dev
-
-      - uses: actions/cache/restore@v4
-        id: restore-cached-toolchain
-        with:
-          path: Toolchain
-          key: ${{ runner.os }}-${{ hashFiles('*/*.sh') }}
-
-      - name: Bootstrap toolchain
-        if: steps.restore-cached-toolchain.outputs.cache-hit != 'true'
-        run: Toolchain/bootstrap.sh
-
-      - uses: actions/cache/save@v4
-        id: save-toolchain
-        if: steps.restore-cached-toolchain.outputs.cache-hit != 'true'
-        with:
-          path: Toolchain
-          key: ${{ runner.os }}-${{ hashFiles('*/*.sh') }}
-
-      - name: Setup
-        run: eval $(./bootstrap)
-
-      - name: Build
-        run: ninja -C build
-
   MacOS:
     if: github.event_name != 'schedule' || github.repository == 'juniorrantila/MusicStudio'
     runs-on: macos-latest

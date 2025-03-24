@@ -14,10 +14,6 @@
 
     xcode-select install
 
-#### Ubuntu
-
-    sudo apt install freeglut3-dev libglew-dev libjack-jackd2-dev
-
 ### Setup:
 
     eval $(./bootstrap)

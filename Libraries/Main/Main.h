@@ -8,4 +8,4 @@ ErrorOr<int> main(int argc, c_string argv[]);
 
 }
 
-extern "C" int main(int argc, c_string argv[]);
+int main(int argc, c_string argv[]);

@@ -85,12 +85,15 @@ void* Slab::alloc(usize size, usize align) { return slab_alloc(this, size, align
 C_API void* slab_alloc(Slab* slab, usize size, usize align)
 {
     if (align < 16) align = 16;
+    if (size < 16) size = 16;
     return pool_for_allocation(slab, size, align)->alloc(size);
 }
 
 void Slab::free(void* ptr, usize size, usize align) { return slab_free(this, ptr, size, align); }
 C_API void slab_free(Slab* slab, void* ptr, usize size, usize align)
 {
+    if (align < 16) align = 16;
+    if (size < 16) size = 16;
     pool_for_allocation(slab, size, align)->free(ptr, size);
 }
 

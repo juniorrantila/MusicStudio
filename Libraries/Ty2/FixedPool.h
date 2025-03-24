@@ -4,6 +4,7 @@
 typedef struct FixedPool {
     Allocator allocator;
 
+    usize capacity;
     usize object_size;
     usize object_align;
     u8* objects;

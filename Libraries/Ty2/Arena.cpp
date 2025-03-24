@@ -14,7 +14,7 @@ C_API Arena arena_create(Allocator* gpa)
     return (Arena){
         .allocator = make_allocator(dispatch),
         .backing_gpa = gpa,
-        .current = 0,
+        .current = nullptr,
     };
 }
 
@@ -99,28 +99,27 @@ bool arena_owns(Arena const* arena, void* ptr)
 void* Arena::alloc(usize size, usize align) { return arena_alloc(this, size, align); }
 void* arena_alloc(Arena* arena, usize size, usize align)
 {
-    usize segment_size = size * 2 > min_segment_size ? size * 2 : min_segment_size;
+    usize segment_size = size * 4 > min_segment_size ? size * 4 : min_segment_size;
 
     if (!arena->current) {
         arena->current = create_segment(arena->backing_gpa, 0, segment_size);
         if (!arena->current) {
-            return 0;
+            return nullptr;
         }
     }
 
     for (ArenaSegment* seg = arena->current; seg; seg = seg->next) {
         arena->current = seg;
         void* ptr = seg->arena.alloc(size, align);
-        if (ptr) return ptr;
+        if (ptr) return memcheck_canary(ptr, size);
     }
 
     ArenaSegment* seg = create_segment(arena->backing_gpa, arena->current, segment_size);
-    if (!seg) {
-        return 0;
-    }
-    arena->current->next = seg;
+    if (!seg) return nullptr;
     arena->current = seg;
-    return seg->arena.alloc(size, align);
+    void* ptr = seg->arena.alloc(size, align);
+    if (ptr) return memcheck_canary(ptr, size);
+    return nullptr;
 }
 
 void Arena::free(void* ptr, usize size, usize align) { return arena_free(this, ptr, size, align); }
@@ -132,17 +131,20 @@ void arena_free(Arena* arena, void* ptr, usize size, usize align)
     VERIFY(arena->owns(((u8*)ptr) + size));
     if (arena->current->arena.owns(ptr)) {
         arena->current->arena.free(ptr, size, align);
+        VERIFY(ptr != nullptr);
+        memset_canary(ptr, size);
     }
 }
 
 static ArenaSegment* create_segment(Allocator* a, ArenaSegment* previous, usize segment_size)
 {
     ArenaSegment* segment = (ArenaSegment*)memalloc(a, sizeof(ArenaSegment) + segment_size, alignof(ArenaSegment));
-    if (!segment) return 0;
+    if (!segment) return nullptr;
+    memset_canary(segment->buffer, segment_size);
 
     *segment = (ArenaSegment){
         .previous = previous,
-        .next = 0,
+        .next = nullptr,
         .arena = FixedArena::from_slice(segment->buffer, segment_size),
         .segment_size = segment_size,
     };

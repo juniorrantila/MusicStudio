@@ -46,3 +46,22 @@ C_API void* memrealloc(Allocator* a, void const* data, usize old_byte_count, usi
     memmove(n, data, old_byte_count);
     return n;
 }
+
+static const u8 canary_value = 0xCA;
+C_API void* memset_canary(void* buf, usize byte_size)
+{
+    VERIFY(buf != nullptr);
+    return memset(buf, canary_value, byte_size);
+}
+
+C_API void* memcheck_canary(void* buf, usize byte_size)
+{
+    VERIFY(buf != nullptr);
+    u8* bytes = (u8*)buf;
+    bool good_canary = true;
+    for (usize i = 0; i < byte_size; i++) {
+        good_canary &= bytes[i] == canary_value;
+    }
+    VERIFYS(good_canary, "use after free detected");
+    return buf;
+}

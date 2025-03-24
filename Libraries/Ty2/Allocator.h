@@ -105,3 +105,6 @@ C_API void* memclone_zero_extend(Allocator*, void const* data, usize byte_count,
 
 RETURNS_SIZED_AND_ALIGNED_BY(4, 5)
 C_API void* memrealloc(Allocator*, void const* data, usize old_byte_count, usize new_byte_count, usize align);
+
+C_API void* memset_canary(void*, usize);
+C_API void* memcheck_canary(void*, usize);

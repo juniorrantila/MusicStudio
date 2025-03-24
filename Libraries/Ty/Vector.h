@@ -271,7 +271,7 @@ private:
     ErrorOr<void> expand_hydrate(u32 capacity)
     {
         auto* data = (T*)TRY(allocate_memory(capacity * sizeof(T)));
-        __builtin_memcpy(data, inline_buffer(), storage_size());
+        __builtin_memcpy((void*)data, inline_buffer(), storage_size());
         m_capacity = capacity;
         m_data = data;
 

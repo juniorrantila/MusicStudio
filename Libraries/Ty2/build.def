@@ -25,6 +25,7 @@ static auto const ty2 = cc_library("Ty2", {
         "FixedArena.h",
         "FixedPool.h",
         "Forward.h",
+        "Hash.h",
         "Logger.h",
         "PageAllocator.h",
         "Pool.h",

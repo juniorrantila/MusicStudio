@@ -26,6 +26,8 @@ exit 0
 #ifndef BS_H
 #define BS_H
 
+#define OPTIMIZE_LEVEL "-O2"
+
 #include <stdlib.h>
 #include <libgen.h>
 #include <string.h>
@@ -1130,7 +1132,7 @@ static inline void emit_ninja(FILE* output, Target target)
     }
     fprintf(output, "\n\n");
 
-    fprintf(output, "default_cpp_args    = $default_cxx_args -fno-exceptions -fno-rtti -xc++ -std=c++23\n");
+    fprintf(output, "default_cpp_args    = $default_cxx_args -xc++ -std=c++23\n");
     fprintf(output, "default_c_args      = $default_cxx_args -xc -std=c23\n");
     fprintf(output, "default_objc_args   = $default_cxx_args -xobjective-c -fobjc-arc -std=c23\n");
     fprintf(output, "default_objcpp_args = $default_cxx_args -xobjective-c++ -fobjc-arc -std=c++23\n");
@@ -1266,13 +1268,15 @@ static inline Strings default_cxx_args(void)
         "-Wsuggest-override",
         "-fstrict-flex-arrays=2",
         "-Wno-c23-extensions",
+        OPTIMIZE_LEVEL,
         "-g3",
-        "-O2",
         "-gdwarf",
         "-gfull",
         "-gmodules",
         "-glldb",
         "-fno-omit-frame-pointer",
+        "-fno-exceptions",
+        "-fno-rtti",
         "-fcolor-diagnostics",
     };
 }

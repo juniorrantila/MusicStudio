@@ -9,6 +9,9 @@
 #include <GL/GL.h>
 #include <Layout/Sugar.h>
 #include <Core/Print.h>
+#include <Clay/Clay.h>
+
+#include "./UI.h"
 
 using namespace LayoutSugar;
 
@@ -68,7 +71,6 @@ void context_window_did_resize(Context* context, UIWindow* window)
     auto pixel_ratio = ui_window_pixel_ratio(window);
     layout_set_size(context->layout, size, pixel_ratio);
     glViewport(0, 0, (i32)(size.x * pixel_ratio), (i32)(size.y * pixel_ratio));
-    context_update(context, window);
 }
 
 void context_window_did_scroll(Context* context, UIWindow* window)
@@ -153,6 +155,42 @@ void titlebar(Context*)
 void main_content(Context* context)
 {
     hstack("MainContent"sv, [=]{
+        Element().config([]{
+            id("Controls"sv);
+            layout({
+                .sizing = {
+                    .width = sizing_fixed(64),
+                    .height = sizing_fit(),
+                },
+                .padding = {},
+                .childGap = {},
+                .childAlignment = {
+                    .x = CLAY_ALIGN_X_CENTER,
+                    .y = CLAY_ALIGN_Y_CENTER,
+                },
+                .layoutDirection = CLAY_TOP_TO_BOTTOM,
+            });
+        }).body([=]{
+            button({
+                .id = "play/pause"sv,
+                .text = context->is_playing ? "pause"sv : "play"sv,
+                .font_id = 0,
+                .text_align = {
+                    .x = CLAY_ALIGN_X_CENTER,
+                    .y = CLAY_ALIGN_Y_CENTER,
+                },
+                .on_hover_user = (iptr)context,
+                .on_hover = [](Clay_ElementId, Clay_PointerData pointer, iptr data){
+                    Context* context = (Context*)data;
+                    if (pointer.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+                        context->is_playing = !context->is_playing;
+                        context->rt.seconds_offset = 0;
+                        context->current_subdivision = 0;
+                        context->rt.process_time = 0;
+                    }
+                },
+            });
+        }),
         // browser(context);
         pinboard(context);
     });

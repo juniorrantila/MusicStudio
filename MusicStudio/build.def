@@ -34,6 +34,7 @@ auto const music_studio = cc_binary("music-studio", {
         libraries.ui,
         libraries.debug,
         libraries.ty,
+        libraries.ty2,
         libraries.core,
         libraries.fs,
         libraries.cli,
@@ -41,5 +42,6 @@ auto const music_studio = cc_binary("music-studio", {
         libraries.soundio,
         libraries.layout,
         libraries.au,
+        libraries.schedule,
     }
 });

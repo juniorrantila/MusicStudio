@@ -2,6 +2,7 @@
 #include <Ty/Allocator.h>
 #ifdef __cplusplus
 #include <Ty/Traits.h>
+#include <Ty/ErrorOr.h>
 #endif
 
 #ifdef __cplusplus

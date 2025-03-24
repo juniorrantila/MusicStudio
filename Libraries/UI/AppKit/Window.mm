@@ -239,7 +239,7 @@ void ui_window_set_size(UIWindow* window, Vec2f size)
         NSOpenGLProfileVersion3_2Core,
         NSOpenGLPFAColorFloat,
         NSOpenGLPFAColorSize, 64,
-        NSOpenGLPFAAlphaSize, 16,
+        NSOpenGLPFAAlphaSize, 32,
         NSOpenGLPFADoubleBuffer,
         NSOpenGLPFAAccelerated,
         NSOpenGLPFANoRecovery,

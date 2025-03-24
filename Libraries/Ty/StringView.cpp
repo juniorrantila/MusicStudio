@@ -57,7 +57,7 @@ ErrorOr<Vector<StringView>> StringView::split_on(
 
     auto splits = TRY(Vector<StringView>::create());
 
-    u32 last_index = 0xFFFFFFFF; // Intentional overflow
+    isize last_index = -1; // Intentional overflow
     for (auto index : indexes) {
         TRY(splits.append(part(last_index + 1, index)));
         last_index = index;
@@ -79,7 +79,7 @@ ErrorOr<Vector<StringView>> StringView::split_on(
 
     auto splits = TRY(Vector<StringView>::create());
 
-    u32 last_index = 0 - sequence.size(); // Intentional overflow
+    isize last_index = 0 - (isize)sequence.size(); // Intentional overflow
     for (auto index : indexes) {
         TRY(splits.append(part(last_index + sequence.size(), index)));
         last_index = index;

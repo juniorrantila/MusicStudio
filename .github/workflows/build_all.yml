@@ -17,19 +17,19 @@ jobs:
       - name: Fetch tags and unshallow
         run: git fetch --unshallow --tags
 
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install build-essential freeglut3-dev libglew-dev libjack-jackd2-dev
+
       - uses: actions/cache@v4
         id: cache
         with:
           path: Toolchain
           key: ${{ runner.os }}-${{ hashFiles('Toolchain/**') }}
 
-      - name: Install packages
-        run: |
-          sudo apt-get update
-          sudo apt-get -y install build-essential freeglut3-dev libglew-dev libjack-jackd2-dev
-
       - name: Setup
-        run: ./bootstrap
+        run: eval $(./bootstrap)
 
       - name: Build
         run: ninja -C build
@@ -50,7 +50,7 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('Toolchain/**') }}
 
       - name: Setup
-        run: ./bootstrap
+        run: eval $(./bootstrap)
 
       - name: Build
         run: ninja -C build

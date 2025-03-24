@@ -36,9 +36,5 @@ C_API inline usize bit_popcount(u8 const* bitset, usize byte_count)
 
 C_API inline usize usize_popcount(usize bitset)
 {
-    usize count = 0;
-    for (usize i = 0; i < sizeof(bitset); i++) {
-        count += (bitset & (1 << i)) != 0;
-    }
-    return count;
+    return bit_popcount((u8 const*)&bitset, sizeof(bitset));
 }

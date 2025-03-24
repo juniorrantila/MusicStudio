@@ -22,11 +22,22 @@ jobs:
           sudo apt-get update
           sudo apt-get -y install build-essential freeglut3-dev libglew-dev libjack-jackd2-dev
 
-      - uses: actions/cache@v4
-        id: cache
+      - uses: actions/cache/restore@v4
+        id: restore-cached-toolchain
         with:
           path: Toolchain
-          key: ${{ runner.os }}-${{ hashFiles('Toolchain/**') }}
+          key: ${{ runner.os }}-${{ hashFiles('*/*.sh') }}
+
+      - name: Bootstrap toolchain
+        if: steps.restore-cached-toolchain.outputs.cache-hit != 'true'
+        run: Toolchain/bootstrap.sh
+
+      - uses: actions/cache/save@v4
+        id: save-toolchain
+        if: steps.restore-cached-toolchain.outputs.cache-hit != 'true'
+        with:
+          path: Toolchain
+          key: ${{ runner.os }}-${{ hashFiles('*/*.sh') }}
 
       - name: Setup
         run: eval $(./bootstrap)
@@ -43,11 +54,22 @@ jobs:
       - name: Fetch tags and unshallow
         run: git fetch --unshallow --tags
 
-      - uses: actions/cache@v4
-        id: cache
+      - uses: actions/cache/restore@v4
+        id: restore-cached-toolchain
         with:
           path: Toolchain
-          key: ${{ runner.os }}-${{ hashFiles('Toolchain/**') }}
+          key: ${{ runner.os }}-${{ hashFiles('*/*.sh') }}
+
+      - name: Bootstrap toolchain
+        if: steps.restore-cached-toolchain.outputs.cache-hit != 'true'
+        run: Toolchain/bootstrap.sh
+
+      - uses: actions/cache/save@v4
+        id: save-toolchain
+        if: steps.restore-cached-toolchain.outputs.cache-hit != 'true'
+        with:
+          path: Toolchain
+          key: ${{ runner.os }}-${{ hashFiles('*/*.sh') }}
 
       - name: Setup
         run: eval $(./bootstrap)

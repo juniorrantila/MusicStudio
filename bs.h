@@ -722,6 +722,7 @@ static inline bool is_library(TargetKind kind)
     switch (kind) {
     case TargetKind_SharedLibrary:
     case TargetKind_StaticLibrary:
+        return true;
     case TargetKind_Binary:
     case TargetKind_Targets:
     case TargetKind_UniversalBinary:

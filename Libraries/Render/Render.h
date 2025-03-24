@@ -4,17 +4,25 @@
 #include <Ty/Base.h>
 #include <Ty/Allocator.h>
 #include <FS/FSVolume.h>
+#include <Ty2/Logger.h>
 #include <Rexim/LA.h>
 
+typedef struct {
+    FileID vert;
+    FileID frag;
+} RenderShader;
+
 C_API c_string render_strerror(int);
-C_API Render* render_create(FSVolume const*, Allocator* gpa);
+C_API Render* render_create(FSVolume const*, Allocator* gpa, Logger*);
 C_API void render_destroy(Render*);
 
 C_API void render_set_time(Render*, f32 time);
 C_API void render_set_resolution(Render*, Vec2f);
 C_API void render_set_mouse_position(Render*, Vec2f);
-C_API int render_reload_shaders(Render*);
-C_API int render_handle_events(Render*, FSEvents);
+C_API bool render_use_shader(Render*, RenderShader);
+C_API void render_update(Render*);
+C_API bool render_needs_reload(Render const*);
+C_API bool render_reload(Render*);
 C_API void render_flush(Render*);
 
 C_API void render_clear(Render*, Vec4f color);

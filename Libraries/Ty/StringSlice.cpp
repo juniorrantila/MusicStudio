@@ -20,9 +20,8 @@ C_API bool string_resolve_path(StringSlice s, Allocator* a, StringSlice* out)
     if (result.is_error()) return false;
     auto view = result->view();
 
-    char* buf = (char*)memalloc(a, view.size(), 1);
+    char* buf = (char*)memclone(a, view.data(), view.size(), 1);
     if (!buf) return false;
-    memcpy(buf, view.data(), view.size());
 
     *out = string_slice(buf, view.size());
     return true;

@@ -174,3 +174,19 @@ auto const play_pipe = cc_binary("play-pipe", {
         libraries.au,
     }
 });
+
+
+auto const watchf = cc_binary("watchf", {
+    .srcs = {
+        "./watchf.cpp",
+    },
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .deps = {
+        libraries.main,
+        libraries.ty,
+        libraries.cli,
+        libraries.fs,
+    }
+});

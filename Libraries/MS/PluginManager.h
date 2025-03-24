@@ -3,7 +3,7 @@
 
 #include "./Project.h"
 
-#include <Ty/ArenaAllocator.h>
+#include <Ty2/Arena.h>
 #include <Ty/SmallMap.h>
 
 #include <Ty/Id.h>
@@ -17,8 +17,17 @@ struct PluginManager {
     {
         auto manager = PluginManager();
         manager.arena = arena;
-        manager.plugins = TRY(arena->alloc<Plugin>(1024));
-        manager.libraries = TRY(arena->alloc<Library*>(1024));
+
+        auto plugin_count = 1024;
+
+        auto* plugins = arena->alloc<Plugin>(plugin_count);
+        if (!plugins) return Error::from_string_literal("could not allocate plugins");
+        manager.plugins = View(plugins, plugin_count);
+
+        auto* libraries = arena->alloc<Library*>(plugin_count);
+        if (!plugins) return Error::from_string_literal("could not allocate libraries");
+        manager.libraries = View(libraries, plugin_count);
+
         return manager;
     }
 

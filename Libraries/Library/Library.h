@@ -1,9 +1,7 @@
 #pragma once
 #include <Ty/Base.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <Ty/StringSlice.h>
+#include <FS/FSVolume.h>
 
 typedef struct Library Library;
 typedef enum e_library {
@@ -12,14 +10,17 @@ typedef enum e_library {
 #undef LIBRARY_ERROR
 } e_library;
 
-c_string library_strerror(e_library error);
+C_API c_string library_strerror(e_library error);
 
-Library* library_create_from_memory(c_string identifier, void* mem, usize size, e_library* error);
-Library* library_create_from_path(char const* path, e_library* error);
-void library_destroy(Library*);
+C_API Library* library_create_from_memory(c_string identifier, void* mem, usize size, e_library* error);
+C_API Library* library_create_from_path(char const* path, e_library* error);
+C_API void library_destroy(Library*);
 
-void* library_get_symbol(Library const* library, c_string name);
+C_API void* library_get_symbol(Library const* library, c_string name);
 
-#ifdef __cplusplus
-}
-#endif
+C_API Library* library_hotreloadable(Allocator* gpa, FSVolume*, FileID, e_library* error);
+C_API void library_update(Library*);
+C_API void* library_hotreload_state(Library const*);
+
+C_API bool library_needs_reload(Library const*);
+C_API bool library_reload(Library*);

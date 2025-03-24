@@ -26,6 +26,10 @@ exit 0
 #ifndef BS_H
 #define BS_H
 
+#define USE_SANITIZERS
+// #define USE_REALTIME_SANITIZER
+// #define USE_THREAD_SANITIZER
+
 #define OPTIMIZE_LEVEL "-O2"
 
 #include <stdlib.h>
@@ -239,6 +243,52 @@ static inline void cat(T (&items)[Count], T const (& other)[Count2])
     memcpy(items + c, &other, sizeof(T) * c2);
 }
 
+template <typename T, usize Count>
+static inline void append(T (&items)[Count], T value)
+{
+    usize l = len(items);
+    assert(l + 1 < Count);
+    items[l] = value;
+}
+
+static inline void add_sanitizers(Strings* flags, TargetTriple triple)
+{
+    if (!triple.arch) triple.arch = system_arch();
+    if (!triple.os) triple.os = system_os();
+    if (!triple.abi) triple.abi = system_abi();
+    if (strcmp(triple.arch, "wasm32") == 0)
+        return;
+#ifndef USE_SANITIZERS
+    return;
+#endif
+
+#ifdef USE_REALTIME_SANITIZER
+    append(flags->entries, "-fsanitize=realtime");
+    return; // Can't use realtime sanitizer with anything else.
+#endif
+
+#ifdef USE_THREAD_SANITIZER
+    append(flags->entries, "-fsanitize=thread");
+    return; // Can't use thread sanitizer with anything else.
+#endif
+
+    append(flags->entries, "-fsanitize=address");
+    if (strcmp(triple.os, "darwin") != 0) {
+        append(flags->entries, "-fsanitize=memory");
+    }
+    // append(flags->entries, "-fsanitize=type");
+    // append(flags->entries, "-fsanitize=undefined");
+    append(flags->entries, "-fsanitize=null");
+    append(flags->entries, "-fsanitize=bool");
+    append(flags->entries, "-fsanitize=builtin");
+    append(flags->entries, "-fsanitize=bounds");
+    append(flags->entries, "-fsanitize=enum");
+    append(flags->entries, "-fsanitize=float-cast-overflow");
+    append(flags->entries, "-fsanitize=integer");
+    append(flags->entries, "-fsanitize-address-use-after-scope");
+    // append(flags->entries, "-fsanitize-stats");
+}
+
 static inline Targets all_targets_deps;
 static inline usize all_targets_count = 0;
 static inline Target all_targets = {
@@ -253,6 +303,9 @@ static inline Target cc_binary(c_string name, BinaryArgs args, c_string file)
     c_string base_dir = strdup(dirname(strdup(file)));
     BinaryArgs* res = (BinaryArgs*)malloc(sizeof(args));
     *res = args;
+
+    add_sanitizers(&res->compile_flags, res->target_triple);
+    add_sanitizers(&res->linker_flags, res->target_triple);
 
     if (res->target_triple.abi == 0) {
         res->target_triple.abi = system_abi();
@@ -320,6 +373,9 @@ static inline Target cc_library(c_string name, LibraryArgs args, c_string file)
     c_string base_dir = strdup(dirname(strdup(file)));
     LibraryArgs* res = (LibraryArgs*)malloc(sizeof(args));
     *res = args;
+
+    add_sanitizers(&res->compile_flags, res->target_triple);
+    // add_sanitizers(&res->linker_flags, res->target_triple);
 
     if (res->target_triple.abi == 0) {
         res->target_triple.abi = system_abi();

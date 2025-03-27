@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -e
+
+ninja -C build # Ensure bin/watchf is built
+ninja -C build -t inputs | ./build/bin/watchf -f - "ninja -C build $1"

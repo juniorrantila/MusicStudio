@@ -123,7 +123,7 @@ static Actor* audio_actor_create(Context const* ctx)
     }
 
     e_library error;
-    Library* lib = library_hotreloadable(ctx->arena, ctx->volume, file_id, &error);
+    Library* lib = library_hotreloadable(ctx->arena, ctx->volume, file_id, "hotreload_dispatch", &error);
     if (!lib) {
         ctx->log->error("could not load '%.*s': %s", (int)path.count, path.items, library_strerror(error));
         return nullptr;

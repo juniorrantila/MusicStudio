@@ -23,6 +23,7 @@ typedef struct HotReloadState {
     Allocator* gpa;
     HotReload dispatch;
     FSVolume* volume;
+    c_string dispatch_symbol;
     FileID file;
 
     void* state;
@@ -128,7 +129,7 @@ void* library_get_symbol(Library const* library, c_string name)
 
 static bool hot_reload(Library* lib);
 
-C_API Library* library_hotreloadable(Allocator* gpa, FSVolume* volume, FileID file, e_library* error)
+C_API Library* library_hotreloadable(Allocator* gpa, FSVolume* volume, FileID file, c_string dispatch_symbol, e_library* error)
 {
     Library* lib = memalloc(gpa, sizeof(Library), alignof(Library));
     if (!lib) {
@@ -140,6 +141,7 @@ C_API Library* library_hotreloadable(Allocator* gpa, FSVolume* volume, FileID fi
     lib->hotreload.gpa = gpa;
     lib->hotreload.volume = volume;
     lib->hotreload.file = file;
+    lib->hotreload.dispatch_symbol = dispatch_symbol;
 
     if (!hot_reload(lib)) {
         *error = e_library_not_hotreloadable;
@@ -171,7 +173,7 @@ static bool hot_reload(Library* lib)
     void* old_handle = lib->handle;
 
     HotReload new_dispatch = {
-        .dispatch = dlsym(new_handle, "hotreload_dispatch"),
+        .dispatch = dlsym(new_handle, hot->dispatch_symbol),
     };
     if (!new_dispatch.dispatch) goto fi_2;
 

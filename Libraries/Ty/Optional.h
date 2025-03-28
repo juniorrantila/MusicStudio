@@ -125,6 +125,11 @@ struct [[nodiscard]] Optional {
         return move(value());
     }
 
+    constexpr void release_error()
+    {
+        VERIFY(!has_value());
+    }
+
     constexpr bool has_value() const { return m_has_value; }
 
     T unwrap()
@@ -222,6 +227,11 @@ struct [[nodiscard]] Optional<T*> {
         auto value = m_value;
         m_value = nullptr;
         return value;
+    }
+
+    constexpr void release_error()
+    {
+        VERIFY(!has_value());
     }
 
     constexpr bool has_value() const { return m_value != nullptr; }

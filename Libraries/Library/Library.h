@@ -1,4 +1,6 @@
 #pragma once
+#include "./HotReload.h"
+
 #include <Ty/Base.h>
 #include <Ty/StringSlice.h>
 #include <FS/FSVolume.h>
@@ -21,6 +23,9 @@ C_API void* library_get_symbol(Library const* library, c_string name);
 C_API Library* library_hotreloadable(Allocator* gpa, FSVolume*, FileID, e_library* error);
 C_API void library_update(Library*);
 C_API void* library_hotreload_state(Library const*);
+C_API usize library_hotreload_state_size(Library const*);
+C_API usize library_hotreload_state_align(Library const*);
+C_API HotReload library_hotreload(Library const*);
 
 C_API bool library_needs_reload(Library const*);
 C_API bool library_reload(Library*);

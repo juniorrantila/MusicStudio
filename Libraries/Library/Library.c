@@ -244,6 +244,24 @@ C_API void* library_hotreload_state(Library const* lib)
     return lib->hotreload.state;
 }
 
+C_API usize library_hotreload_state_size(Library const* lib)
+{
+    VERIFY(lib->kind == Library_Shared);
+    return lib->hotreload.size;
+}
+
+C_API usize library_hotreload_state_align(Library const* lib)
+{
+    VERIFY(lib->kind == Library_Shared);
+    return 16;
+}
+
+C_API HotReload library_hotreload(Library const* lib)
+{
+    VERIFY(lib->kind == Library_Shared);
+    return lib->hotreload.dispatch;
+}
+
 C_API usize hotreload_size(HotReload r)
 {
     if (!r.dispatch) return 0;
@@ -255,23 +273,13 @@ C_API usize hotreload_size(HotReload r)
     });
 }
 
-C_API void* hotreload_init(HotReload r, Allocator* gpa, void* state, usize size)
+C_API void* hotreload_find_symbol(HotReload r, StringSlice symbol)
 {
     return r.dispatch((HotReloadEvent){
-        .gpa = gpa,
-        .size = size,
-        .state = state,
-        .tag = HotReloadTag_Init,
-    });
-}
-
-C_API void* hotreload_deinit(HotReload r, Allocator* gpa, void* state, usize size)
-{
-    return r.dispatch((HotReloadEvent){
-        .gpa = gpa,
-        .size = size,
-        .state = state,
-        .tag = HotReloadTag_Deinit,
+        .gpa = 0,
+        .size = symbol.count,
+        .state = (void*)symbol.items,
+        .tag = HotReloadTag_Find,
     });
 }
 

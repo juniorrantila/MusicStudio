@@ -105,7 +105,6 @@ void library_destroy(Library* library)
         free(library);
         break;
     case Library_Shared:
-        hotreload_deinit(library->hotreload.dispatch, library->hotreload.gpa, library->hotreload.state, library->hotreload.size);
         memfree(library->hotreload.gpa, library->hotreload.state, library->hotreload.size, 16);
         dlclose(library->handle);
         memfree(library->hotreload.gpa, library, sizeof(Library), alignof(Library));
@@ -169,7 +168,6 @@ static bool hot_reload(Library* lib)
 
     usize old_size = hot->size;
     void* old_state = hot->state;
-    HotReload old_dispatch = lib->hotreload.dispatch;
     void* old_handle = lib->handle;
 
     HotReload new_dispatch = {
@@ -185,10 +183,8 @@ static bool hot_reload(Library* lib)
         memset(new_state, 0, new_size);
     }
 
-    if (old_dispatch.dispatch) hotreload_deinit(old_dispatch, hot->gpa, old_state, old_size);
     usize smaller = old_size < new_size ? old_size : new_size;
     memcpy(new_state, old_state, smaller);
-    hotreload_init(new_dispatch, hot->gpa, new_state, new_size);
 
     hot->state = new_state;
     hot->size = new_size;

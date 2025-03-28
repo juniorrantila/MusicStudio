@@ -1,6 +1,7 @@
 #pragma once
 #include <Ty/Base.h>
 #include <Ty2/Allocator.h>
+#include <Ty/StringSlice.h>
 
 #if __x86_64__
 #define HOTRELOAD_ARCH "x86_64"
@@ -29,8 +30,7 @@
 
 typedef enum HotReloadTag {
     HotReloadTag_Size,
-    HotReloadTag_Init,
-    HotReloadTag_Deinit,
+    HotReloadTag_Find,
 } HotReloadTag;
 
 typedef struct {
@@ -45,5 +45,4 @@ typedef struct HotReload {
 } HotReload;
 
 C_API usize hotreload_size(HotReload r);
-C_API void* hotreload_init(HotReload r, Allocator* gpa, void* state, usize size);
-C_API void* hotreload_deinit(HotReload r, Allocator* gpa, void* state, usize size);
+C_API void* hotreload_find_symbol(HotReload r, StringSlice);

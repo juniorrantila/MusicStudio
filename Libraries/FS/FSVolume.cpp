@@ -31,7 +31,6 @@ C_API FSVolume* fs_volume_create(Allocator* gpa)
     return volume;
 }
 
-
 Optional<Tar*> FSVolume::as_tar(Allocator* gpa) const { return fs_volume_as_tar(this, gpa); }
 C_API Tar* fs_volume_as_tar(FSVolume const*, Allocator*)
 {
@@ -74,6 +73,17 @@ C_API FSFile* fs_volume_use_ref(FSVolume const* volume, FileID id)
     return &volume->items[id.index];
 }
 
+static bool mount_no_cache(FSVolume* volume, FSFile file, FileID* out)
+{
+    if (!expand_if_needed(volume)) return false;
+    usize id = volume->count++;
+    volume->items[id] = file;
+    if (out) {
+        *out = (FileID){ id };
+    }
+    return true;
+}
+
 Optional<FileID> FSVolume::find(StringSlice path) const
 {
     FileID id;
@@ -97,6 +107,22 @@ C_API bool fs_volume_find(FSVolume const* volume, StringSlice path, FileID* id)
             return true;
         }
     }
+
+    if (volume->automount_when_not_found) {
+        auto* log = volume->debug;
+        if (log) log->debug("could not find '%.*s', trying to auto mount it", (int)path.count, path.items);
+        FSFile file;
+        if (!fs_system_open(volume->gpa, path, &file)) {
+            if (log) log->debug("could not open '%.*s'", (int)path.count, path.items);
+            return false;
+        }
+        if (!mount_no_cache((FSVolume*)volume, file, id)) {
+            if (log) log->debug("could not mount '%.*s'", (int)path.count, path.items);
+            return false;
+        }
+        return true;
+    }
+
     return false;
 }
 
@@ -116,13 +142,7 @@ C_API bool fs_volume_mount(FSVolume* volume, FSFile file, FileID* out)
     auto path = fs_virtual_path(file);
     if (fs_volume_find(volume, path, out))
         return true;
-    if (!expand_if_needed(volume)) return false;
-    usize id = volume->count++;
-    volume->items[id] = file;
-    if (out) {
-        *out = (FileID){ id };
-    }
-    return true;
+    return mount_no_cache(volume, file, out);
 }
 
 

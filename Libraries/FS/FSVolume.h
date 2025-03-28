@@ -1,6 +1,7 @@
 #pragma once
 #include "./Forward.h"
 
+#include <Ty2/Logger.h>
 #include <Ty2/Allocator.h>
 #include <Ty/StringSlice.h>
 #include <Tar/Tar.h>
@@ -58,16 +59,17 @@ typedef struct FSVolume {
     Allocator* gpa;
     Arena event_arena;
 
+    Logger* debug; // May be null.
     FSFile* items;
     usize count;
     usize capacity;
 
     FSEvents events;
     int watch_fd;
+    bool automount_when_not_found;
 
 #ifdef __cplusplus
     static Optional<FSVolume*> create(Allocator* gpa);
-
     Optional<Tar*> as_tar(Allocator*) const;
     Optional<StringSlice const*> open(StringSlice path) const;
     FSFile use(FileID) const;

@@ -8,6 +8,8 @@
 #include <Ty2/PageAllocator.h>
 #include <Ty2/Arena.h>
 
+#include <stdio.h>
+
 ErrorOr<int> Main::main(int argc, c_string argv[])
 {
     auto arena_instance = arena_create(page_allocator());
@@ -19,8 +21,30 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
     static StringSlice paths[max_paths];
     usize path_count = 0;
     TRY(argument_parser.add_option("--file", "-f", "path", "watch file at path (can be used multiple times)", [&](c_string arg){
-        VERIFY(path_count + 1 < max_paths);
-        paths[path_count++] = string_slice_from_c_string(arg);
+        auto path = string_slice_from_c_string(arg);
+        if (!path.equal("-"s)) {
+            VERIFY(path_count + 1 < max_paths);
+            paths[path_count++] = path;
+            return;
+        }
+
+        char* line = nullptr;
+        usize len = 0;
+        ssize_t read = 0;
+        while ((read = getline(&line, &len, stdin)) != -1) {
+            auto path = string_slice(line, read).as_view();
+            if (!path.starts_with("../")) {
+                continue;
+            }
+            path = path.chop_left("../"sv.size());
+            if (path.ends_with("\n")) {
+                path = path.shrink("\n"sv.size());
+            }
+            VERIFY(path_count + 1 < max_paths);
+            char* buf = (char*)memclone(arena, path.data(), path.size(), 1);
+            paths[path_count++] = string_slice(buf, path.size());
+        }
+        free(line);
     }));
 
     c_string command = nullptr;

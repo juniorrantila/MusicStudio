@@ -228,7 +228,6 @@ C_API void render_set_mouse_position(Render* render, Vec2f position)
 C_API bool render_use_shader(Render* render, RenderShader shader)
 {
     render_flush(render);
-
     FSFile* vert_file = fs_volume_use_ref(render->volume, shader.vert);
     if (fs_file_needs_reload(vert_file)) {
         if (!fs_file_reload(vert_file)) return false;
@@ -253,11 +252,12 @@ C_API bool render_use_shader(Render* render, RenderShader shader)
     glAttachShader(program, vs);
     glAttachShader(program, fs);
     if (!link_program(render->log, program)) return false;
-
     glDeleteProgram(render->current_program);
-    render->current_shaders = shader;
+
     render->current_program = program;
+    render->current_shaders = shader;
     glUseProgram(render->current_program);
+
     uniform_location(render->current_program, render->uniforms);
     glUniform1f(render->uniforms[UniformSlot_Time], render->time);
     glUniform2f(render->uniforms[UniformSlot_Resolution], render->resolution.x, render->resolution.y);

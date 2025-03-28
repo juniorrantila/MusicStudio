@@ -110,14 +110,14 @@ C_API bool fs_volume_find(FSVolume const* volume, StringSlice path, FileID* id)
 
     if (volume->automount_when_not_found) {
         auto* log = volume->debug;
-        if (log) log->debug("could not find '%.*s', trying to auto mount it", (int)path.count, path.items);
+        if (log) log->warning("could not find '%.*s', trying to auto mount it", (int)path.count, path.items);
         FSFile file;
         if (!fs_system_open(volume->gpa, path, &file)) {
-            if (log) log->debug("could not open '%.*s'", (int)path.count, path.items);
+            if (log) log->warning("could not open '%.*s'", (int)path.count, path.items);
             return false;
         }
         if (!mount_no_cache((FSVolume*)volume, file, id)) {
-            if (log) log->debug("could not mount '%.*s'", (int)path.count, path.items);
+            if (log) log->warning("could not mount '%.*s'", (int)path.count, path.items);
             return false;
         }
         return true;

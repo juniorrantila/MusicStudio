@@ -7,11 +7,13 @@
 static auto const library = cc_library("Library", {
     .srcs = {
         "./Library.c",
+        "./Actor.c",
     },
     .exported_headers = {
         "./Error.def",
         "./Library.h",
         "./HotReload.h",
+        "./Actor.h",
     },
     .header_namespace = "Library",
     .compile_flags = {

@@ -26,7 +26,11 @@
 #error "unknown ABI and OS"
 #endif
 
+#define HOTRELOAD_LIB_POSTFIX ".hotlib"
+
 #define HOTRELOAD_LIB_DIR "build/" HOTRELOAD_ARCH "-" HOTRELOAD_ABI "-" HOTRELOAD_OS "/lib"
+
+#define hotreload_library_path(lib) HOTRELOAD_LIB_DIR "/" lib HOTRELOAD_LIB_POSTFIX ""s
 
 typedef enum HotReloadTag {
     HotReloadTag_Size,

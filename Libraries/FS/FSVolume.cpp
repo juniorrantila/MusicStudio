@@ -145,7 +145,6 @@ C_API bool fs_volume_mount(FSVolume* volume, FSFile file, FileID* out)
     return mount_no_cache(volume, file, out);
 }
 
-
 C_API FSEvents fs_volume_poll_events(FSVolume* volume, struct timespec* timeout)
 {
     auto* arena = &volume->event_arena;
@@ -353,10 +352,8 @@ C_API bool fs_file_needs_reload(FSFile const* file)
     case FSFileMount_VirtualMount:
         return false;
     case FSFileMount_SystemMount:
-        break;
+        return file->system_mount.stale;
     }
-    FSSystemMount const* mount = &file->system_mount;
-    return mount->stale;
 }
 
 static bool expand_if_needed(FSVolume* volume)

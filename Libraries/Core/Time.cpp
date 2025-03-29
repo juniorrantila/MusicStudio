@@ -12,3 +12,17 @@ f64 time(void)
 }
 
 }
+
+C_API f64 core_time_now()
+{
+    return Core::time();
+}
+
+C_API f64 core_time_since_start()
+{
+    static f64 start;
+    if (start == 0.0) {
+        start = core_time_now();
+    }
+    return core_time_now() - start;
+}

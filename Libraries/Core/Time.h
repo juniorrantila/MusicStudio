@@ -33,3 +33,6 @@ auto benchmark(F callback)
 }
 
 }
+
+C_API f64 core_time_now();
+C_API f64 core_time_since_start();

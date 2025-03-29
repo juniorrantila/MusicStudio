@@ -112,7 +112,6 @@ ErrorOr<int> Main::main(int argc, char const* argv[])
     auto ratio = ui_window_pixel_ratio(window);
     render_set_resolution(render, size * ratio);
 
-    auto begin = Core::time();
     while (!ui_window_should_close(window)) {
         ui_application_poll_events(app);
 
@@ -125,8 +124,8 @@ ErrorOr<int> Main::main(int argc, char const* argv[])
             else log->warning("could not reload shaders");
         }
 
-        render_set_time(render, (f32)(Core::time() - begin));
         ui_window_gl_make_current_context(window);
+        render_set_time(render, core_time_since_start());
         ui_frame(&context);
         render_flush(render);
         ui_window_gl_flush(window);

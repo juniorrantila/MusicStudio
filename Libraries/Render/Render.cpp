@@ -51,7 +51,7 @@ struct Render {
     GLuint current_program;
     GLint uniforms[UniformSlot__Count];
 
-    f32 time;
+    f64 time;
     Vec2f resolution;
     Vec2f mouse_position;
 
@@ -199,10 +199,10 @@ C_API void render_destroy(Render* render)
     memfree(render->gpa, render, sizeof(Render) + render->vertex_capacity * sizeof(Vertex), alignof(Render));
 }
 
-C_API void render_set_time(Render* render, f32 time)
+C_API void render_set_time(Render* render, f64 time)
 {
     render->time = time;
-    glUniform1f(render->uniforms[UniformSlot_Time], time);
+    glUniform1f(render->uniforms[UniformSlot_Time], (f32)time);
 }
 
 C_API void render_set_resolution(Render* render, Vec2f resolution)
@@ -259,7 +259,7 @@ C_API bool render_use_shader(Render* render, RenderShader shader)
     glUseProgram(render->current_program);
 
     uniform_location(render->current_program, render->uniforms);
-    glUniform1f(render->uniforms[UniformSlot_Time], render->time);
+    glUniform1f(render->uniforms[UniformSlot_Time], (f32)render->time);
     glUniform2f(render->uniforms[UniformSlot_Resolution], render->resolution.x, render->resolution.y);
     glUniform2f(render->uniforms[UniformSlot_MousePosition], render->mouse_position.x, render->mouse_position.y);
 

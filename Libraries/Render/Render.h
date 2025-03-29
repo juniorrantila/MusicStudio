@@ -16,7 +16,7 @@ C_API c_string render_strerror(int);
 C_API Render* render_create(FSVolume const*, Allocator* gpa, Logger*);
 C_API void render_destroy(Render*);
 
-C_API void render_set_time(Render*, f32 time);
+C_API void render_set_time(Render*, f64 time);
 C_API void render_set_resolution(Render*, Vec2f);
 C_API Vec2f render_resolution(Render const*);
 C_API void render_set_mouse_position(Render*, Vec2f);

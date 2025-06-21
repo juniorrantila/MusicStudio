@@ -59,6 +59,16 @@ auto const swap_stack = cc_binary("swap-stack", {
     },
 });
 
+auto const message_queues = cc_binary("message-queues", {
+    .srcs = {
+        "./message-queues.cpp"
+    },
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .deps = {},
+});
+
 auto const fs_volume_file_watch_example = cc_binary("fs-volume-file-watch-example", {
     .srcs = {
         "./fs-volume-file-watch-example.cpp",
@@ -71,45 +81,5 @@ auto const fs_volume_file_watch_example = cc_binary("fs-volume-file-watch-exampl
         libraries.ty2,
         libraries.fs,
         libraries.cli,
-    }
-});
-
-auto const hotreload_test_lib = cc_library("hotreload-test-lib", {
-    .srcs = {
-        "./hotreload-test-lib.cpp",
-    },
-    .compile_flags = {},
-    .linker_flags = {},
-    .target_triple = {},
-    .link_style = "both",
-    .deps = {
-        libraries.ty,
-        libraries.ty2,
-        libraries.library,
-    },
-});
-
-auto const hostreload_test = cc_binary("hotreload-test", {
-    .srcs = {
-        "./hotreload-test.cpp"
-    },
-    .compile_flags = {},
-    .linker_flags = {
-#ifdef __APPLE__
-    "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
-    "-framework", "CoreFoundation",
-    "-framework", "CoreAudio",
-    "-framework", "AudioUnit",
-#endif
-    },
-    .target_triple = {},
-    .deps = {
-        libraries.main,
-        libraries.ty2,
-        libraries.fs,
-        libraries.cli,
-        libraries.library,
-        libraries.core,
-        libraries.soundio,
     }
 });

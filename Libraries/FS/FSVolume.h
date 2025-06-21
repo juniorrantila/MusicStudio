@@ -5,7 +5,7 @@
 #include <Ty2/Allocator.h>
 #include <Ty/StringSlice.h>
 #include <Tar/Tar.h>
-#include <Ty2/Arena.h>
+#include <Ty2/FixedArena.h>
 
 #if __cplusplus
 #include <Ty/Optional.h>
@@ -24,7 +24,8 @@ typedef struct FSSystemMount {
     StringSlice content;
     StringSlice path;
     int fd;
-    bool stale;
+    f64 stale_at;
+    f64 deleted_at;
 } FSSystemMount;
 
 typedef struct FSFile {
@@ -42,7 +43,7 @@ typedef struct { usize index; } FileID;
 typedef enum FSEventKind {
     FSEventKind_Modify,
     FSEventKind_Delete,
-    // FSEventKind_Create,
+    FSEventKind_Create,
 } FSEventKind;
 
 typedef struct FSEvent {
@@ -55,9 +56,10 @@ typedef struct FSEvents {
     usize count;
 } FSEvents;
 
+constexpr u64 fs_volume_arena_capacity = 1024LLU * 1024LLU * 1024LLU;
 typedef struct FSVolume {
     Allocator* gpa;
-    Arena event_arena;
+    FixedArena event_arena;
 
     Logger* debug; // May be null.
     FSFile* items;
@@ -68,6 +70,7 @@ typedef struct FSVolume {
     int watch_fd;
     bool automount_when_not_found;
 
+    u8 arena_store[fs_volume_arena_capacity];
 #ifdef __cplusplus
     static Optional<FSVolume*> create(Allocator* gpa);
     Optional<Tar*> as_tar(Allocator*) const;
@@ -91,7 +94,7 @@ C_API bool fs_volume_find(FSVolume const*, StringSlice path, FileID*);
 C_API [[nodiscard]] bool fs_volume_mount(FSVolume*, FSFile file, FileID*);
 
 struct timespec;
-C_API FSEvents fs_volume_poll_events(FSVolume*, struct timespec* timeout);
+C_API FSEvents fs_volume_poll_events(FSVolume*, struct timespec const* timeout);
 C_API bool fs_volume_needs_reload(FSVolume const*);
 C_API bool fs_volume_reload(FSVolume*);
 

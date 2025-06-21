@@ -8,6 +8,15 @@ PROG_NAME=$(basename $0)
 $TOOLCHAIN_DIR/bootstrap.sh > /dev/stderr
 export PATH="$TOOLCHAIN_DIR/Tools/bin:$PATH"
 
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    echo "USAGE: $PROG_NAME [flags]"
+    echo ""
+    echo "FLAGS:"
+    echo "        --no-echo    do not echo message about where files where generated"
+    echo ""
+    exit 0
+fi
+
 ccache clang -fcolor-diagnostics -std=c++17 -c -emit-llvm -xc++ $0 -o /tmp/bootstrap
 lli /tmp/bootstrap
 rm -f build/compile_commands.json

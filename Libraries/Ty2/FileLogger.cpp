@@ -3,8 +3,6 @@
 
 #include <stdlib.h>
 #include <unistd.h>
-#include <time.h>
-#include <string.h>
 
 static void dispatch(struct Logger*, LoggerEvent);
 
@@ -19,27 +17,37 @@ C_API FileLogger make_file_logger(Allocator* temporary_arena, FILE* file)
     return (FileLogger){
         .logger = make_logger(temporary_arena, dispatch),
         .file = file,
+        .name = nullptr,
         .is_tty = isatty(fileno(file)) == 1,
     };
 }
 
-static c_string level_string(LoggerEventTag tag, bool is_tty)
+static c_string severity(LoggerEventTag tag)
 {
-    if (is_tty) {
-        switch (tag) {
-        case LoggerEventTag_Debug: return CYAN "DEBUG" NORMAL;
-        case LoggerEventTag_Info: return BLUE "INFO" NORMAL;
-        case LoggerEventTag_Warning: return YELLOW "WARNING" NORMAL;
-        case LoggerEventTag_Error: return RED "ERROR" NORMAL;
-        case LoggerEventTag_Fatal: return RED "FATAL" NORMAL;
-        }
-    }
     switch (tag) {
-    case LoggerEventTag_Debug: return "DEBUG";
+    case LoggerEventTag_Debug: return "DEBG";
     case LoggerEventTag_Info: return "INFO";
-    case LoggerEventTag_Warning: return "WARNING";
-    case LoggerEventTag_Error: return "ERROR";
+    case LoggerEventTag_Warning: return "WARN";
+    case LoggerEventTag_Error: return "ERRR";
     case LoggerEventTag_Fatal: return "FATAL";
+    }
+}
+
+static c_string reset(bool is_tty)
+{
+    if (!is_tty) return "";
+    return NORMAL;
+}
+
+static c_string color(LoggerEventTag tag, bool is_tty)
+{
+    if (!is_tty) return "";
+    switch (tag) {
+    case LoggerEventTag_Debug: return CYAN;
+    case LoggerEventTag_Info: return BLUE;
+    case LoggerEventTag_Warning: return YELLOW;
+    case LoggerEventTag_Error:
+    case LoggerEventTag_Fatal: return RED;
     }
 }
 
@@ -49,19 +57,37 @@ static void dispatch(struct Logger* l, LoggerEvent event)
     int len = (int)event.message_size;
     int pid = getpid();
 
-    auto t = time(0);
-    struct tm tm;
-    (void)gmtime_r(&t, &tm);
-    char time_buf[1024];
-    memset(time_buf, 0, sizeof(time_buf));
-    (void)strftime(time_buf, sizeof(time_buf), "%Y-%m-%dT%H:%M:%SZ", &tm);
-
-    (void)fprintf(file_logger->file, "%s[%d][%s]: %.*s\n",
-        level_string(event.tag, file_logger->is_tty),
-        pid,
-        time_buf,
-        len,
-        event.message
-    );
+    bool is_tty = file_logger->is_tty;
+    if (file_logger->name) {
+        (void)fprintf(file_logger->file, "%s%s|%s%.2u%s|%s%u%s|%s%s%s%s: %.*s\n",
+            color(event.tag, is_tty), // 1
+            severity(event.tag),
+            reset(is_tty),
+            event.seq % 100,
+            color(event.tag, is_tty),
+            reset(is_tty),
+            pid,
+            color(event.tag, is_tty),
+            reset(is_tty),
+            file_logger->name,
+            color(event.tag, is_tty),
+            reset(is_tty),
+            len,
+            event.message
+        );
+    } else {
+                                        // a b  c d e    f g    hi
+        (void)fprintf(file_logger->file, "%s%s|%s%d%s|%.2X%s: %.*s\n",
+            color(event.tag, is_tty), // a
+            severity(event.tag),      // b
+            reset(is_tty),            // c
+            event.seq % 100,          // d
+            color(event.tag, is_tty), // e
+            pid,                      // f
+            reset(is_tty),            // j
+            len,
+            event.message
+        );
+    }
     if (event.tag == LoggerEventTag_Fatal) abort();
 }

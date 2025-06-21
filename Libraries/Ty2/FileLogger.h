@@ -1,10 +1,12 @@
 #pragma once
 #include "./Logger.h"
+
 #include <stdio.h>
 
 typedef struct {
     Logger logger;
     FILE* file;
+    c_string name;
     bool is_tty;
 } FileLogger;
 

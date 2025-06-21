@@ -152,6 +152,16 @@ static Clay_Dimensions measure_text(Clay_StringSlice text, Clay_TextElementConfi
     };
 }
 
+void layout_begin(Layout*)
+{
+    Clay_BeginLayout();
+}
+
+LayoutRenderCommands layout_end(Layout*)
+{
+    return Clay_EndLayout();
+}
+
 static void clay_handle_error(Clay_ErrorData error)
 {
     Layout* layout = (Layout*)error.userData;

@@ -3,7 +3,7 @@
 #include <CLI/ArgumentParser.h>
 #include <Main/Main.h>
 #include <Tar/Tar.h>
-#include <Ty2/Arena.h>
+#include <Ty2/FixedArena.h>
 #include <Ty2/PageAllocator.h>
 #include <Core/Print.h>
 
@@ -28,8 +28,8 @@ ErrorOr<int> Main::main(int argc, char const* argv[])
 
     auto output = TRY(Core::File::open_for_writing(output_path));
 
-    // FIXME: Don't use an arena for this.
-    auto arena_allocator = arena_create(page_allocator());
+    u64 arena_size = 2LLU * 1024LLU * 1024LLU * 1024LLU;
+    auto arena_allocator = fixed_arena_from_slice(page_alloc(arena_size), arena_size);
     auto* arena = &arena_allocator.allocator;
 
     Tar* tar = tar_create(arena);

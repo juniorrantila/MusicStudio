@@ -6,11 +6,12 @@
 #include <Main/Main.h>
 #include <CLI/ArgumentParser.h>
 #include <Ty2/PageAllocator.h>
-#include <Ty2/Arena.h>
+#include <Ty2/FixedArena.h>
 
 ErrorOr<int> Main::main(int argc, c_string argv[])
 {
-    auto arena_instance = arena_create(page_allocator());
+    constexpr u64 arena_size = 16LLU * 1024LLU * 1024LLU * 1024LLU;
+    auto arena_instance = fixed_arena_from_slice(page_alloc(arena_size), arena_size);
     auto* arena = &arena_instance.allocator;
 
     auto argument_parser = CLI::ArgumentParser();
@@ -49,7 +50,11 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
     }
 
     while (1) {
-        FSEvents events = fs_volume_poll_events(volume, nullptr);
+        struct timespec timeout = {
+            .tv_sec = 1,
+            .tv_nsec = 0,
+        };
+        FSEvents events = fs_volume_poll_events(volume, &timeout);
         for (usize i = 0; i < events.count; i++) {
             FSEvent event = events.items[i];
             auto path = fs_virtual_path(*event.file);
@@ -67,6 +72,9 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
             }
             case FSEventKind_Delete:
                 dprintln("deleted file: {}", path.as_view());
+                continue;
+            case FSEventKind_Create:
+                dprintln("created file: {}", path.as_view());
                 continue;
             }
         }

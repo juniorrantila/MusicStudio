@@ -5,34 +5,33 @@
 #include <UI/Window.h>
 #include <Main/Main.h>
 #include <Ty/StringSlice.h>
-#include <Render/Render.h>
+#include <GL/Renderer.h>
 #include <Core/Time.h>
 #include <Ty2/PageAllocator.h>
-#include <Ty2/Arena.h>
+#include <Ty2/FixedArena.h>
 #include <Ty2/FileLogger.h>
+#include <FS/FSVolume.h>
 #include <sys/time.h>
 
 #include <stdio.h>
 
 struct Context {
-    Render* render;
+    GLRenderer* render;
+    UIWindow* window;
+    FSVolume* volume;
+    Logger* log;
 };
 
 static void ui_frame(Context*);
 
 ErrorOr<int> Main::main(int argc, char const* argv[])
 {
-    auto arena = arena_create(page_allocator());
-    auto volume_arena_instance = arena_create(&arena.allocator);
-    auto* volume_arena = &volume_arena_instance.allocator;
-    auto render_arena_instance = arena_create(&arena.allocator);
-    auto* render_arena = &render_arena_instance.allocator;
-    auto log_arena_instance = arena_create(&arena.allocator);
-    auto* log_arena = &log_arena_instance.allocator;
-    auto file_logger = make_file_logger(log_arena, stderr);
+    constexpr u64 arena_size = 16LLU * 1024LLU * 1024LLU * 1024LLU;
+    auto arena = fixed_arena_from_slice(page_alloc(arena_size), arena_size);
+    auto file_logger = make_file_logger(&arena.allocator, stderr);
     auto* log = &file_logger.logger;
 
-    FSVolume* volume = fs_volume_create(volume_arena);
+    FSVolume* volume = fs_volume_create(page_allocator());
     if (!volume) log->fatal("could not create file volume");
 
     auto argument_parser = CLI::ArgumentParser();
@@ -53,7 +52,7 @@ ErrorOr<int> Main::main(int argc, char const* argv[])
     }
 
     FSFile vertex_file;
-    if (!fs_system_open(volume_arena, vertex_shader_path, &vertex_file)) {
+    if (!fs_system_open(page_allocator(), vertex_shader_path, &vertex_file)) {
         log->fatal("could not open '%.*s'", (int)vertex_shader_path.count, vertex_shader_path.items);
     }
     vertex_file.virtual_path = "Shaders/simple.vert"s;
@@ -62,7 +61,7 @@ ErrorOr<int> Main::main(int argc, char const* argv[])
     }
 
     FSFile fragment_file;
-    if (!fs_system_open(volume_arena, fragment_shader_path, &fragment_file)) {
+    if (!fs_system_open(page_allocator(), fragment_shader_path, &fragment_file)) {
         log->fatal("could not open '%.*s'", (int)fragment_shader_path.count, fragment_shader_path.items);
     }
     fragment_file.virtual_path = "Shaders/color.frag"s;
@@ -88,60 +87,89 @@ ErrorOr<int> Main::main(int argc, char const* argv[])
     };
     ui_window_autosave(window, "com.music-studio.shadertoy");
 
-    auto* render = render_create(volume, render_arena, log);
-    if (!render) log->fatal("could not create render");
-
+    GLRenderer renderer = (GLRenderer){};
     auto context = Context {
-        .render = render,
+        .render = &renderer,
+        .window = window,
+        .volume = volume,
+        .log = log,
     };
 
     ui_window_set_resize_callback(window, &context, [](UIWindow* window, void* user) {
         auto* context = (Context*)user;
         auto size = ui_window_size(window);
         auto ratio = ui_window_pixel_ratio(window);
-        render_set_resolution(context->render, size * ratio);
+        context->render->uniform2f(context->render->uniform("resolution"), (v2){ size.x * ratio, size.y * ratio });
 
         ui_window_gl_make_current_context(window);
         ui_frame(context);
-        render_flush(context->render);
+
+        context->render->flush();
         ui_window_gl_flush(window);
     });
 
     ui_window_gl_make_current_context(window);
     auto size = ui_window_size(window);
     auto ratio = ui_window_pixel_ratio(window);
-    render_set_resolution(render, size * ratio);
+    renderer.uniform2f(renderer.uniform("resolution"), (v2){ size.x * ratio, size.y * ratio });
 
     while (!ui_window_should_close(window)) {
         ui_application_poll_events(app);
 
         struct timespec time {};
-        fs_volume_poll_events(volume, &time);
-        render_update(render);
-
-        if (render_needs_reload(render)) {
-            if (render_reload(render)) log->info("reloaded shaders");
-            else log->warning("could not reload shaders");
+        auto events = fs_volume_poll_events(volume, &time);
+        for (usize i = 0; i < events.count; i++) {
+            if (events.items[i].kind == FSEventKind_Modify)
+                fs_file_reload(events.items[i].file);
+            if (events.items[i].kind == FSEventKind_Create)
+                fs_file_reload(events.items[i].file);
         }
 
         ui_window_gl_make_current_context(window);
-        render_set_time(render, core_time_since_start());
+        renderer.uniform1f(renderer.uniform("time"), (f32)core_time_since_start());
+
         ui_frame(&context);
-        render_flush(render);
+
+        renderer.flush();
         ui_window_gl_flush(window);
     }
 
     return 0;
 }
 
+static GLVertex vertex(v2 position, v4 color, v2 uv0 = 0, v2 uv1 = 0, v4 bits = 0) {
+    return (GLVertex) {
+            .color = color,
+            .bits = bits,
+            .position = position,
+            .uv0 = uv0,
+            .uv1 = uv1,
+    };
+}
+
 static void ui_frame(Context* ctx)
 {
-    auto resolution = render_resolution(ctx->render);
-    render_clear(ctx->render, vec4f(0, 0, 0, 1));
-    render_quad(ctx->render,
-        vec2f(0, 0), vec4f(1, 0, 0, 1), vec2f(0.0,          0.0),
-        vec2f(1, 0), vec4f(0, 1, 0, 1), vec2f(resolution.x, 0.0),
-        vec2f(0, 1), vec4f(0, 0, 1, 1), vec2f(0.0,          resolution.y),
-        vec2f(1, 1), vec4f(1, 1, 1, 1), vec2f(resolution.x, resolution.y)
-    );
+    auto size = ui_window_size(ctx->window);
+    auto ratio = ui_window_pixel_ratio(ctx->window);
+    v2 resolution = (v2){size.x * ratio, size.y * ratio};
+
+    ctx->render->clear((v4){0, 0, 0, 1});
+
+    FileID vert;
+    if (!fs_volume_find(ctx->volume, "Shaders/simple.vert"s, &vert))
+        return;
+
+    FileID frag;
+    if (!fs_volume_find(ctx->volume, "Shaders/color.frag"s, &frag))
+        return;
+
+    ctx->render->push_quad(ctx->render->shader(ctx->log, GLShaderSource{
+        .vert = fs_content(fs_volume_use(ctx->volume, vert)),
+        .frag = fs_content(fs_volume_use(ctx->volume, frag)),
+    }), GLQuad{
+        vertex((v2){0, 0}, (v4){1, 0, 0, 1}, (v2){0,            0}),
+        vertex((v2){1, 0}, (v4){0, 1, 0, 1}, (v2){resolution.x, 0}),
+        vertex((v2){0, 1}, (v4){0, 0, 1, 1}, (v2){0,            resolution.y}),
+        vertex((v2){1, 1}, (v4){1, 1, 1, 1}, (v2){resolution.x, resolution.y}),
+    });
 }

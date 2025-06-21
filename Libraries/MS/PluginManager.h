@@ -3,7 +3,6 @@
 
 #include "./Project.h"
 
-#include <Ty2/Arena.h>
 #include <Ty/SmallMap.h>
 
 #include <Ty/Id.h>

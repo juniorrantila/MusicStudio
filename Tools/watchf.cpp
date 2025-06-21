@@ -6,13 +6,14 @@
 #include <Main/Main.h>
 #include <CLI/ArgumentParser.h>
 #include <Ty2/PageAllocator.h>
-#include <Ty2/Arena.h>
+#include <Ty2/FixedArena.h>
 
 #include <stdio.h>
 
 ErrorOr<int> Main::main(int argc, c_string argv[])
 {
-    auto arena_instance = arena_create(page_allocator());
+    constexpr u64 arena_size = 16LLU * 1024LLU * 1024LLU * 1024LLU;
+    auto arena_instance = fixed_arena_from_slice(page_alloc(arena_size), arena_size);
     auto* arena = &arena_instance.allocator;
 
     auto argument_parser = CLI::ArgumentParser();

@@ -16,7 +16,7 @@
 #include <Ty/Limits.h>
 #include <Ty/Optional.h>
 #include <Ty/Swap.h>
-#include <Ty2/Arena.h>
+#include <Ty2/FixedArena.h>
 #include <Ty2/PageAllocator.h>
 #include <UI/Application.h>
 #include <UI/Window.h>
@@ -46,7 +46,7 @@ struct Context {
     View<f64> scratch2;
 };
 
-static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_audio(Arena* arena, MS::Plugin* plugin);
+static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_audio(FixedArena* arena, MS::Plugin* plugin);
 
 ErrorOr<int> Main::main(int argc, c_string argv[]) {
     auto argument_parser = CLI::ArgumentParser();
@@ -71,12 +71,12 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         return 1;
     }
 
-    auto arena_allocator = arena_create(page_allocator());
+    constexpr u64 arena_size = 2LLU * 1024LLU * 1024LLU * 1024LLU;
+    auto arena_allocator = fixed_arena_from_slice(page_alloc(arena_size), arena_size);
     auto* arena = &arena_allocator.allocator;
 
-    auto pipe_arena = arena_create(page_allocator());
-    pipe_arena.alloc(1024ULL * 1024ULL * 1024ULL, 16); // Reserve memory to make it unlikely that we allocate in the audio thread.
-    pipe_arena.drain();
+    constexpr u64 pipe_arena_size = 1024LLU * 1024LLU * 1024LLU;
+    auto pipe_arena = fixed_arena_from_slice(page_alloc(pipe_arena_size), pipe_arena_size);
 
     auto wav_file = TRY(Core::MappedFile::open(wav_path));
     auto audio = TRY(AUAudioRef::decode(arena, AUFormat_WAV, wav_file.bytes()));
@@ -316,9 +316,9 @@ static void underflow_callback(SoundIoOutStream *outstream) {
     dprintln("underflow {}", count++);
 }
 
-static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_f64(Arena* arena_instance, MS::Plugin* plugin);
-static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_f32(Arena* arena_instance, MS::Plugin* plugin);
-static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_audio(Arena* arena_instance, MS::Plugin* plugin)
+static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_f64(FixedArena* arena_instance, MS::Plugin* plugin);
+static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_f32(FixedArena* arena_instance, MS::Plugin* plugin);
+static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_audio(FixedArena* arena_instance, MS::Plugin* plugin)
 {
     if (plugin->supports_f64()) {
         return vst2_process_f64(arena_instance, plugin);
@@ -326,7 +326,7 @@ static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_audio(Arena* ar
     return vst2_process_f32(arena_instance, plugin);
 }
 
-static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_f64(Arena* arena_instance, MS::Plugin* plugin)
+static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_f64(FixedArena* arena_instance, MS::Plugin* plugin)
 {
     return [=](f64* out, f64* in, usize frames, usize channels){
         arena_instance->drain();
@@ -352,7 +352,7 @@ static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_f64(Arena* aren
     };
 }
 
-static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_f32(Arena* arena_instance, MS::Plugin* plugin)
+static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_f32(FixedArena* arena_instance, MS::Plugin* plugin)
 {
     return [=](f64* out, f64* in, usize frames, usize channels){
         arena_instance->drain();

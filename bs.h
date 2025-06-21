@@ -885,10 +885,10 @@ static inline void emit_ninja_build_universal_library(FILE* output, Target const
 
     auto bins_len = len(universal->libs.entries);
     for (usize i = 0; i < bins_len; i++) {
-        Target bin = universal->libs.entries[i];
-        assert(is_library(bin.kind));
-        c_string triple = target_triple_string(target_triple(bin));
-        fprintf(output, " %s/lib/%s.o", triple, bin.name);
+        Target lib = universal->libs.entries[i];
+        assert(is_library(lib.kind));
+        c_string triple = target_triple_string(target_triple(lib));
+        fprintf(output, " %s/lib/%s.o", triple, lib.name);
     }
     fprintf(output, "\n\n");
 }
@@ -906,6 +906,40 @@ static inline void mkdir_p(char* path, mode_t mode)
     mkdir(path, mode);
 }
 
+static c_string shared_library_extension(LibraryArgs const* lib)
+{
+    c_string os = lib->target_triple.os;
+    if (!os) os = system_os();
+    if (strcmp(os, "linux") == 0) {
+        return "so";
+    }
+    if (strcmp(os, "darwin") == 0) {
+        return "dylib";
+    }
+    if (strcmp(os, "windows") == 0) {
+        return "dll";
+    }
+    fprintf(stderr, "unknown os: %s\n", os);
+    assert(false && "unknown os");
+}
+
+static c_string shared_library_prefix(LibraryArgs const* lib)
+{
+    c_string os = lib->target_triple.os;
+    if (!os) os = system_os();
+    if (strcmp(os, "linux") == 0) {
+        return "lib";
+    }
+    if (strcmp(os, "darwin") == 0) {
+        return "lib";
+    }
+    if (strcmp(os, "windows") == 0) {
+        return "";
+    }
+    fprintf(stderr, "unknown os: %s\n", os);
+    assert(false && "unknown os");
+}
+
 static inline void emit_ninja_build_static_library(FILE* output, Target const* target);
 static inline void emit_ninja_build_shared_library(FILE* output, Target const* target)
 {
@@ -914,7 +948,6 @@ static inline void emit_ninja_build_shared_library(FILE* output, Target const* t
     LibraryArgs* library = target->library;
     c_string triple = target_triple_string(library->target_triple);
     c_string base_dir = target->base_dir;
-    usize srcs_len = len(library->srcs.entries);
     usize headers_len = len(library->exported_headers.entries);
     c_string name = target->name;
 
@@ -936,8 +969,11 @@ static inline void emit_ninja_build_shared_library(FILE* output, Target const* t
         symlink(header_path, output_path);
     }
 
-    (void)fprintf(output, "build %s/lib/%s.hotlib: send-file  %s/lib/%s.hotlib.shadow\n\n", triple, name, triple, name);
-    (void)fprintf(output, "build %s/lib/%s.hotlib.shadow: link-shared %s/lib/%s.o\n", triple, name, triple, name);
+    c_string library_prefix = shared_library_prefix(library);
+    c_string library_extension = shared_library_extension(library);
+
+    (void)fprintf(output, "build %s/lib/%s%s.%s: send-file  %s/lib/%s%s.%s.shadow\n\n", triple, library_prefix, name, library_extension, triple, library_prefix, name, library_extension);
+    (void)fprintf(output, "build %s/lib/%s%s.%s.shadow: link-shared %s/lib/%s.o\n", triple, library_prefix, name, library_extension, triple, name);
     usize link_args_len = len(library->linker_flags.entries);
     if (link_args_len > 0) {
         (void)fprintf(output, "    link_args =");
@@ -1062,50 +1098,50 @@ static inline c_string extra_target_files[MAX_ENTRIES];
 
 static inline void emit_ninja(FILE* output, Target target)
 {
-    fprintf(output, "ninja_required_version = 1.8.2\n\n");
+    (void)fprintf(output, "ninja_required_version = 1.8.2\n\n");
 
-    fprintf(output, "bin = ../Toolchain/Tools/bin\n");
-    fprintf(output, "uni_bin = universal-apple-darwin/bin\n");
-    fprintf(output, "\n");
+    (void)fprintf(output, "bin = ../Toolchain/Tools/bin\n");
+    (void)fprintf(output, "uni_bin = universal-apple-darwin/bin\n");
+    (void)fprintf(output, "\n");
 
-    fprintf(output, "default_cxx_args =");
+    (void)fprintf(output, "default_cxx_args =");
     {
         Strings args = default_cxx_args();
         auto args_len = len(args.entries);
         for (usize i = 0; i < args_len; i++) {
-            fprintf(output, " %s", args.entries[i]);
+            (void)fprintf(output, " %s", args.entries[i]);
         }
     }
-    fprintf(output, "\n\n");
+    (void)fprintf(output, "\n\n");
 
-    fprintf(output, "default_cpp_args    = $default_cxx_args -xc++ -std=c++23\n");
-    fprintf(output, "default_c_args      = $default_cxx_args -xc -std=c23\n");
-    fprintf(output, "default_objc_args   = $default_cxx_args -xobjective-c -fobjc-arc -std=c23\n");
-    fprintf(output, "default_objcpp_args = $default_cxx_args -xobjective-c++ -fobjc-arc -std=c++23\n");
-    fprintf(output, "default_asm_args    = -xassembler-with-cpp\n");
-    fprintf(output, "\n");
+    (void)fprintf(output, "default_cpp_args    = $default_cxx_args -xc++ -std=c++23\n");
+    (void)fprintf(output, "default_c_args      = $default_cxx_args -xc -std=c23\n");
+    (void)fprintf(output, "default_objc_args   = $default_cxx_args -xobjective-c -fobjc-arc -std=c23\n");
+    (void)fprintf(output, "default_objcpp_args = $default_cxx_args -xobjective-c++ -fobjc-arc -std=c++23\n");
+    (void)fprintf(output, "default_asm_args    = -xassembler-with-cpp\n");
+    (void)fprintf(output, "\n");
 
     for (usize i = 0; i < all_rules_count; i++) {
         emit_ninja_rule(output, &all_rules[i]);
     }
 
-    fprintf(output, "build compile_commands.json: compdb\n\n");
+    (void)fprintf(output, "build compile_commands.json: compdb\n\n");
 
     Targets targets = flatten_targets(target);
     usize targets_len = len(targets.entries);
-    fprintf(output, "build build.ninja: reconfigure ../%s", g_root_file);
-    fprintf(output, " ../%s", __FILE__);
+    (void)fprintf(output, "build build.ninja: reconfigure ../%s", g_root_file);
+    (void)fprintf(output, " ../%s", __FILE__);
     usize extra_target_files_len = len(extra_target_files);
     for (usize i = 0; i < extra_target_files_len; i++) {
-        fprintf(output, " ../%s", extra_target_files[i]);
+        (void)fprintf(output, " ../%s", extra_target_files[i]);
     }
     for (usize i = 0; i < targets_len; i++) {
         Target const* target = &targets.entries[i];
         if (target->file[0] == '\0')
             continue;
-        fprintf(output, " ../%s", target->file);
+        (void)fprintf(output, " ../%s", target->file);
     }
-    fprintf(output, "\n    configure = %s\n\n", g_root_file);
+    (void)fprintf(output, "\n    configure = %s\n\n", g_root_file);
 
     for (usize i = 0; i < targets_len; i++) {
         Target const* target = &targets.entries[i];
@@ -1211,6 +1247,7 @@ static inline Strings default_cxx_args(void)
         "-Wno-unknown-warning-option",
         "-Wno-unused-command-line-argument",
         "-Wno-user-defined-literals",
+        "-Wno-gcc-compat",
         "-Wsuggest-override",
         "-fstrict-flex-arrays=2",
         "-Wno-c23-extensions",

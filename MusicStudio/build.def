@@ -29,7 +29,6 @@ auto const music_studio = cc_binary("music-studio", {
     .deps = {
         fonts,
         shaders,
-        libraries.render,
         libraries.ms,
         libraries.ui,
         libraries.debug,

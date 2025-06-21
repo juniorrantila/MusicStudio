@@ -1,17 +1,23 @@
 #pragma once
 #include "../../bs.h"
+#include "../Ty/build.def"
+#include "../Ty2/build.def"
 
 static auto const gl = cc_library("GL", {
     .srcs = {
-        "./Dummy.cpp",
+        "./Renderer.cpp",
     },
     .exported_headers = {
         "./GL.h",
+        "./Renderer.h",
     },
     .header_namespace = "GL",
     .compile_flags = {},
     .linker_flags = {},
     .target_triple = {},
     .link_style = "static",
-    .deps = {},
+    .deps = {
+        ty2,
+        ty,
+    },
 });

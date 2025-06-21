@@ -54,13 +54,14 @@ C_API void fixed_arena_sweep(FixedArena* arena, FixedMark mark)
 void* FixedArena::alloc(usize size, usize align) { return fixed_arena_alloc(this, size, align); }
 C_API void* fixed_arena_alloc(FixedArena* arena, usize size, usize align)
 {
-    usize size_until_aligned = align - ((uptr)arena->head) % align;
-    usize allocation_size = size + size_until_aligned;
-    if ((arena->head + allocation_size) > arena->end) {
+    u8* new_head = __builtin_align_up(arena->head, align);
+    usize size_until_aligned = new_head - arena->head;
+    if ((new_head + size) > arena->end) {
         return nullptr;
     }
-    memcheck_canary(arena->head, allocation_size);
-    arena->head += size_until_aligned;
+    memcheck_canary(arena->head, size_until_aligned);
+    memcheck_canary(new_head, size);
+    arena->head = new_head;
     VERIFY(((uptr)arena->head) % align == 0);
     void* ptr = arena->head;
     arena->head += size;

@@ -5,7 +5,7 @@
 
 #define UI_KEYMAP_SIZE ((usize)1024)
 
-typedef struct WSWindowSpec {
+typedef struct UIWindowSpec {
     UIWindow* parent;
     c_string title;
     i32 x;

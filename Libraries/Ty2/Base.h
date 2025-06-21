@@ -60,8 +60,10 @@ typedef char const* c_string;
 
 #ifdef __cplusplus
 #define C_API extern "C"
+#define C_INLINE extern "C" inline
 #else
 #define C_API
+#define C_INLINE static inline
 #endif
 
 #define RETURNS_SIZED_BY(size_parameter_index) \

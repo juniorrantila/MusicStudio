@@ -20,9 +20,9 @@ typedef struct StringSlice {
 #endif
 } StringSlice;
 
-C_API inline StringSlice string_slice_empty(void) { return (StringSlice){ 0, 0 }; }
-C_API inline StringSlice string_slice_from_c_string(c_string s) { return (StringSlice){ s, __builtin_strlen(s) }; }
-C_API inline StringSlice string_slice(char const* items, usize count) { return (StringSlice){ items, count }; }
+C_INLINE StringSlice string_slice_empty(void) { return (StringSlice){ 0, 0 }; }
+C_INLINE StringSlice string_slice_from_c_string(c_string s) { return (StringSlice){ s, __builtin_strlen(s) }; }
+C_INLINE StringSlice string_slice(char const* items, usize count) { return (StringSlice){ items, count }; }
 C_API bool string_clone(Allocator*, StringSlice s, StringSlice*);
 
 C_API bool string_resolve_path(StringSlice, Allocator*, StringSlice*);

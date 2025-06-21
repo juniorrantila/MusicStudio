@@ -12,7 +12,6 @@ static auto const library = cc_library("Library", {
     .exported_headers = {
         "./Error.def",
         "./Library.h",
-        "./HotReload.h",
         "./Actor.h",
     },
     .header_namespace = "Library",

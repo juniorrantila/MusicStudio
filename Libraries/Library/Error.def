@@ -1,5 +1,3 @@
-LIBRARY_ERROR(could_not_allocate, "could not allocate")
-LIBRARY_ERROR(not_hotreloadable, "library not hotreloadable")
 LIBRARY_ERROR(could_not_open, "could not open file")
 LIBRARY_ERROR(could_not_stat, "could not stat")
 LIBRARY_ERROR(could_not_map, "could not map")

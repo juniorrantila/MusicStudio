@@ -124,12 +124,13 @@ ArgumentParserResult ArgumentParser::run(int argc,
 
             TRY(err_out.writeln("Missing positional argument: "sv,
                 placeholder));
-        }
-        TRY(err_out.writeln("Missing positional arguments: "sv));
-        for (usize i = used_positionals;
-             i < positional_placeholders.size(); i++) {
-            auto placeholder = positional_placeholders[i];
-            TRY(err_out.writeln("\t"sv, placeholder));
+        } else {
+            TRY(err_out.writeln("Missing positional arguments: "sv));
+            for (usize i = used_positionals;
+                 i < positional_placeholders.size(); i++) {
+                auto placeholder = positional_placeholders[i];
+                TRY(err_out.writeln("\t"sv, placeholder));
+            }
         }
 
         TRY(err_out.writeln("\nSee help for more info ("sv,

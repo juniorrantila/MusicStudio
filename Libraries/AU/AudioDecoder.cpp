@@ -320,6 +320,7 @@ enum AUWAVFormat {
     AUWAVFormat_Unknown = 0,
     AUWAVFormat_PCM = 1,
     AUWAVFormat_Float = 2,
+    AUWAVFormat_OGG = ('O' << 8) | ('g' << 0),
 };
 
 struct AUWAV {
@@ -550,6 +551,7 @@ static e_au_decode decode_wav(Bytes bytes, AUWAV* out)
         switch (format) {
         case 1: return AUWAVFormat_PCM;
         case 3: return AUWAVFormat_Float;
+        case 'O' << 8 | 'g': return AUWAVFormat_OGG;
         }
         return AUWAVFormat_Unknown;
     }).or_throw([]{

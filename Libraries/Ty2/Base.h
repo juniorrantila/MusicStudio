@@ -73,12 +73,14 @@ typedef __attribute__((ext_vector_type(4))) f32 v4;
 #define C_INLINE static inline
 #endif
 
-#define RETURNS_SIZED_BY(size_parameter_index) \
-    __attribute__((alloc_size(size_parameter_index)))
+typedef struct [[nodiscard]] { bool ok; } KSuccess;
+C_INLINE KSuccess ksuccess() { return (KSuccess){true}; }
+C_INLINE KSuccess kfail() { return (KSuccess){false}; }
 
-#define RETURNS_ALIGNED_BY(align_parameter_index) \
-    __attribute__((alloc_size(align_parameter_index)))
-
-#define RETURNS_SIZED_AND_ALIGNED_BY(size_parameter_index, align_parameter_index) \
-    RETURNS_SIZED_BY(size_parameter_index) \
-    RETURNS_ALIGNED_BY(align_parameter_index)
+#if __has_feature(realtime_sanitizer)
+C_API void __rtsan_disable(void);
+C_API void __rtsan_enable();
+#else
+#define __rtsan_disable() do {} while(0)
+#define __rtsan_enable() do {} while(0)
+#endif

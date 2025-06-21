@@ -196,7 +196,6 @@ auto const shadertoy = cc_binary("shadertoy", {
         libraries.cli,
         libraries.ui,
         libraries.gl,
-        libraries.render,
         libraries.fs,
     }
 });

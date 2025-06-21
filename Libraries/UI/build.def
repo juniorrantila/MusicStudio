@@ -3,19 +3,16 @@
 #include "../Ty/build.def"
 #include "../GL/build.def"
 #include "../Rexim/build.def"
-#include "../Render/build.def"
 
 static auto const ui = cc_library("UI", {
     .srcs = {
         "./AppKit/Application.mm",
         "./AppKit/Window.mm",
-        "./UI.cpp",
     },
     .exported_headers = {
         "./Application.h",
         "./Forward.h",
         "./KeyCode.h",
-        "./UI.h",
         "./Window.h",
     },
     .header_namespace = "UI",
@@ -27,6 +24,5 @@ static auto const ui = cc_library("UI", {
         ty,
         gl,
         rexim,
-        render,
     },
 });

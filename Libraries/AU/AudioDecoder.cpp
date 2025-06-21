@@ -48,9 +48,9 @@ static usize sample_index(AUAudio const* audio, usize channel, usize frame)
 i8 au_audio_sample_i8(AUAudio const* audio, usize channel, usize frame)
 {
     usize index = sample_index(audio, channel, frame);
-    if (index >= au_audio_sample_count(audio)) {
+    if (index >= au_audio_sample_count(audio))
         return 0;
-    }
+    VERIFY(audio->samples.i8);
     switch (audio->sample_format) {
     case AUSampleFormat_I8:
         return audio->samples.i8[index];
@@ -72,9 +72,9 @@ i8 au_audio_sample_i8(AUAudio const* audio, usize channel, usize frame)
 i16 au_audio_sample_i16(AUAudio const* audio, usize channel, usize frame)
 {
     usize index = sample_index(audio, channel, frame);
-    if (index >= au_audio_sample_count(audio)) {
+    if (index >= au_audio_sample_count(audio))
         return 0;
-    }
+    VERIFY(audio->samples.i8);
     switch (audio->sample_format) {
     case AUSampleFormat_I8:
         return (i16)(((i16)audio->samples.i8[index]) * 2);
@@ -96,9 +96,9 @@ i16 au_audio_sample_i16(AUAudio const* audio, usize channel, usize frame)
 i32 au_audio_sample_i32(AUAudio const* audio, usize channel, usize frame)
 {
     usize index = sample_index(audio, channel, frame);
-    if (index >= au_audio_sample_count(audio)) {
+    if (index >= au_audio_sample_count(audio))
         return 0;
-    }
+    VERIFY(audio->samples.i8);
     switch (audio->sample_format) {
     case AUSampleFormat_I8:
         return (i32)(((i32)audio->samples.i8[index]) * 4);
@@ -120,9 +120,9 @@ i32 au_audio_sample_i32(AUAudio const* audio, usize channel, usize frame)
 i64 au_audio_sample_i64(AUAudio const* audio, usize channel, usize frame)
 {
     usize index = sample_index(audio, channel, frame);
-    if (index >= au_audio_sample_count(audio)) {
+    if (index >= au_audio_sample_count(audio))
         return 0;
-    }
+    VERIFY(audio->samples.i8);
     switch (audio->sample_format) {
     case AUSampleFormat_I8:
         return (i64)(((i64)audio->samples.i8[index]) * 8);
@@ -144,9 +144,9 @@ i64 au_audio_sample_i64(AUAudio const* audio, usize channel, usize frame)
 f16 au_audio_sample_f16(AUAudio const* audio, usize channel, usize frame)
 {
     usize index = sample_index(audio, channel, frame);
-    if (index >= au_audio_sample_count(audio)) {
+    if (index >= au_audio_sample_count(audio))
         return 0.0f;
-    }
+    VERIFY(audio->samples.i8);
     switch (audio->sample_format) {
     case AUSampleFormat_I8:
         return (f16)(((f16)audio->samples.i8[index]) / (f16)Limits<i8>::max());
@@ -168,9 +168,9 @@ f16 au_audio_sample_f16(AUAudio const* audio, usize channel, usize frame)
 f32 au_audio_sample_f32(AUAudio const* audio, usize channel, usize frame)
 {
     usize index = sample_index(audio, channel, frame);
-    if (index >= au_audio_sample_count(audio)) {
+    if (index >= au_audio_sample_count(audio))
         return 0.0f;
-    }
+    VERIFY(audio->samples.i8);
     switch (audio->sample_format) {
     case AUSampleFormat_I8:
         return (f32)(((f32)audio->samples.i8[index]) / (f32)Limits<i8>::max());
@@ -192,9 +192,9 @@ f32 au_audio_sample_f32(AUAudio const* audio, usize channel, usize frame)
 f64 au_audio_sample_f64(AUAudio const* audio, usize channel, usize frame)
 {
     usize index = sample_index(audio, channel, frame);
-    if (index >= au_audio_sample_count(audio)) {
-        return 0.0f;
-    }
+    if (index >= au_audio_sample_count(audio))
+        return 0.0;
+    VERIFY(audio->samples.i8);
     switch (audio->sample_format) {
     case AUSampleFormat_I8:
         return (f64)(((f64)audio->samples.i8[index]) / (f64)Limits<i8>::max());
@@ -229,14 +229,14 @@ e_au_transcode au_transcode(Schedule* schedule, Allocator* gpa, AUAudio input, A
 
     AUAudio output = {
         .gpa = gpa,
-        .sample_layout = to_spec.sample_layout,
-        .sample_format = to_spec.sample_format,
-        .sample_rate = to_spec.sample_rate,
-        .channel_count = input.channel_count,
         .frame_count = input.frame_count,
         .samples = {
             .i8 = nullptr,
-        }
+        },
+        .sample_rate = to_spec.sample_rate,
+        .channel_count = input.channel_count,
+        .sample_layout = to_spec.sample_layout,
+        .sample_format = to_spec.sample_format,
     };
     auto byte_size = au_audio_byte_size(&output);
     output.samples.i8 = (i8*)gpa->alloc(byte_size, sample_align);
@@ -371,14 +371,14 @@ static e_au_decode borrow_wav(AUWAV wav, AUAudio* out)
     }
     *out = {
         .gpa = nullptr,
-        .sample_layout = AUSampleLayout_Interlaced,
-        .sample_format = sample_format,
-        .sample_rate = wav.sample_rate,
-        .channel_count = wav.channel_count,
         .frame_count = wav.frame_count,
         .samples = {
             .i8 = wav.samples.i8,
         },
+        .sample_rate = wav.sample_rate,
+        .channel_count = wav.channel_count,
+        .sample_layout = AUSampleLayout_Interlaced,
+        .sample_format = sample_format,
     };
     return e_au_decode_none;
 }
@@ -392,11 +392,10 @@ e_au_decode au_audio_decode(Allocator* gpa, AUFormat format, Bytes bytes, AUAudi
             return error;
         }
     }
-    AUAudio audio;
+    AUAudio audio {};
     if (auto error = borrow_wav(wav, &audio)) {
         return error;
     }
-    (void)gpa;
     usize byte_size = au_audio_byte_size(&audio);
     auto* samples = (i8*)gpa->alloc(byte_size, sample_align);
     if (!samples) {

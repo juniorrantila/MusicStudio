@@ -12,9 +12,9 @@ typedef enum AUFormat {
     AUFormat_WAV,
 } AUFormat;
 
-typedef enum AUChannelLayout : u16 {
-    AUSampleLayout_Interlaced,
-    AUSampleLayout_Linear,
+typedef enum AUChannelLayout : u8 {
+    AUSampleLayout_Interlaced = 0,
+    AUSampleLayout_Linear = 1,
 } AUSampleLayout;
 
 typedef enum AUSampleKind : u8 {
@@ -22,7 +22,7 @@ typedef enum AUSampleKind : u8 {
     AUSampleKind_Float = 1,
 } AUSampleKind;
 
-typedef enum AUSampleFormat : u16 {
+typedef enum AUSampleFormat : u8 {
     AUSampleFormat_I8  = (sizeof(i8)  << 1) | AUSampleKind_PCM,
     AUSampleFormat_I16 = (sizeof(i16) << 1) | AUSampleKind_PCM,
     AUSampleFormat_I32 = (sizeof(i32) << 1) | AUSampleKind_PCM,
@@ -70,10 +70,6 @@ c_string au_decode_strerror(e_au_decode);
 
 typedef struct AUAudio {
     Allocator* gpa;
-    AUSampleLayout sample_layout;
-    AUSampleFormat sample_format;
-    u32 sample_rate;
-    u32 channel_count;
     u64 frame_count;
     union {
         i8*  i8;
@@ -84,7 +80,12 @@ typedef struct AUAudio {
         f32* f32;
         f64* f64;
     } samples;
+    u32 sample_rate;
+    u16 channel_count;
+    AUSampleLayout sample_layout;
+    AUSampleFormat sample_format;
 } AUAudio;
+static_assert(sizeof(AUAudio) == 32);
 
 typedef struct AUAudioSpec {
     AUSampleLayout sample_layout;

@@ -60,6 +60,9 @@ static_assert(sizeof(f64) == 8, "");
 
 typedef char const* c_string;
 
+typedef __attribute__((ext_vector_type(2))) f32 v2;
+typedef __attribute__((ext_vector_type(4))) f32 v4;
+
 #define field_base(T, field, value) ((T*) (((u8*)(value)) - ty_offsetof(T, field)))
 
 #ifdef __cplusplus

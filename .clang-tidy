@@ -27,6 +27,11 @@ Checks: >
   -readability-use-anyofallof,
   -readability-implicit-bool-conversion,
   -readability-redundant-member-init,
+  -readability-simplify-boolean-expr,
+  -readability-avoid-unconditional-preprocessor-if,
+  -readability-math-missing-parentheses,
+  -readability-avoid-return-with-void-value,
+  -readability-use-std-min-max
 WarningsAsErrors: ''
 FormatStyle: none
 CheckOptions:

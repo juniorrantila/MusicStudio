@@ -16,6 +16,10 @@
 #define ty_offsetof __builtin_offsetof
 #endif
 
+#ifndef ty_array_size
+#define ty_array_size(a) (sizeof(a) / sizeof(a[0]))
+#endif
+
 typedef __INT8_TYPE__ i8;
 typedef __INT16_TYPE__ i16;
 typedef __INT32_TYPE__ i32;

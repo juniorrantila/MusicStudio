@@ -16,6 +16,7 @@ typedef struct LoggerEvent {
     char const* message;
     usize message_size;
     LoggerEventTag tag;
+    u32 seq;
 } LoggerEvent;
 
 typedef struct Logger {
@@ -23,6 +24,7 @@ typedef struct Logger {
     Allocator* temporary_arena;
 
 #ifdef __cplusplus
+
     [[gnu::format(printf, 2, 3)]]
     void debug(c_string, ...);
 
@@ -87,3 +89,23 @@ C_API void log_fatal(Logger*, c_string, ...);
 
 __attribute__((noreturn, format(printf, 2, 0)))
 C_API void vlog_fatal(Logger*, c_string, va_list);
+
+__attribute__((format(printf, 2, 3)))
+C_API void log_debug_if(Logger*, c_string, ...);
+__attribute__((format(printf, 2, 0)))
+C_API void vlog_debug_if(Logger*, c_string, va_list);
+
+__attribute__((format(printf, 2, 3)))
+C_API void log_info_if(Logger*, c_string, ...);
+__attribute__((format(printf, 2, 0)))
+C_API void vlog_info_if(Logger*, c_string, va_list);
+
+__attribute__((format(printf, 2, 3)))
+C_API void log_warning_if(Logger*, c_string, ...);
+__attribute__((format(printf, 2, 0)))
+C_API void vlog_warning_if(Logger*, c_string, va_list);
+
+__attribute__((format(printf, 2, 3)))
+C_API void log_error_if(Logger*, c_string, ...);
+__attribute__((format(printf, 2, 0)))
+C_API void vlog_error_if(Logger*, c_string, va_list);

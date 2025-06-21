@@ -1,13 +1,23 @@
+#include <pthread.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-fallthrough"
+#pragma clang diagnostic ignored "-Wunused"
+#define STB_SPRINTF_IMPLEMENTATION
+#define STB_SPRINTF_NOUNALIGNED
+#define STB_SPRINTF_STATIC
+#define STB_SPRINTF_DECORATE(x) stb_##x
+#include "./stb_sprintf.h"
+#pragma clang diagnostic pop
+
 #include "./Logger.h"
 
-#include <stdio.h>
+#include "./Verify.h"
+
 #include <stdarg.h>
-#include <stdlib.h>
 
 struct Format {
     char* buf;
     usize buf_len;
-    bool used_allocator;
 };
 
 [[gnu::format(printf, 2, 0)]]
@@ -16,6 +26,7 @@ static Format format_resolve(Allocator*, c_string fmt, va_list args);
 [[gnu::format(printf, 3, 0)]]
 static void log_generic(Logger* l, LoggerEventTag tag, c_string fmt, va_list args)
 {
+    static _Atomic u32 seq;
     Format format = format_resolve(l->temporary_arena, fmt, args);
     if (!format.buf) return;
 
@@ -23,20 +34,17 @@ static void log_generic(Logger* l, LoggerEventTag tag, c_string fmt, va_list arg
         .message = format.buf,
         .message_size = format.buf_len,
         .tag = tag,
+        .seq = seq++,
     });
 
-    if (format.used_allocator) {
-        memfree(l->temporary_arena, format.buf, format.buf_len, 1);
-    } else {
-        free(format.buf);
-    }
+    memfree(l->temporary_arena, format.buf, format.buf_len, 1);
 }
 
 C_API void vlog_debug(Logger* l, c_string fmt, va_list args) { log_generic(l, LoggerEventTag_Debug, fmt, args); }
 C_API void vlog_info(Logger* l, c_string fmt, va_list args)  { log_generic(l, LoggerEventTag_Info, fmt, args); }
 C_API void vlog_warning(Logger* l, c_string fmt, va_list args) { log_generic(l, LoggerEventTag_Warning, fmt, args); }
 C_API void vlog_error(Logger* l, c_string fmt, va_list args) { log_generic(l, LoggerEventTag_Error, fmt, args); }
-C_API void vlog_fatal(Logger* l, c_string fmt, va_list args) { log_generic(l, LoggerEventTag_Fatal, fmt, args); abort(); }
+C_API void vlog_fatal(Logger* l, c_string fmt, va_list args) { log_generic(l, LoggerEventTag_Fatal, fmt, args); __builtin_abort(); }
 
 C_API void log_debug(Logger* l, c_string fmt, ...)
 {
@@ -123,50 +131,89 @@ void Logger::fatal(c_string fmt, ...)
 }
 void Logger::vfatal(c_string fmt, va_list args) { vlog_fatal(this, fmt, args); }
 
+
+C_API void log_debug_if(Logger* l, c_string fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+
+    vlog_debug_if(l, fmt, args);
+
+    va_end(args);
+}
+__attribute__((format(printf, 2, 0)))
+C_API void vlog_debug_if(Logger* l, c_string fmt, va_list args)
+{
+    if (!l) return;
+    vlog_debug(l, fmt, args);
+}
+
+C_API void log_info_if(Logger* l, c_string fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+
+    vlog_info_if(l, fmt, args);
+
+    va_end(args);
+}
+
+C_API void vlog_info_if(Logger* l, c_string fmt, va_list args)
+{
+    if (!l) return;
+    vlog_info(l, fmt, args);
+}
+
+C_API void log_warning_if(Logger* l, c_string fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+
+    vlog_warning_if(l, fmt, args);
+
+    va_end(args);
+}
+
+C_API void vlog_warning_if(Logger* l, c_string fmt, va_list args)
+{
+    if (!l) return;
+    vlog_warning(l, fmt, args);
+}
+
+C_API void log_error_if(Logger* l, c_string fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+
+    vlog_error_if(l, fmt, args);
+
+    va_end(args);
+}
+
+C_API void vlog_error_if(Logger* l, c_string fmt, va_list args)
+{
+    if (!l) return;
+    vlog_error(l, fmt, args);
+}
+
 static Format format_resolve(Allocator* a, c_string fmt, va_list args)
 {
     va_list args2;
     va_copy(args2, args);
 
+    int len = stb_vsnprintf(0, 0, fmt, args);
+    VERIFY(len >= 0);
 
-    int len = vsnprintf(0, 0, fmt, args);
-    if (len < 0) {
-        va_end(args2);
-        (void)fprintf(stderr, "ERROR: could not resolve format length\n");
-        return {
-            .buf = 0,
-            .buf_len = 0,
-            .used_allocator = false,
-        };
-    }
-    len += 1;
+    char* buf = (char*)memalloc(a, len + 1, 1);
+    VERIFY(buf);
+    __builtin_memset(buf, 0, len);
 
-    char* buf = (char*)memalloc(a, len, 1);
-    if (!buf) {
-        buf = (char*)calloc(len, 1);
-        if (!buf) {
-            (void)fprintf(stderr, "ERROR: could not allocate memory for message\n");
-            (void)vfprintf(stderr, fmt, args2);
-            va_end(args2);
-            return {
-                .buf = 0,
-                .buf_len = 0,
-                .used_allocator = false,
-            };
-        }
-        va_end(args2);
-        return {
-            .buf = buf,
-            .buf_len = (usize)len,
-            .used_allocator = false,
-        };
-    }
+    int len2 = stb_vsnprintf(buf, len + 1, fmt, args2);
+    VERIFY(len == len2);
 
-    (void)vsnprintf(buf, len, fmt, args2);
     va_end(args2);
     return {
         .buf = buf,
         .buf_len = (usize)len,
-        .used_allocator = true,
     };
 }

@@ -868,7 +868,8 @@ static M3ValueType type_char(char c)
     case 'F': return c_m3Type_f64;
     case '*': return c_m3Type_i32; // FIXME: Assuming wasm32
     }
-    VERIFY(false && "unknown type_char");
+    panics("unknown type_char");
+    return c_m3Type_unknown;
 }
 
 static bool function_has_signature(IM3Function func, StringView signature)

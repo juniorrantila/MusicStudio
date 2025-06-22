@@ -59,16 +59,6 @@ auto const swap_stack = cc_binary("swap-stack", {
     },
 });
 
-auto const message_queues = cc_binary("message-queues", {
-    .srcs = {
-        "./message-queues.cpp"
-    },
-    .compile_flags = {},
-    .linker_flags = {},
-    .target_triple = {},
-    .deps = {},
-});
-
 auto const fs_volume_file_watch_example = cc_binary("fs-volume-file-watch-example", {
     .srcs = {
         "./fs-volume-file-watch-example.cpp",

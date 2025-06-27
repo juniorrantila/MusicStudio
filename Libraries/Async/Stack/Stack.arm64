@@ -1,7 +1,0 @@
-.align 4
-.global async_stack_swap
-async_stack_swap:
-    mov x1, sp
-    mov sp, x0
-    mov x0, x1
-    ret

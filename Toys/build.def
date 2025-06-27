@@ -34,31 +34,6 @@ auto const hello_asm = cc_binary("hello-asm", {
     .deps = {}
 });
 
-auto const async_c = cc_binary("async", {
-    .srcs = {
-        "./async.c"
-    },
-    .compile_flags = {},
-    .linker_flags = {},
-    .target_triple = {},
-    .deps = {
-        libraries.async,
-        libraries.ty,
-    },
-});
-
-auto const swap_stack = cc_binary("swap-stack", {
-    .srcs = {
-        "./swap-stack.c"
-    },
-    .compile_flags = {},
-    .linker_flags = {},
-    .target_triple = {},
-    .deps = {
-        libraries.async,
-    },
-});
-
 auto const fs_volume_file_watch_example = cc_binary("fs-volume-file-watch-example", {
     .srcs = {
         "./fs-volume-file-watch-example.cpp",

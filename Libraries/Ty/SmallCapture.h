@@ -33,7 +33,8 @@
 #include "./Defer.h"
 #include "./Verify.h"
 #include "./Move.h"
-#include "./BitCast.h"
+
+#include <Ty2/Bits.h>
 
 namespace Ty {
 
@@ -191,9 +192,9 @@ private:
         case FunctionKind::NullPointer:
             return nullptr;
         case FunctionKind::Inline:
-            return bit_cast<CallableWrapperBase*>(&m_storage);
+            return ty_bit_cast<CallableWrapperBase*>(&m_storage);
         case FunctionKind::Outline:
-            return *bit_cast<CallableWrapperBase**>(&m_storage);
+            return *ty_bit_cast<CallableWrapperBase**>(&m_storage);
         default:
             VERIFY(false);
         }
@@ -254,7 +255,7 @@ private:
             m_kind = FunctionKind::Inline;
             break;
         case FunctionKind::Outline:
-            *bit_cast<CallableWrapperBase**>(&m_storage) = other_wrapper;
+            *ty_bit_cast<CallableWrapperBase**>(&m_storage) = other_wrapper;
             m_kind = FunctionKind::Outline;
             break;
         default:

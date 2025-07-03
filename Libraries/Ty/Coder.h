@@ -1,8 +1,9 @@
 #pragma once
 #include "./Base.h"
 #include "./StringView.h"
-#include "./BitCast.h"
 #include "./SmallVector.h"
+
+#include <Ty2/Bits.h>
 
 namespace Ty {
 
@@ -90,7 +91,7 @@ private:
     {
         m_fields.must_append({
             .name = name,
-            .offset = bit_cast<uptr>(field),
+            .offset = ty_bit_cast<uptr>(field),
             .type = type,
             .required = required,
         });

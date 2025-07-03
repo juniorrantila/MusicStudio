@@ -1,6 +1,5 @@
 #include "Host.h"
 
-#include <Ty/ScopeGuard.h>
 #include <Ty/Base.h>
 #include <Vst/AEffect.h>
 #include <Vst/Opcodes.h>

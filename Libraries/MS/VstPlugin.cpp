@@ -1,6 +1,6 @@
 #include "VstPlugin.h"
 
-#include <Ty/ScopeGuard.h>
+#include <Ty2/Defer.h>
 
 namespace MS {
 
@@ -26,7 +26,7 @@ ErrorOr<Plugin> Plugin::create_from(const char *path)
     // if (!plugin->init())
     //     return Error::from_string_literal("could not initialize plugin");
     (void)plugin->init();
-    ScopeGuard deinit_plugin = [&] {
+    Defer deinit_plugin = [&] {
         (void)plugin->deinit();
     };
 

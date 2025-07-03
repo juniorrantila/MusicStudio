@@ -58,3 +58,5 @@ struct Limits<u64> {
 };
 
 }
+
+using Ty::Limits;

@@ -23,7 +23,6 @@ static auto const ty = cc_library("Ty", {
         "./Assert.h",
         "./Base.h",
         "./BitCast.h",
-        "./Buffer.h",
         "./ByteBuffer.h",
         "./ByteDecoder.h",
         "./Bytes.h",

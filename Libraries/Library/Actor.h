@@ -21,9 +21,9 @@ typedef struct ActorEvent {
     ActorEventTag tag;
 } ActorEvent;
 
-static constexpr usize actor_max_states = 4;
-static constexpr usize actor_max_state_size = 256;
-static constexpr usize actor_max_state_align = 256;
+static constexpr u64 actor_max_states = 4;
+static constexpr u64 actor_max_state_size = 32;
+static constexpr u64 actor_max_state_align = 32;
 
 typedef struct Actor {
     void* (*dispatch)(ActorEvent);
@@ -42,8 +42,8 @@ typedef struct Actor {
     alignas(actor_max_state_align) u8 state[actor_max_states][actor_max_state_size];
 } Actor;
 
-C_API bool actor_init(Logger* debug, void* (*dispatch)(ActorEvent), void const* arg, usize arg_size, Actor*);
-C_API bool actor_init_reloadable(Logger* debug, FSVolume* volume, FileID library, c_string dispatch_name, void const* arg, usize arg_size, Actor*);
+C_API bool actor_init(Logger* debug, void* (*dispatch)(ActorEvent), void const* arg, u64 arg_size, Actor*);
+C_API bool actor_init_reloadable(Logger* debug, FSVolume* volume, FileID library, c_string dispatch_name, void const* arg, u64 arg_size, Actor*);
 C_API void actor_deinit(Actor*);
 
 C_API void actor_update(Actor*);

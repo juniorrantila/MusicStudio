@@ -13,7 +13,7 @@ static bool init(void*(*dispatch)(ActorEvent), u8* state, void const* arg, usize
 static void deinit(void*(*dispatch)(ActorEvent), u8* state);
 static void bind(void*(*dispatch)(ActorEvent), u8* state);
 
-C_API bool actor_init(Logger* debug, void* (*dispatch)(ActorEvent), void const* arg, usize arg_size, Actor* out)
+C_API bool actor_init(Logger* debug, void* (*dispatch)(ActorEvent), void const* arg, u64 arg_size, Actor* out)
 {
     VERIFY(dispatch);
     VERIFY(out);
@@ -52,7 +52,7 @@ C_API bool actor_init(Logger* debug, void* (*dispatch)(ActorEvent), void const* 
     return true;
 }
 
-C_API bool actor_init_reloadable(Logger* debug, FSVolume* volume, FileID library, c_string dispatch_name, void const* arg, usize arg_size, Actor* out)
+C_API bool actor_init_reloadable(Logger* debug, FSVolume* volume, FileID library, c_string dispatch_name, void const* arg, u64 arg_size, Actor* out)
 {
     VERIFY(volume);
     VERIFY(dispatch_name);

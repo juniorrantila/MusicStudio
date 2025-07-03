@@ -40,11 +40,11 @@ C_API MailboxSuccess mailbox_post(MailboxWriter* mb, u16 tag, u64 size, u64 alig
     VERIFY(pthread_equal(mb->mailbox.writer_thread.thread, pthread_self()));
     if (slots_left(&mb->mailbox) == 0) return mailbox_no_space();
 
-    Message* m = (Message*)write_ptr(&mb->mailbox);
+    Message* m = write_ptr(&mb->mailbox);
     *m = (Message){
         .tag = tag,
         .align = (u16)align,
-        .size = (u8)size,
+        .size = (u16)size,
         .data = {},
     };
     memcpy(m->data, data, size);

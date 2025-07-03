@@ -21,12 +21,12 @@ C_INLINE MailboxStatus mailbox_empty(void) { return (MailboxStatus){false}; }
 C_INLINE MailboxStatus mailbox_found(void) { return (MailboxStatus){true}; }
 
 
-constexpr u64 message_size_max = 251;
+constexpr u64 message_size_max = 1274;
 constexpr u64 message_align_max = 65535;
 typedef struct alignas(256) Message {
     u16 tag;
     u16 align;
-    u8 size;
+    u16 size;
     u8 data[message_size_max];
 
 #ifdef __cplusplus
@@ -36,7 +36,7 @@ typedef struct alignas(256) Message {
     MailboxSuccess unwrap(T* buf) const { return unwrap(Ty2::type_id<T>(), sizeof(T), alignof(T), buf); }
 #endif
 } Message;
-static_assert(sizeof(Message) == 256);
+static_assert(sizeof(Message) == 1280);
 
 C_API MailboxSuccess message_unwrap(Message const*, u16 tag, u64 size, u64 align, void*);
 

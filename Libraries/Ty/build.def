@@ -56,7 +56,6 @@ static auto const ty = cc_library("Ty", {
         "./ReverseIterator.h",
         "./ScopeGuard.h",
         "./SegmentedArena.h",
-        "./Signal.h",
         "./SmallCapture.h",
         "./SmallMap.h",
         "./SmallVector.h",

@@ -14,14 +14,14 @@ typedef struct [[nodiscard]] { bool failed; } VerifyFail;
 #define verify(__expression)                \
     ({                                      \
         bool __result = !(__expression);    \
-        if (__result) __builtin_printf(VERIFY_RED "VERIFY" VERIFY_NORMAL ": %s: \"" VERIFY_CYAN "%s" VERIFY_NORMAL "\" " VERIFY_RED "failed" VERIFY_NORMAL " [%s:%d]\n", __FUNCTION__, #__expression, __FILE__, __LINE__);  \
+        if (__result) __builtin_printf(VERIFY_RED "VERIFY" VERIFY_NORMAL ": %s: \"" VERIFY_CYAN "%s" VERIFY_NORMAL "\" " VERIFY_RED "failed" VERIFY_NORMAL " [%s:%d]\n", __builtin_FUNCTION(), #__expression, __FILE__, __LINE__);  \
         (VerifyFail){__result};             \
     })
 
 #define verifys(__expression, message)      \
     ({                                      \
         bool __result = !(__expression);    \
-        if (__result) __builtin_printf(VERIFY_RED "VERIFY" VERIFY_NORMAL ": %s: \"" VERIFY_CYAN "%s" VERIFY_NORMAL "\" " VERIFY_RED "failed" VERIFY_NORMAL " (" message ") [%s:%d]\n", __FUNCTION__, #__expression, __FILE__, __LINE__); \
+        if (__result) __builtin_printf(VERIFY_RED "VERIFY" VERIFY_NORMAL ": %s: \"" VERIFY_CYAN "%s" VERIFY_NORMAL "\" " VERIFY_RED "failed" VERIFY_NORMAL " (" message ") [%s:%d]\n", __builtin_FUNCTION(), #__expression, __FILE__, __LINE__); \
         (VerifyFail){__result};             \
     })
 #endif

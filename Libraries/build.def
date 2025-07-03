@@ -20,7 +20,7 @@
 #include "./Image/build.def"
 #include "./AU/build.def"
 #include "./Math/build.def"
-#include "./Schedule/build.def"
+
 #include "./Vendor/SoundIo/build.def"
 #include "./Vendor/WASM3/build.def"
 #include "./Vendor/NanoVG/build.def"
@@ -38,7 +38,6 @@ typedef struct {
     Target tar;
     Target au;
     Target math;
-    Target schedule;
 
     // Userspace
     Target rexim;
@@ -76,7 +75,6 @@ static auto const libraries = target([] {
         .tar = tar,
         .au = au,
         .math = math,
-        .schedule = schedule,
         .rexim = rexim,
         .soundio = soundio,
         .wasm = wasm,

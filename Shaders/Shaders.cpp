@@ -3,6 +3,7 @@
 #include <FS/FSVolume.h>
 #include <FS/Resource.h>
 #include <FS/Bundle.h>
+#include <Ty2/PageAllocator.h>
 
 #define BUNDLE(path, bytes)                         \
     FS::ResourceView::create_with_resolved_path(    \
@@ -45,9 +46,9 @@ bool Shaders::add_to_volume(FSVolume* volume, UseBakedShaders use_baked_shaders)
         frag = fs_virtual_open(simple_color_frag.resolved_path(), simple_color_frag.view());
         break;
     case UseBakedShaders_No:
-        if (!fs_system_open(volume->gpa, simple_vert.resolved_path(), &vert))
+        if (!fs_system_open(page_allocator(), simple_vert.resolved_path(), &vert))
             return false;
-        if (!fs_system_open(volume->gpa, simple_color_frag.resolved_path(), &frag))
+        if (!fs_system_open(page_allocator(), simple_color_frag.resolved_path(), &frag))
             return false;
         break;
     }

@@ -1,6 +1,6 @@
 #pragma once
-#include <Ty/Base.h>
-#include <Ty/Allocator.h>
+#include <Ty2/Base.h>
+#include <Ty2/Allocator.h>
 
 #include <Schedule/Schedule.h>
 
@@ -95,6 +95,7 @@ typedef struct AUAudioSpec {
 
 e_au_format_guess au_format_guess(Bytes bytes, AUFormat* format);
 
+e_au_decode au_audio_decode_wav(Bytes bytes, AUAudio*);
 e_au_decode au_audio_decode(Allocator* gpa, AUFormat format, Bytes bytes, AUAudio*);
 e_au_decode au_audio_decode_into_format(Schedule* schedule, Allocator* gpa, AUFormat format, Bytes bytes, AUAudioSpec spec, AUAudio*);
 void au_audio_destroy(AUAudio*);

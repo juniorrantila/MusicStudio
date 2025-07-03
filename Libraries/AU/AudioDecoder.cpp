@@ -384,6 +384,16 @@ static e_au_decode borrow_wav(AUWAV wav, AUAudio* out)
     return e_au_decode_none;
 }
 
+e_au_decode au_audio_decode_wav(Bytes bytes, AUAudio* out)
+{
+    AUWAV wav;
+    if (auto error = decode_wav(bytes, &wav))
+        return error;
+    if (auto error = borrow_wav(wav, out))
+        return error;
+    return e_au_decode_none;
+}
+
 e_au_decode au_audio_decode(Allocator* gpa, AUFormat format, Bytes bytes, AUAudio* out)
 {
     AUWAV wav;

@@ -7,16 +7,13 @@
 
 static auto const au = cc_library("AU", {
     .srcs = {
-        "./Audio.cpp",
         "./AudioDecoder.cpp",
-        "./WAV.cpp",
         "./SoundIo.cpp",
         "./Pipeline.cpp",
         "./Transcoder.cpp",
     },
     .exported_headers = {
         "./Forward.h",
-        "./Audio.h",
         "./AudioDecoder.h",
         "./SoundIo.h",
         "./Pipeline.h",

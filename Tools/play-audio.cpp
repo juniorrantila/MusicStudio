@@ -1,4 +1,3 @@
-#include <AU/Audio.h>
 #include <AU/AudioDecoder.h>
 #include <AU/Pipeline.h>
 #include <AU/SoundIo.h>
@@ -72,11 +71,11 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
     }
 
     constexpr u64 arena_size = 2LLU * 1024LLU * 1024LLU * 1024LLU;
-    auto arena_allocator = fixed_arena_from_slice(page_alloc(arena_size), arena_size);
+    auto arena_allocator = fixed_arena_init(page_alloc(arena_size), arena_size);
     auto* arena = &arena_allocator.allocator;
 
     constexpr u64 pipe_arena_size = 1024LLU * 1024LLU * 1024LLU;
-    auto pipe_arena = fixed_arena_from_slice(page_alloc(pipe_arena_size), pipe_arena_size);
+    auto pipe_arena = fixed_arena_init(page_alloc(pipe_arena_size), pipe_arena_size);
 
     auto wav_file = TRY(Core::MappedFile::open(wav_path));
     auto audio = TRY(AUAudioRef::decode(arena, AUFormat_WAV, wav_file.bytes()));

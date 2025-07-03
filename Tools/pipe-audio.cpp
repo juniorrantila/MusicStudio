@@ -1,11 +1,12 @@
 #include <CLI/ArgumentParser.h>
 #include <Main/Main.h>
 #include <Core/MappedFile.h>
-#include <AU/Audio.h>
 #include <Core/File.h>
 #include <Ty/System.h>
-#include <Ty/ArenaAllocator.h>
+#include <Ty2/FixedArena.h>
+#include <Ty2/PageAllocator.h>
 #include <unistd.h>
+#include <AU/AudioDecoder.h>
 
 ErrorOr<int> Main::main(int argc, c_string argv[]) {
     auto argument_parser = CLI::ArgumentParser();
@@ -21,15 +22,24 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
     }
 
     auto wav_file = TRY(Core::MappedFile::open(wav_path));
-    auto size = TRY(AU::Audio::samples_byte_size(AU::AudioFormat::WAV, wav_file.bytes()));
-    auto arena = TRY(ArenaAllocator::create(size));
-    auto audio = TRY(AU::Audio::decode(arena.allocator(), AU::AudioFormat::WAV, wav_file.bytes()));
+    AUAudio audio;
+    auto err = au_audio_decode_wav(wav_file.bytes(), &audio);
+    if (err != e_au_decode_none)
+        return Error::from_string_literal(au_decode_strerror(err));
+    f64* samples = (f64*)page_alloc(audio.channel_count * audio.frame_count * sizeof(f64));
+    if (!samples) return Error::from_string_literal("could not allocate samples");
 
-    u32 channel_count = audio.channel_count();
-    u32 sample_rate = audio.sample_rate();
-    View<f64 const> samples = audio.samples();
+    u64 sample_index = 0;
+    for (u64 frame = 0; frame < audio.frame_count; frame += 1) {
+        for (u64 channel = 0; channel < audio.channel_count; channel += 1) {
+            samples[sample_index++] = au_audio_sample_f64(&audio, channel, frame);
+        }
+    }
+
+    u32 channel_count = audio.channel_count;
+    u32 sample_rate = audio.sample_rate;
     TRY(System::write(1, &channel_count, sizeof(channel_count)));
     TRY(System::write(1, &sample_rate, sizeof(sample_rate)));
-    TRY(System::write(1, samples.data(), samples.byte_size()));
+    TRY(System::write(1, samples, sample_index * sizeof(f64)));
     return 0;
 }

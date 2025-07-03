@@ -4,7 +4,6 @@
 
 static auto const ty = cc_library("Ty", {
     .srcs = {
-        "./Endian.cpp",
         "./Error.cpp",
         "./Json.cpp",
         "./Memory.cpp",
@@ -21,7 +20,6 @@ static auto const ty = cc_library("Ty", {
         "./Coder.h",
         "./Concepts.h",
         "./Defer.h",
-        "./Endian.h",
         "./Error.h",
         "./ErrorOr.h",
         "./FormatCounter.h",

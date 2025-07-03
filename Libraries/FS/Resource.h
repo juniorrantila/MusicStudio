@@ -1,5 +1,5 @@
 #pragma once
-#include <Ty/Bytes.h>
+#include <Ty2/Bytes.h>
 #include <Ty/StringView.h>
 #include <Ty/StringBuffer.h>
 
@@ -14,10 +14,10 @@ struct ResourceView {
     constexpr StringView resolved_path() const { return m_resolved_path; }
     constexpr Bytes bytes() const { return m_bytes; }
 
-    StringView view() const { return StringView::from_parts((char const*)m_bytes.data(), m_bytes.size()); }
+    StringView view() const { return StringView::from_parts((char const*)m_bytes.items, m_bytes.count); }
 
-    u8 const* data() const { return m_bytes.data(); }
-    usize size() const { return m_bytes.size(); }
+    u8 const* data() const { return m_bytes.items; }
+    usize size() const { return m_bytes.count; }
 
 private:
     constexpr ResourceView(StringView resolved_path, Bytes bytes)

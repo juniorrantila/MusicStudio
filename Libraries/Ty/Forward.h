@@ -23,7 +23,6 @@ class Function;
 
 template <typename>
 struct SmallCapture;
-struct Bytes;
 
 template <typename T>
 struct View;
@@ -33,19 +32,8 @@ struct Hash;
 template <typename T>
 struct RefPtr;
 
-template <typename T>
-struct Signal;
-
 struct Coder;
 struct CoderField;
-
-template <typename T>
-struct Buffer;
-
-struct ByteDecoder;
-
-template <typename T>
-struct Ref;
 
 struct ArenaAllocator;
 
@@ -60,12 +48,8 @@ using Ty::StringView;
 using Ty::Formatter;
 using Ty::Function;
 using Ty::SmallCapture;
-using Ty::Bytes;
 using Ty::View;
 using Ty::Json;
 using Ty::Hash;
-using Ty::Signal;
 using Ty::Coder;
 using Ty::CoderField;
-using Ty::Buffer;
-using Ty::ByteDecoder;

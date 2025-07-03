@@ -1,10 +1,11 @@
 #pragma once
 #include "Base.h"
-#include "Bytes.h"
 #include "Forward.h"
 #include "Optional.h"
 #include "Traits.h"
 #include "./StringSlice.h"
+
+#include <Ty2/Bytes.h>
 
 namespace Ty {
 
@@ -158,7 +159,7 @@ struct StringView {
         return view;
     }
 
-    Bytes as_bytes() const { return Bytes(data(), size()); }
+    Bytes as_bytes() const { return bytes(data(), size()); }
 
     explicit constexpr operator bool() const { return !is_empty(); }
 

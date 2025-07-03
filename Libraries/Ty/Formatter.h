@@ -1,5 +1,4 @@
 #pragma once
-#include "./Bytes.h"
 #include "./Concepts.h"
 #include "./Error.h"
 #include "./ErrorOr.h"
@@ -375,31 +374,6 @@ struct Formatter<Optional<StringView>> {
         }
 
         size += TRY(to.write(")"sv));
-        return size;
-    }
-};
-
-template <>
-struct Formatter<Bytes> {
-    template <typename U>
-    requires Ty::Writable<U>
-    static constexpr ErrorOr<u32> write(U& to, Bytes value)
-    {
-        u32 size = 0;
-        for (u32 i = 0; i < value.size(); i++) {
-            u8 e = value[i];
-            u8 upper = (e & 0xF0) >> 4;
-            u8 lower = (e & 0x0F) >> 0;
-
-            upper = upper > 9 ? upper + 'A' - 10 : upper + '0';
-            lower = lower > 9 ? lower + 'A' - 10 : lower + '0';
-
-            char nibbles[2] = {
-                (char)upper,
-                (char)lower,
-            };
-            size += TRY(to.write(StringView::from_parts(nibbles, 2)));
-        }
         return size;
     }
 };

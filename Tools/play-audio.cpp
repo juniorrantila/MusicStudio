@@ -78,11 +78,15 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
     auto pipe_arena = fixed_arena_init(page_alloc(pipe_arena_size), pipe_arena_size);
 
     auto wav_file = TRY(Core::MappedFile::open(wav_path));
-    auto audio = TRY(AUAudioRef::decode(arena, AUFormat_WAV, wav_file.bytes()));
+
+    AUAudio audio;
+    auto err = au_audio_decode_wav(wav_file.bytes(), &audio);
+    if (err != e_au_decode_none)
+        return Error::from_string_literal(au_decode_strerror(err));
 
     auto project = MS::Project {
-        .sample_rate = audio.raw.sample_rate,
-        .channels = audio.raw.channel_count,
+        .sample_rate = audio.sample_rate,
+        .channels = audio.channel_count,
     };
     auto wasm_plugin_manager = MS::WASMPluginManager(&project);
     for (auto path : wasm_plugin_paths) {
@@ -202,9 +206,9 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         .pipeline = &audio_pipeline,
         .write_sample = stream_writer.writer,
         .played_frames = &played_frames,
-        .frame_count = audio.raw.frame_count,
-        .scratch = TRY(arena->alloc_many<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.raw.sample_rate).or_error(Error::from_string_literal("could not create scratch buffer"))),
-        .scratch2 = TRY(arena->alloc_many<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.raw.sample_rate).or_error(Error::from_string_literal("could not create scratch buffer 2"))),
+        .frame_count = audio.frame_count,
+        .scratch = TRY(arena->alloc_many<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.sample_rate).or_error(Error::from_string_literal("could not create scratch buffer"))),
+        .scratch2 = TRY(arena->alloc_many<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.sample_rate).or_error(Error::from_string_literal("could not create scratch buffer 2"))),
     };
 
     SoundIoOutStream *outstream = soundio_outstream_create(device);
@@ -214,7 +218,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
 
     outstream->write_callback = write_callback;
     outstream->underflow_callback = underflow_callback;
-    outstream->sample_rate = (i32)audio.raw.sample_rate;
+    outstream->sample_rate = (i32)audio.sample_rate;
     outstream->userdata = &context;
     outstream->format = stream_writer.format;
 
@@ -229,10 +233,10 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
     }
 
     dprintln("\n----------------------");
-    dprintln("Layout: {}", (u64)audio.raw.sample_layout);
-    dprintln("Format: {}", (u64)audio.raw.sample_format);
-    dprintln("Sample rate: {}", audio.raw.sample_rate);
-    dprintln("Channels: {}", audio.raw.channel_count);
+    dprintln("Layout: {}", (u64)audio.sample_layout);
+    dprintln("Format: {}", (u64)audio.sample_format);
+    dprintln("Sample rate: {}", audio.sample_rate);
+    dprintln("Channels: {}", audio.channel_count);
     dprintln("Duration: {}", part_time((u32)audio.duration()));
     dprintln("----------------------\n");
 
@@ -240,7 +244,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
     dprint("Time: {} / {}", part_time(0), duration);
     while (!ui_window_should_close(root_window)) {
         ui_application_poll_events(app);
-        if (played_frames >= audio.raw.frame_count) {
+        if (played_frames >= audio.frame_count) {
             break;
         }
         soundio_flush_events(soundio);
@@ -248,7 +252,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
             (void)plugin.vst->editor_idle();
         }
 
-        auto current_time = part_time(played_frames / audio.raw.sample_rate);
+        auto current_time = part_time(played_frames / audio.sample_rate);
         dprint("\r\033[KTime: {} / {}", current_time, duration);
 
         usleep(16000);

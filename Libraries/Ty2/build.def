@@ -4,6 +4,8 @@
 static auto const ty2 = cc_library("Ty2", {
     .srcs = {
         "Allocator.cpp",
+        "ByteDecoder.cpp",
+        "Bytes.cpp",
         "DeferredFileLogger.cpp",
         "FileLogger.cpp",
         "FixedArena.cpp",
@@ -20,6 +22,8 @@ static auto const ty2 = cc_library("Ty2", {
         "Allocator.h",
         "Base.h",
         "BitSet.h",
+        "ByteDecoder.h",
+        "Bytes.h",
         "Defer.h",
         "DeferredFileLogger.h",
         "FileLogger.h",

@@ -10,7 +10,7 @@ ErrorOr<Image> Image::load_from_bytes(Bytes bytes)
     int width = 0;
     int height = 0;
     int channels = 0;
-    auto* data = stbi_load_from_memory(bytes.data(), bytes.size(), &width, &height, &channels, 4);
+    auto* data = stbi_load_from_memory(bytes.items, (int)bytes.count, &width, &height, &channels, 4);
     if (!data) {
         return Error::from_string_literal("could not load image");
     }

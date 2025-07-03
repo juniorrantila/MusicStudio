@@ -1,10 +1,10 @@
 #pragma once
-#include "FS/Bundle.h"
 #include <UI/Forward.h>
 #include <Ty/Base.h>
 #include <Midi/Note.h>
 #include <Layout/Layout.h>
 #include <Ty/ErrorOr.h>
+#include <FS/FSVolume.h>
 
 struct Context {
     u8 _Atomic notes[(u8)Midi::Note::__Size];
@@ -34,7 +34,7 @@ struct Context {
     } rt;
 };
 
-ErrorOr<Context> context_create(FS::Bundle& bundle);
+ErrorOr<Context> context_create(FSVolume* bundle);
 void context_destroy(Context* context);
 
 void context_set_notes_from_keymap(Context*, Midi::Note base_note, u8 const* keymap);

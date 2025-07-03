@@ -4,7 +4,6 @@
 #include <CLI/ArgumentParser.h>
 #include <Core/Print.h>
 #include <Core/Time.h>
-#include <FS/Bundle.h>
 #include <Fonts/Fonts.h>
 #include <GL/GL.h>
 #include <MS/PluginManager.h>
@@ -12,11 +11,12 @@
 #include <Math/Math.h>
 #include <SoundIo/SoundIo.h>
 #include <SoundIo/os.h>
-#include <Ty2/Arena.h>
+#include <Ty2/FixedArena.h>
 #include <Ty2/PageAllocator.h>
 #include <UI/Application.h>
 #include <UI/KeyCode.h>
 #include <UI/Window.h>
+#include <FS/FSVolume.h>
 
 #include <unistd.h>
 
@@ -24,10 +24,16 @@ static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int
 
 ErrorOr<int> Main::main(int argc, c_string* argv)
 {
-    auto bundle = FS::Bundle().add_pack(Fonts());
+    FSVolume* volume = (FSVolume*)page_alloc(sizeof(FSVolume));
+    fs_volume_init(volume);
+    if (!Fonts::add_to_volume(volume)) {
+        return Error::from_string_literal("could not add fonts to volume");
+    }
+
     dprintln("resources:");
-    for (auto resource : bundle.resources()) {
-        dprintln("  {}", resource.resolved_path());
+    for (u64 i = 0; i < volume->count; i++) {
+        auto path = fs_virtual_path(volume->items[i]);
+        dprintln("  {}", path.as_view());
     }
 
     auto argument_parser = CLI::ArgumentParser();
@@ -74,7 +80,8 @@ ErrorOr<int> Main::main(int argc, c_string* argv)
         ui_window_destroy(window);
     };
 
-    auto arena_allocator = arena_create(page_allocator());
+    constexpr u64 arena_size = 16LLU * 1024LLU * 1024LLU * 1024LLU;
+    auto arena_allocator = fixed_arena_init(page_alloc(arena_size), arena_size);
     auto* arena = &arena_allocator.allocator;
     auto project = MS::Project();
     auto manager = TRY(MS::PluginManager::create(arena)).init(&project);
@@ -90,7 +97,7 @@ ErrorOr<int> Main::main(int argc, c_string* argv)
         manager.plugins[i].init();
     }
 
-    Context context = TRY(context_create(bundle));
+    Context context = TRY(context_create(volume));
     defer [&] {
         context_destroy(&context);
     };
@@ -178,6 +185,7 @@ ErrorOr<int> Main::main(int argc, c_string* argv)
         glViewport(0, 0, (i32)(size.x * pixel_ratio), (i32)(size.y * pixel_ratio));
     }
 
+    ui_window_show(window);
     bool d_pressed_last_frame = false;
     bool space_pressed_last_frame = false;
     f64 start = soundio_os_get_time();
@@ -266,7 +274,7 @@ static f64 gen_sample(Context* ctx, f64 time)
         }
     }
 
-    return result;
+    return result * 4;
 }
 
 static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max) noexcept [[clang::nonblocking]]

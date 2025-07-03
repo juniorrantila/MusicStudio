@@ -2,7 +2,6 @@
 
 #include <FS/FSVolume.h>
 #include <FS/Resource.h>
-#include <FS/Bundle.h>
 #include <Ty2/PageAllocator.h>
 
 #define BUNDLE(path, bytes)                         \
@@ -28,12 +27,6 @@ static constexpr auto simple_color_frag = BUNDLE(
 );
 
 #undef BUNDLE
-
-void Shaders::add_to_bundle(FS::Bundle& bundle)
-{
-    bundle.unsafe_add_resource(simple_vert);
-    bundle.unsafe_add_resource(simple_color_frag);
-}
 
 bool Shaders::add_to_volume(FSVolume* volume, UseBakedShaders use_baked_shaders)
 {

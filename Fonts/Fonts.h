@@ -1,6 +1,6 @@
 #pragma once
-#include <FS/Forward.h>
+#include <FS/FSVolume.h>
 
 struct Fonts {
-    static void add_to_bundle(FS::Bundle&);
+    [[nodiscard]] static bool add_to_volume(FSVolume*);
 };

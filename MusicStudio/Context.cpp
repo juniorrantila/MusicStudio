@@ -12,14 +12,15 @@
 #include <Clay/Clay.h>
 
 #include "./UI.h"
+#include <FS/FSVolume.h>
 
 using namespace LayoutSugar;
 
 static f64 average(f64 entries, f64 current, f64 value);
 
-ErrorOr<Context> context_create(FS::Bundle& bundle)
+ErrorOr<Context> context_create(FSVolume* bundle)
 {
-    auto main_typeface = TRY(bundle.open("Fonts/OxaniumLight/Oxanium-Light.ttf").or_error(Error::from_string_literal("could not open main typeface")));
+    auto const* main_typeface = TRY(bundle->open("Fonts/OxaniumLight/Oxanium-Light.ttf"s).or_error(Error::from_string_literal("could not open main typeface")));
 
     auto* layout = layout_create(nullptr, [](void*, char const* data, usize size) {
         auto message = StringView::from_parts(data, size);
@@ -29,7 +30,7 @@ ErrorOr<Context> context_create(FS::Bundle& bundle)
         return Error::from_string_literal("could not create layout");
     }
 
-    int main_typeface_id = layout_add_typeface(layout, "main", main_typeface.data(), main_typeface.size());
+    int main_typeface_id = layout_add_typeface(layout, "main", (u8 const*)main_typeface->items, main_typeface->count);
     if (main_typeface_id < 0) {
         return Error::from_string_literal("could not load main typeface");
     }

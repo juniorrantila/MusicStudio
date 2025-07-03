@@ -105,6 +105,11 @@ C_INLINE void* memzero(void* ptr, u64 size)
     return ptr;
 }
 
+#if __cplusplus
+template <typename T>
+T* memzero(T* ptr) { return memzero(ptr, sizeof(T)); }
+#endif
+
 C_API void* memclone(Allocator*, void const* data, usize byte_count, usize align);
 C_API void* memclone_zero_extend(Allocator*, void const* data, usize byte_count, usize align, usize extend_bytes);
 

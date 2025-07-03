@@ -1,14 +1,13 @@
 #pragma once
 #include "./WASMPlugin.h"
 
-#include <Ty/Ref.h>
 #include <Ty/Vector.h>
 
 namespace MS {
 
 struct Project;
 struct WASMPluginManager {
-    WASMPluginManager(Ref<Project> project)
+    WASMPluginManager(Project* project)
         : m_project(project)
     {
     }
@@ -25,7 +24,7 @@ struct WASMPluginManager {
     WASMPlugin const* plugin(Id<WASMPlugin> id) const { return &m_plugins[id]; }
 
 private:
-    Ref<Project> m_project;
+    Project* m_project;
     Vector<WASMPlugin> m_plugins {};
 };
 

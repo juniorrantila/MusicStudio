@@ -39,7 +39,7 @@ ErrorOr<int> Main::main(int argc, char const* argv[])
         .channels = 2,
     };
 
-    auto manager = MS::WASMPluginManager(Ref(project));
+    auto manager = MS::WASMPluginManager(&project);
     auto plugin_id = TRY(manager.add_plugin(plugin_path));
     TRY(manager.link());
     TRY(manager.init());

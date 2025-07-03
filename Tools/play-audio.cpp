@@ -84,7 +84,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         .sample_rate = audio.raw.sample_rate,
         .channels = audio.raw.channel_count,
     };
-    auto wasm_plugin_manager = MS::WASMPluginManager(Ref(project));
+    auto wasm_plugin_manager = MS::WASMPluginManager(&project);
     for (auto path : wasm_plugin_paths) {
         TRY(wasm_plugin_manager.add_plugin(path));
     }

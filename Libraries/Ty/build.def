@@ -49,7 +49,6 @@ static auto const ty = cc_library("Ty", {
         "./Optional.h",
         "./PageAllocator.h",
         "./Parse.h",
-        "./Ref.h",
         "./RefPtr.h",
         "./ReverseIterator.h",
         "./ScopeGuard.h",

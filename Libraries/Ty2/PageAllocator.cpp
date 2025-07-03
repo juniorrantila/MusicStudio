@@ -28,10 +28,6 @@ C_API void* page_alloc(usize size)
     void* ptr = mmap(0, size, PROT_READ|PROT_WRITE, MAP_ANON|MAP_PRIVATE, -1, 0);
     if (ptr == MAP_FAILED)
         return 0;
-    if (mlock(ptr, size) < 0) {
-        munmap(ptr, size);
-        return 0;
-    }
     return ptr;
 }
 

@@ -31,7 +31,6 @@ static auto const ty = cc_library("Ty", {
         "./Json.h",
         "./Limits.h",
         "./LinearMap.h",
-        "./Map.h",
         "./Memory.h",
         "./Move.h",
         "./New.h",

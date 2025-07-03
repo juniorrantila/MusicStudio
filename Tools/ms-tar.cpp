@@ -26,39 +26,37 @@ ErrorOr<int> Main::main(int argc, char const* argv[])
         return 1;
     }
 
-    auto output = TRY(Core::File::open_for_writing(output_path));
-
-    u64 arena_size = 2LLU * 1024LLU * 1024LLU * 1024LLU;
-    auto arena_allocator = fixed_arena_from_slice(page_alloc(arena_size), arena_size);
-    auto* arena = &arena_allocator.allocator;
-
-    Tar* tar = tar_create(arena);
-    if (!tar) {
-        dprintln("could not create tar: out of memory");
-        return -1;
-    }
-
+    TarCounter counter = tar_counter();
+    auto files = Vector<Core::MappedFile>();
+    auto dest_paths = Vector<StringView>();
     for (auto path : paths) {
         auto splits = TRY(path.split_on(':'));
         auto source = TRY(splits.view().at(0).or_error(Error::from_string_literal("invalid source path")));
         auto dest = splits.view().at(1).or_default(source);
         auto content = TRY(Core::MappedFile::open(source));
-        auto index = tar_add_borrowed2(tar, dest.data(), dest.size(), content.data(), content.size());
-        if (index < 0) {
-            auto error = StringView::from_c_string(tar_strerror((e_tar)-index));
-            dprintln("could not add '{}:{}' to tar: {}", source, dest, error);
-            return -1;
-        }
-        content.invalidate(); // Leak :)
+        tar_count(&counter, content.size());
+        TRY(files.append(move(content)));
+        TRY(dest_paths.append(dest));
     }
-    auto buf_size = tar_buffer_size(tar);
-    u8* buf = arena->alloc<u8>(buf_size);
-    if (!buf) return Error::from_string_literal("could not create tar buffer");
-    if (auto size = tar_buffer(tar, buf, buf_size); size < 0) {
-        dprintln("could not create tar file: {}", StringView::from_c_string(tar_strerror((e_tar)-size)));
+
+    void* tar_buf = page_alloc(counter.size);
+    if (!tar_buf) {
+        dprintln("could not create tar: out of memory");
         return -1;
     }
-    TRY(output.write(StringView::from_parts((char*)buf, buf_size)));
+    auto tar = tar_init(tar_buf, counter.size);
+    for (u32 i = 0; i < files.size(); i++) {
+        auto content = files[i].view();
+        auto path = paths[i];
+        if (e_tar error = tar_add2(&tar, path.data(), path.size(), content.data(), content.size()); error != e_tar_none) {
+            auto message = StringView::from_c_string(tar_strerror(error));
+            dprintln("could not tar file: {}", message);
+            return -1;
+        }
+    }
+
+    auto output = TRY(Core::File::open_for_writing(output_path));
+    TRY(output.write(StringView::from_parts((char*)tar_buffer(tar), tar_size(tar))));
 
     return 0;
 }

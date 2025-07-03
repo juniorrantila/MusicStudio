@@ -1,6 +1,6 @@
 #pragma once
 #include "../../bs.h"
-#include "../Ty/build.def"
+#include "../Ty2/build.def"
 
 static auto const tar = cc_library("Tar", {
     .srcs = {
@@ -15,6 +15,6 @@ static auto const tar = cc_library("Tar", {
     .target_triple = {},
     .link_style = "static",
     .deps = {
-        ty,
+        ty2,
     },
 });

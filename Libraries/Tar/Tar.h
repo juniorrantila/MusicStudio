@@ -1,55 +1,42 @@
 #pragma once
-#include <Ty/Base.h>
-#include <Ty/Allocator.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct Tar Tar;
-
-typedef struct TarFile {
-    u8 const* bytes;
-    usize size;
-} TarFile;
+#include <Ty2/Base.h>
+#include <Ty2/Allocator.h>
+#include <Ty2/FixedArena.h>
 
 typedef enum e_tar : isize {
     e_tar_none = 0,
-    e_tar_no_mem,
-    e_tar_no_ent,
+    e_tar_invalid_file,
     e_tar_invalid_path,
     e_tar_invalid_file_size,
     e_tar_invalid_buffer_size,
+    e_tar_no_mem,
 } e_tar;
 
-c_string tar_strerror(e_tar error);
+typedef struct TarCounter {
+    u64 size;
+} TarCounter;
 
-Tar* tar_create(Allocator* gpa);
-void tar_destroy(Tar* tar);
+typedef struct Tar {
+    u8 const* base;
+    u8 const* head;
+    u8 const* seek;
+    u8 const* end;
+} Tar;
 
-isize tar_add(Tar* tar, c_string path, void const* content, usize content_size);
-isize tar_add_borrowed(Tar* tar, c_string path, void const* content, usize content_size);
+C_API c_string tar_strerror(e_tar error);
 
-isize tar_add2(Tar* tar, char const* path, usize path_size, void const* content, usize content_size);
-isize tar_add_borrowed2(Tar* tar, char const* path, usize path_size, void const* content, usize content_size);
+C_API bool untar(Tar*, char const** path, u64* path_size, u8 const** content, u64* content_size);
 
-void tar_remove(Tar* tar, c_string path);
-void tar_remove_at_index(Tar* tar, usize index);
+C_API Tar tar_init(void const* data, u64 size);
+C_INLINE u64 tar_size(Tar tar) { return tar.end - tar.base; }
+C_INLINE u8 const* tar_buffer(Tar tar) { return tar.base; }
 
-usize tar_file_count(Tar const* tar);
-c_string tar_file_path(Tar const* tar, usize index);
+C_API void tar_rewind(Tar*);
+C_API bool tar_find(Tar const*, char const* path, u8 const** content, u64* content_size);
+C_API bool tar_find2(Tar const*, char const* path, u64 path_size, u8 const** content, u64* content_size);
 
-isize tar_find(Tar const* tar, c_string);
-TarFile tar_file(Tar const* tar, c_string);
-TarFile tar_file_at_index(Tar const* tar, usize);
+C_API TarCounter tar_counter(void);
+C_API void tar_count(TarCounter*, u64 content_size);
 
-isize tar_buffer(Tar const* tar, u8* buffer, usize buffer_size);
-usize tar_buffer_size(Tar const* tar);
-
-#if __cplusplus
-}
-#endif
-
-#ifdef __cplusplus
-static inline c_string to_c_string(e_tar error) { return tar_strerror(error); }
-#endif
+C_API e_tar tar_add(Tar*, c_string path, void const* content, u64 content_size);
+C_API e_tar tar_add2(Tar*, char const* path, u64 path_size, void const* content, u64 content_size);

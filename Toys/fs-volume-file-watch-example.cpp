@@ -11,7 +11,7 @@
 ErrorOr<int> Main::main(int argc, c_string argv[])
 {
     constexpr u64 arena_size = 16LLU * 1024LLU * 1024LLU * 1024LLU;
-    auto arena_instance = fixed_arena_from_slice(page_alloc(arena_size), arena_size);
+    FixedArena arena_instance = fixed_arena_init(page_alloc(arena_size), arena_size);
     auto* arena = &arena_instance.allocator;
 
     auto argument_parser = CLI::ArgumentParser();
@@ -33,8 +33,8 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
         return Error::from_string_literal("no path specified (see --help)");
     }
 
-    auto* volume = fs_volume_create(arena);
-    if (!volume) return Error::from_string_literal("could not create volume");
+    FSVolume volume = (FSVolume){};
+    fs_volume_init(&volume);
 
     for (usize i = 0; i < path_count; i++) {
         auto path = paths[i];
@@ -43,7 +43,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
             dprintln("could not open '{}'", path.as_view());
             return 1;
         }
-        if (!fs_volume_mount(volume, file, nullptr)) {
+        if (!fs_volume_mount(&volume, file, nullptr)) {
             dprintln("could not mount '{}'", path.as_view());
             return 1;
         }
@@ -54,7 +54,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
             .tv_sec = 1,
             .tv_nsec = 0,
         };
-        FSEvents events = fs_volume_poll_events(volume, &timeout);
+        FSEvents events = fs_volume_poll_events(&volume, &timeout);
         for (usize i = 0; i < events.count; i++) {
             FSEvent event = events.items[i];
             auto path = fs_virtual_path(*event.file);

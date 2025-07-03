@@ -1,9 +1,9 @@
 #include "./FSVolume.h"
 #include "Ty/StringSlice.h"
+#include "Ty2/FixedArena.h"
 
 #include <Ty/Verify.h>
 #include <Ty/Defer.h>
-#include <Ty/Allocator.h>
 #include <Ty2/PageAllocator.h>
 
 #include <Core/Time.h>
@@ -12,6 +12,7 @@
 #include <sys/fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/syslimits.h>
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
@@ -21,18 +22,12 @@
 
 static bool expand_if_needed(FSVolume* volume);
 
-
-Optional<FSVolume*> FSVolume::create(Allocator* gpa) { return fs_volume_create(gpa); }
-C_API FSVolume* fs_volume_create(Allocator* gpa)
+C_API void fs_volume_init(FSVolume* volume)
 {
-    FSVolume* volume = (FSVolume*)memalloc(gpa, sizeof(FSVolume), alignof(FSVolume));
-    if (!volume) return nullptr;
     *volume = (FSVolume){};
     memset(volume, 0, sizeof(FSVolume));
-    volume->gpa = gpa;
     volume->watch_fd = -1;
-    volume->event_arena = fixed_arena_from_slice(volume->arena_store, sizeof(volume->arena_store));
-    return volume;
+    volume->event_arena = fixed_arena_init(volume->arena_store, sizeof(volume->arena_store));
 }
 
 Optional<Tar*> FSVolume::as_tar(Allocator* gpa) const { return fs_volume_as_tar(this, gpa); }
@@ -53,8 +48,8 @@ static StringSlice const* file_content(FSFile const* file)
 }
 
 
-Optional<StringSlice const*> FSVolume::open(StringSlice path) const { return fs_volume_open(this, path); }
-C_API StringSlice const* fs_volume_open(FSVolume const* volume, StringSlice path)
+Optional<StringSlice const*> FSVolume::open(StringSlice path) { return fs_volume_open(this, path); }
+C_API StringSlice const* fs_volume_open(FSVolume* volume, StringSlice path)
 {
     auto id = volume->find(path);
     if (!id.has_value()) {
@@ -88,22 +83,22 @@ static bool mount_no_cache(FSVolume* volume, FSFile file, FileID* out)
     return true;
 }
 
-Optional<FileID> FSVolume::find(StringSlice path) const
+Optional<FileID> FSVolume::find(StringSlice path)
 {
     FileID id;
     if (!fs_volume_find(this, path, &id))
         return {};
     return id;
 }
-C_API bool fs_volume_find(FSVolume const* volume, StringSlice path, FileID* id)
+C_API bool fs_volume_find(FSVolume* volume, StringSlice path, FileID* id)
 {
-    auto resolved_path = path.resolve_path(volume->gpa);
+    char path_buf[PATH_MAX];
+    FixedArena arena = fixed_arena_init(path_buf, sizeof(path_buf));
+
+    auto resolved_path = path.resolve_path(&arena.allocator);
     if (!resolved_path.has_value()) {
         return false;
     }
-    defer [&] {
-        volume->gpa->free((char*)resolved_path->items, resolved_path->count);
-    };
     for (usize i = 0; i < volume->count; i++) {
         auto other = fs_virtual_path(volume->items[i]);
         if (resolved_path->equal(other)) {
@@ -116,11 +111,11 @@ C_API bool fs_volume_find(FSVolume const* volume, StringSlice path, FileID* id)
         auto* log = volume->debug;
         if (log) log->warning("could not find '%.*s', trying to auto mount it", (int)path.count, path.items);
         FSFile file;
-        if (!fs_system_open(volume->gpa, path, &file)) {
+        if (!fs_system_open(page_allocator(), path, &file)) {
             if (log) log->warning("could not open '%.*s'", (int)path.count, path.items);
             return false;
         }
-        if (!mount_no_cache((FSVolume*)volume, file, id)) {
+        if (!mount_no_cache(volume, file, id)) {
             if (log) log->warning("could not mount '%.*s'", (int)path.count, path.items);
             return false;
         }
@@ -161,7 +156,7 @@ static bool is_file_deleted(FSFile const* file)
 
 static struct kevent* alloc_kevent(FixedArena* arena, usize count)
 {
-    auto* events = (struct kevent*)arena->alloc(count * sizeof(struct kevent), alignof(struct kevent));
+    auto* events = (struct kevent*)arena->push(count * sizeof(struct kevent), alignof(struct kevent));
     if (events) memset(events, 0, count * sizeof(struct kevent));
     return events;
 }
@@ -199,7 +194,7 @@ static int fill_in_events(FSVolume const* volume, struct kevent* events, usize c
 
 static FSEvent* alloc_events(FixedArena* arena, usize count)
 {
-    auto* events = (FSEvent*)arena->alloc(count * sizeof(FSEvent), alignof(FSEvent));
+    auto* events = (FSEvent*)arena->push(count * sizeof(FSEvent), alignof(FSEvent));
     if (events) memset(events, 0, count * sizeof(FSEvent));
     return events;
 }
@@ -215,7 +210,7 @@ static FSFile** reopen_deleted_files(FSVolume const* volume, FixedArena* arena, 
     }
 
     usize opened_count = 0;
-    auto* files = (FSFile**)arena->alloc(deleted_files * sizeof(FSFile*), alignof(FSFile*));
+    auto* files = (FSFile**)arena->push(deleted_files * sizeof(FSFile*), alignof(FSFile*));
     if (!files) return *count = 0, nullptr;
 
     for (usize i = 0; i < volume->count; i++) {
@@ -281,7 +276,7 @@ C_API FSEvents fs_volume_poll_events(FSVolume* volume, struct timespec const* ti
     }
 
     usize deleted_just_now_count = 0;
-    auto* deleted_just_now = (FSEvent**)arena->alloc(kevent_count * sizeof(FSEvent*), alignof(FSEvent));
+    auto* deleted_just_now = (FSEvent**)arena->push(kevent_count * sizeof(FSEvent*), alignof(FSEvent));
 
     for (int i = 0; i < kevent_count; i++) {
         if (out_events[i].flags & EV_ERROR) {
@@ -487,7 +482,7 @@ static bool expand_if_needed(FSVolume* volume)
 {
     if (volume->count >= volume->capacity) {
         usize new_capacity = volume->capacity == 0 ? 16 : volume->capacity * 2;
-        auto* files = (FSFile*)memrealloc(volume->gpa, volume->items, volume->capacity * sizeof(FSFile), new_capacity * sizeof(FSFile), alignof(FSFile));
+        auto* files = (FSFile*)memrealloc(page_allocator(), volume->items, volume->capacity * sizeof(FSFile), new_capacity * sizeof(FSFile), alignof(FSFile));
         if (!files) return false;
         volume->items = files;
         volume->capacity = new_capacity;

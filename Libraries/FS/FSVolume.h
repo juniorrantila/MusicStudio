@@ -56,9 +56,8 @@ typedef struct FSEvents {
     usize count;
 } FSEvents;
 
-constexpr u64 fs_volume_arena_capacity = 1024LLU * 1024LLU * 1024LLU;
+constexpr u64 fs_volume_arena_capacity = 1 * MiB;
 typedef struct FSVolume {
-    Allocator* gpa;
     FixedArena event_arena;
 
     Logger* debug; // May be null.
@@ -72,24 +71,23 @@ typedef struct FSVolume {
 
     u8 arena_store[fs_volume_arena_capacity];
 #ifdef __cplusplus
-    static Optional<FSVolume*> create(Allocator* gpa);
     Optional<Tar*> as_tar(Allocator*) const;
-    Optional<StringSlice const*> open(StringSlice path) const;
+    Optional<StringSlice const*> open(StringSlice path);
     FSFile use(FileID) const;
     FSFile* use_ref(FileID) const;
-    Optional<FileID> find(StringSlice path) const;
+    Optional<FileID> find(StringSlice path);
 
     Optional<FileID> mount(FSFile file);
 #endif
 } FSVolume;
 
-C_API FSVolume* fs_volume_create(Allocator* gpa);
+C_API void fs_volume_init(FSVolume*);
 
 C_API Tar* fs_volume_as_tar(FSVolume const*, Allocator*);
-C_API StringSlice const* fs_volume_open(FSVolume const*, StringSlice path);
+C_API StringSlice const* fs_volume_open(FSVolume*, StringSlice path);
 C_API FSFile fs_volume_use(FSVolume const*, FileID);
 C_API FSFile* fs_volume_use_ref(FSVolume const*, FileID);
-C_API bool fs_volume_find(FSVolume const*, StringSlice path, FileID*);
+C_API bool fs_volume_find(FSVolume*, StringSlice path, FileID*);
 
 C_API [[nodiscard]] bool fs_volume_mount(FSVolume*, FSFile file, FileID*);
 

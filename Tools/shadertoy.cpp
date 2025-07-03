@@ -26,13 +26,11 @@ static void ui_frame(Context*);
 
 ErrorOr<int> Main::main(int argc, char const* argv[])
 {
-    constexpr u64 arena_size = 16LLU * 1024LLU * 1024LLU * 1024LLU;
-    auto arena = fixed_arena_from_slice(page_alloc(arena_size), arena_size);
-    auto file_logger = make_file_logger(&arena.allocator, stderr);
+    auto file_logger = file_logger_init(stderr);
     auto* log = &file_logger.logger;
 
-    FSVolume* volume = fs_volume_create(page_allocator());
-    if (!volume) log->fatal("could not create file volume");
+    FSVolume volume = (FSVolume){};
+    fs_volume_init(&volume);
 
     auto argument_parser = CLI::ArgumentParser();
 
@@ -56,7 +54,7 @@ ErrorOr<int> Main::main(int argc, char const* argv[])
         log->fatal("could not open '%.*s'", (int)vertex_shader_path.count, vertex_shader_path.items);
     }
     vertex_file.virtual_path = "Shaders/simple.vert"s;
-    if (!fs_volume_mount(volume, vertex_file, 0)) {
+    if (!fs_volume_mount(&volume, vertex_file, 0)) {
         log->fatal("could not mount '%.*s'", (int)vertex_shader_path.count, vertex_shader_path.items);
     }
 
@@ -65,7 +63,7 @@ ErrorOr<int> Main::main(int argc, char const* argv[])
         log->fatal("could not open '%.*s'", (int)fragment_shader_path.count, fragment_shader_path.items);
     }
     fragment_file.virtual_path = "Shaders/color.frag"s;
-    if (!fs_volume_mount(volume, fragment_file, 0)) {
+    if (!fs_volume_mount(&volume, fragment_file, 0)) {
         log->fatal("could not mount '%.*s'", (int)fragment_shader_path.count, fragment_shader_path.items);
     }
 
@@ -91,7 +89,7 @@ ErrorOr<int> Main::main(int argc, char const* argv[])
     auto context = Context {
         .render = &renderer,
         .window = window,
-        .volume = volume,
+        .volume = &volume,
         .log = log,
     };
 
@@ -117,7 +115,7 @@ ErrorOr<int> Main::main(int argc, char const* argv[])
         ui_application_poll_events(app);
 
         struct timespec time {};
-        auto events = fs_volume_poll_events(volume, &time);
+        auto events = fs_volume_poll_events(&volume, &time);
         for (usize i = 0; i < events.count; i++) {
             if (events.items[i].kind == FSEventKind_Modify)
                 fs_file_reload(events.items[i].file);

@@ -13,7 +13,7 @@
 ErrorOr<int> Main::main(int argc, c_string argv[])
 {
     constexpr u64 arena_size = 16LLU * 1024LLU * 1024LLU * 1024LLU;
-    auto arena_instance = fixed_arena_from_slice(page_alloc(arena_size), arena_size);
+    auto arena_instance = fixed_arena_init(page_alloc(arena_size), arena_size);
     auto* arena = &arena_instance.allocator;
 
     auto argument_parser = CLI::ArgumentParser();
@@ -62,8 +62,8 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
         return Error::from_string_literal("no path specified (see --help)");
     }
 
-    auto* volume = fs_volume_create(arena);
-    if (!volume) return Error::from_string_literal("could not create volume");
+    FSVolume* volume = (FSVolume*)page_alloc(sizeof(FSVolume));
+    fs_volume_init(volume);
 
     for (usize i = 0; i < path_count; i++) {
         auto path = paths[i];

@@ -84,3 +84,16 @@ C_API void __rtsan_enable();
 #define __rtsan_disable() do {} while(0)
 #define __rtsan_enable() do {} while(0)
 #endif
+
+#if __has_feature(address_sanitizer)
+C_API void __asan_poison_memory_region(void const volatile *addr, usize size);
+C_API void __asan_unpoison_memory_region(void const volatile *addr, usize size);
+#else
+#define __asan_poison_memory_region(addr, size) do { (void)(addr); (void)(size); } while(0)
+#define __asan_unpoison_memory_region(addr, size) do { (void)(addr); (void)(size); } while(0)
+#endif
+
+#define mempoison(addr, size) __asan_poison_memory_region((addr), (size))
+#define memunpoison(addr, size) __asan_unpoison_memory_region((addr), (size))
+
+#define ty_write_barrier() __sync_synchronize()

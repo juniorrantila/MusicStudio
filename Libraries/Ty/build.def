@@ -22,7 +22,6 @@ static auto const ty = cc_library("Ty", {
         "./ArenaAllocator.h",
         "./Assert.h",
         "./Base.h",
-        "./ByteBuffer.h",
         "./ByteDecoder.h",
         "./Bytes.h",
         "./CircularQueue.h",

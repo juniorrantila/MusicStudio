@@ -4,9 +4,11 @@
 static auto const ty2 = cc_library("Ty2", {
     .srcs = {
         "Allocator.cpp",
+        "Arena.cpp",
         "ByteDecoder.cpp",
         "Bytes.cpp",
         "DeferredFileLogger.cpp",
+        "DispatchQueue.cpp",
         "FileLogger.cpp",
         "FixedArena.cpp",
         "Logger.cpp",
@@ -16,10 +18,10 @@ static auto const ty2 = cc_library("Ty2", {
         "Promise.cpp",
         "RPCServer.cpp",
         "StringView.cpp",
-        "DispatchQueue.cpp",
     },
     .exported_headers = {
         "Allocator.h",
+        "Arena.h",
         "Base.h",
         "BitSet.h",
         "Bits.h",

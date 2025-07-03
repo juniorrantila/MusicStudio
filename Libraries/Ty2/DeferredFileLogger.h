@@ -19,17 +19,20 @@ static_assert(sizeof(DeferredLogEvent) <= message_size_max);
 
 typedef struct DeferredFileLogger {
     Logger logger;
-    Allocator* temporary_arena;
     Mailbox* mailbox;
     FILE* file;
     c_string name;
     bool is_tty;
 
+    u8 arena_buffer[1024];
+
 #ifdef __cplusplus
+    Logger* operator->() { return &logger; }
+
     void handle_event(DeferredLogEvent const*);
 #endif
 } DeferredFileLogger;
 
-C_API DeferredFileLogger make_deferred_file_logger(Allocator* temporary_arena, Mailbox* mailbox, FILE* file);
+C_API DeferredFileLogger deferred_file_logger_init(c_string name, Mailbox* mailbox, FILE* file);
 
 C_API void deferred_file_logger_handle_event(DeferredFileLogger*, DeferredLogEvent const*);

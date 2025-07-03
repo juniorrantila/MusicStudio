@@ -22,6 +22,7 @@ static auto const ty2 = cc_library("Ty2", {
         "Allocator.h",
         "Base.h",
         "BitSet.h",
+        "Bits.h",
         "ByteDecoder.h",
         "Bytes.h",
         "Defer.h",

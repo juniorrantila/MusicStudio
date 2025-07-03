@@ -12,12 +12,12 @@ static void dispatch(struct Logger*, LoggerEvent);
 #define CYAN   "\033[1;36m"
 #define NORMAL "\033[0;0m"
 
-C_API FileLogger make_file_logger(Allocator* temporary_arena, FILE* file)
+C_API FileLogger file_logger_init(c_string name, FILE* file)
 {
     return (FileLogger){
-        .logger = make_logger(temporary_arena, dispatch),
+        .logger = logger_init(dispatch),
         .file = file,
-        .name = nullptr,
+        .name = name,
         .is_tty = isatty(fileno(file)) == 1,
     };
 }

@@ -1,6 +1,8 @@
 #pragma once
 #include "./Base.h"
 #include "./Allocator.h"
+#include "./FixedArena.h"
+#include "./Bits.h"
 
 #include <stdarg.h>
 
@@ -21,7 +23,7 @@ typedef struct LoggerEvent {
 
 typedef struct Logger {
     void (*dispatch)(struct Logger*, LoggerEvent);
-    Allocator* temporary_arena;
+    char arena_buffer[1 * KiB];
 
 #ifdef __cplusplus
 
@@ -56,11 +58,11 @@ typedef struct Logger {
 #endif
 } Logger;
 
-C_API inline Logger make_logger(Allocator* temporary_arena, void(*dispatch)(struct Logger*, LoggerEvent))
+C_API inline Logger logger_init(void(*dispatch)(struct Logger*, LoggerEvent))
 {
     return (Logger) {
         .dispatch = dispatch,
-        .temporary_arena = temporary_arena,
+        .arena_buffer = {},
     };
 }
 

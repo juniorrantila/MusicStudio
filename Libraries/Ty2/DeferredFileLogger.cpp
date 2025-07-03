@@ -2,12 +2,10 @@
 
 #include "./Logger.h"
 #include "./FileLogger.h"
-#include "./Verify.h"
 
 #include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <time.h>
 #include <string.h>
 
 static void dispatch(struct Logger*, LoggerEvent);
@@ -18,15 +16,15 @@ static void dispatch(struct Logger*, LoggerEvent);
 #define CYAN   "\033[1;36m"
 #define NORMAL "\033[0;0m"
 
-C_API DeferredFileLogger make_deferred_file_logger(Allocator* temporary_arena, Mailbox* mailbox, FILE* file)
+C_API DeferredFileLogger deferred_file_logger_init(c_string name, Mailbox* mailbox, FILE* file)
 {
     return (DeferredFileLogger){
-        .logger = make_logger(temporary_arena, dispatch),
-        .temporary_arena = temporary_arena,
+        .logger = logger_init(dispatch),
         .mailbox = mailbox,
         .file = file,
-        .name = nullptr,
+        .name = name,
         .is_tty = isatty(fileno(file)) == 1,
+        .arena_buffer = {},
     };
 }
 
@@ -66,7 +64,7 @@ static void dispatch(struct Logger* l, LoggerEvent event)
 
     if (event.tag == LoggerEventTag_Fatal) {
         __rtsan_disable();
-        FileLogger file_logger = make_file_logger(logger->temporary_arena, logger->file);
+        static FileLogger file_logger = file_logger_init(logger->file);
         file_logger.name = logger->name;
         file_logger.logger.dispatch(&file_logger.logger, event);
         abort();
@@ -75,7 +73,7 @@ static void dispatch(struct Logger* l, LoggerEvent event)
 
     if (event.message_size > deferred_log_event_message_size_max) {
         __rtsan_disable();
-        FileLogger file_logger = make_file_logger(logger->temporary_arena, logger->file);
+        static FileLogger file_logger = file_logger_init(logger->file);
         file_logger.name = logger->name;
         file_logger.logger.warning("log message too big for deferred dispatch, logging directly (seq: %.2u)", event.seq % 100);
         file_logger.logger.dispatch(&file_logger.logger, event);
@@ -95,7 +93,7 @@ static void dispatch(struct Logger* l, LoggerEvent event)
     memcpy(e.message, event.message, event.message_size);
     if (!logger->mailbox->writer()->post(e).ok) {
         __rtsan_disable();
-        FileLogger file_logger = make_file_logger(logger->temporary_arena, logger->file);
+        static FileLogger file_logger = file_logger_init(logger->file);
         file_logger.name = logger->name;
         file_logger.logger.warning("failed to dispatch deferred log message, logging directly (seq: %.2u)", event.seq % 100);
         file_logger.logger.dispatch(&file_logger.logger, event);

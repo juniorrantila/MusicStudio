@@ -10,8 +10,8 @@
 #pragma clang diagnostic pop
 
 #include "./Logger.h"
-
 #include "./Verify.h"
+#include "./Defer.h"
 
 #include <stdarg.h>
 
@@ -27,7 +27,10 @@ static Format format_resolve(Allocator*, c_string fmt, va_list args);
 static void log_generic(Logger* l, LoggerEventTag tag, c_string fmt, va_list args)
 {
     static _Atomic u32 seq;
-    Format format = format_resolve(l->temporary_arena, fmt, args);
+
+    auto arena = fixed_arena_init(l->arena_buffer, sizeof(l->arena_buffer));
+
+    Format format = format_resolve(&arena.allocator, fmt, args);
     if (!format.buf) return;
 
     l->dispatch(l, (LoggerEvent){
@@ -36,8 +39,6 @@ static void log_generic(Logger* l, LoggerEventTag tag, c_string fmt, va_list arg
         .tag = tag,
         .seq = seq++,
     });
-
-    memfree(l->temporary_arena, format.buf, format.buf_len, 1);
 }
 
 C_API void vlog_debug(Logger* l, c_string fmt, va_list args) { log_generic(l, LoggerEventTag_Debug, fmt, args); }
@@ -205,7 +206,7 @@ static Format format_resolve(Allocator* a, c_string fmt, va_list args)
     VERIFY(len >= 0);
 
     char* buf = (char*)memalloc(a, len + 1, 1);
-    VERIFY(buf);
+    VERIFY(buf != nullptr);
     __builtin_memset(buf, 0, len);
 
     int len2 = stb_vsnprintf(buf, len + 1, fmt, args2);

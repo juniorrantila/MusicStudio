@@ -1,6 +1,5 @@
 #include "./MemoryPressureMonitor.h"
 
-#include "./Allocator.h"
 #include "./Verify.h"
 
 #include <sys/event.h>
@@ -72,7 +71,6 @@ C_API bool memory_pressure_monitor_init(MemoryPressureMonitor* monitor)
 C_API void memory_pressure_monitor_deinit(MemoryPressureMonitor* monitor)
 {
     close(monitor->fd);
-    memset_canary(monitor, sizeof(MemoryPressureMonitor));
 }
 
 C_API void memory_pressure_monitor_poll(MemoryPressureMonitor* monitor, struct timespec const* time)

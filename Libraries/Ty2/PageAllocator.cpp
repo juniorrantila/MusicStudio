@@ -16,7 +16,7 @@ C_API Allocator* page_allocator(void)
 
 C_API usize page_size(void)
 {
-    static u32 size = 0;
+    static _Atomic u32 size = 0;
     if (size == 0) {
         size = sysconf(_SC_PAGESIZE);
     }

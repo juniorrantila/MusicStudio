@@ -1,6 +1,8 @@
 #pragma once
 #include "./Base.h"
 
+#include "./MemoryPoker.h"
+
 #ifdef __cplusplus
 #include "./TypeId.h"
 #endif
@@ -65,6 +67,8 @@ typedef struct Mailbox {
 #ifdef __cplusplus
     MailboxReader* reader(pthread_t = pthread_self());
     MailboxWriter* writer(pthread_t = pthread_self());
+
+    void attach_memory_poker(MemoryPoker*) const;
 #endif
 } Mailbox;
 
@@ -99,6 +103,8 @@ static_assert(ty_offsetof(MailboxWriter, mailbox) == 0);
 C_API MailboxSuccess mailbox_init(u32 min_items, Mailbox*);
 C_API MailboxReader* mailbox_reader(Mailbox*, pthread_t);
 C_API MailboxWriter* mailbox_writer(Mailbox*, pthread_t);
+
+C_API void mailbox_attach_memory_poker(Mailbox const*, MemoryPoker*);
 
 C_API MailboxSuccess mailbox_post(MailboxWriter*, u16 tag, u64 size, u64 align, void const* data);
 C_API MailboxStatus mailbox_read(MailboxReader*, Message*);

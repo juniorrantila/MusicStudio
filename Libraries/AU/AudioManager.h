@@ -1,7 +1,8 @@
 #pragma once
 #include "AudioDecoder.h"
-#include <Ty2/Base.h>
 
+#include <Ty2/MemoryPoker.h>
+#include <Ty2/Base.h>
 #include <Ty2/Mailbox.h>
 #include <Ty/StringSlice.h>
 #include <FS/FSVolume.h>
@@ -13,6 +14,10 @@ constexpr i64 au_audio_frames_per_block = 1024;
 constexpr u64 au_audio_block_max = 1024;
 constexpr u64 au_audio_block_channel_max = 24;
 constexpr u64 au_audio_file_max = OPEN_MAX;
+
+constexpr u64 au_audio_file_path_max = PATH_MAX;
+static_assert(au_audio_file_path_max <= PATH_MAX);
+static_assert(au_audio_file_path_max <= message_size_max);
 
 typedef struct { u64 hash; } AUAudioID;
 constexpr AUAudioID au_audio_id_null = { 0 };
@@ -30,7 +35,7 @@ typedef struct {
 
 typedef struct AUAudioManager {
     AUAudioBlock blocks[au_audio_block_max]; // Accessed via djb2(block_id) % au_audio_block_max
-    char paths[au_audio_file_max][PATH_MAX]; // Accessed via djb2(file_name) % au_audio_file_max
+    char paths[au_audio_file_max][au_audio_file_path_max]; // Accessed via djb2(file_name) % au_audio_file_max
 
     Mailbox io_mailbox;
     pthread_t io_thread;
@@ -47,6 +52,8 @@ typedef struct AUAudioManager {
         AUAudioID id;
         AUAudio audio;
     } audios[au_audio_block_max];
+
+    MemoryPoker memory_poker;
 
 #if __cplusplus
     AUAudioID audio(StringSlice file_name);

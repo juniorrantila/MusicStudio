@@ -261,3 +261,11 @@ C_API MailboxWriter* mailbox_writer(Mailbox* mailbox, pthread_t thread)
     mailbox->writer_thread.is_tied = true;
     return (MailboxWriter*)mailbox;
 }
+
+void Mailbox::attach_memory_poker(MemoryPoker* poker) const { return mailbox_attach_memory_poker(this, poker); }
+C_API void mailbox_attach_memory_poker(Mailbox const* mailbox, MemoryPoker* poker)
+{
+    VERIFY(mailbox->items != nullptr);
+    u64 size = sizeof(Message) * (u64)mailbox->capacity;
+    poker->push(mailbox->items, size);
+}

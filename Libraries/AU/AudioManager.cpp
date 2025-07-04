@@ -12,11 +12,13 @@
 
 #include <FS/FSVolume.h>
 
+#include <Core/Time.h>
+
 #include <SoundIo/SoundIo.h>
 #include <pthread.h>
 #include <string.h>
 
-static_assert(au_audio_block_channel_max == SOUNDIO_MAX_CHANNELS);
+static_assert(au_audio_block_channel_max <= SOUNDIO_MAX_CHANNELS);
 
 static void* io_thread(void*);
 static u16 path_slot(AUAudioID);
@@ -27,14 +29,16 @@ static void prefetch_history_push(AUAudioManager*, AUAudioBlockID);
 
 struct Open {
     AUAudioID id;
-    char path[PATH_MAX];
+    char path[au_audio_file_path_max];
 };
+static_assert(sizeof(Open) <= message_size_max);
 
 struct Prepare {
    AUAudioBlockID id;
    AUAudioBlock* block;
-   char path[PATH_MAX];
+   char path[au_audio_file_path_max];
 };
+static_assert(sizeof(Prepare) <= message_size_max);
 
 C_API [[nodiscard]] bool au_audio_manager_init(AUAudioManager* audio, Logger* io_debug)
 {
@@ -45,10 +49,15 @@ C_API [[nodiscard]] bool au_audio_manager_init(AUAudioManager* audio, Logger* io
     audio->volume.debug = audio->io_debug;
     audio->volume.automount_when_not_found = true;
 
+    if (!memory_poker_init(&audio->memory_poker))
+        return false;
+    audio->memory_poker.push(audio, sizeof(*audio));
     if (!mailbox_init(2 * au_audio_block_max, &audio->io_mailbox).ok)
         return false;
+    audio->io_mailbox.attach_memory_poker(&audio->memory_poker);
     if (pthread_create(&audio->io_thread, nullptr, io_thread, audio) != 0)
         return false;
+
     return true;
 }
 

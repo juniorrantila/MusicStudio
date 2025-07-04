@@ -43,6 +43,7 @@ static_assert(sizeof(Prepare) <= message_size_max);
 C_API [[nodiscard]] bool au_audio_manager_init(AUAudioManager* audio, Logger* io_debug)
 {
     memzero(audio, sizeof(*audio));
+    mempoison(audio->blocks, sizeof(audio->blocks));
 
     audio->io_debug = io_debug;
     fs_volume_init(&audio->volume);
@@ -104,6 +105,7 @@ C_API void au_audio_prefetch(AUAudioManager* audio, AUAudioID id, i64 frame)
 
     auto block_id = au_audio_block_id(id, frame);
     auto* block = &audio->blocks[block_slot(block_id)];
+    memunpoison(block, sizeof(*block));
     if (block_equal(block_id, block->id))
         return;
     if (did_just_prefetch(audio, block_id))
@@ -126,15 +128,10 @@ C_API f64 au_audio_sample(AUAudioManager* audio, AUAudioID id, i64 frame, u16 ch
 {
     VERIFY(channel < au_audio_block_channel_max);
 
+    au_audio_prefetch(audio, id, frame);
     au_audio_prefetch(audio, id, frame + au_audio_frames_per_block);
     if (frame < 0)
         return 0;
-
-    // FIXME: Remove this.
-    auto* a = &audio->audios[path_slot(id)];
-    if (a->id.hash != id.hash)
-        return 0;
-    return au_audio_sample_f64(&a->audio, channel, frame);
 
     auto block_id = au_audio_block_id(id, frame);
     auto slot = block_slot(block_id);
@@ -159,8 +156,6 @@ static u16 path_slot(AUAudioID id)
 {
     auto* audio = (AUAudioManager*)user;
     auto* log = audio->io_debug;
-    // auto arena = fixed_arena_init(page_alloc(1 * GiB), 1 * GiB);
-    // page_alloc(1 * GiB);
 
     for (;;) {
         audio->io_mailbox.reader()->wait();
@@ -184,13 +179,15 @@ static u16 path_slot(AUAudioID id)
                 auto content = fs_content(*file);
 
                 auto* slot = &audio->audios[path_slot(open.id)];
-                if (au_audio_decode_wav(bytes(content.items, content.count), &slot->audio) != e_au_decode_none) {
-                    log->error("could not decode '%s'", open.path);
+                if (auto error = au_audio_decode_wav(bytes(content.items, content.count), &slot->audio); error != e_au_decode_none) {
+                    log->error("could not decode '%s': %s", open.path, au_decode_strerror(error));
                     continue;
                 }
 
                 ty_write_barrier();
                 slot->id = open.id;
+                ty_write_barrier();
+                log->info("opened '%s'", open.path);
 
                 continue;
             }
@@ -206,30 +203,29 @@ static u16 path_slot(AUAudioID id)
                     continue;
                 }
 
+                auto* slot = &audio->audios[path_slot(prepare.id.audio_id)];
                 auto* file = fs_volume_use_ref(&audio->volume, id);
-                if (fs_file_needs_reload(file))
+                if (fs_file_needs_reload(file)) {
                     fs_file_reload(file);
-                auto content = fs_content(*file);
+                    auto content = fs_content(*file);
 
-                AUAudio audio;
-                if (au_audio_decode_wav(bytes(content.items, content.count), &audio) != e_au_decode_none) {
-                    log->error("could not decode '%s' (%zu)", prepare.path, prepare.id.block);
-                    continue;
+                    if (auto error = au_audio_decode_wav(bytes(content.items, content.count), &slot->audio); error != e_au_decode_none) {
+                        log->error("could not decode '%s': %s", prepare.path, au_decode_strerror(error));
+                        continue;
+                    }
                 }
-                VERIFY(audio.channel_count <= au_audio_block_channel_max);
+                VERIFY(slot->audio.channel_count <= au_audio_block_channel_max);
                 auto* block = prepare.block;
                 u64 sample_start = prepare.id.block * au_audio_frames_per_block;
                 u64 sample_end = sample_start + au_audio_frames_per_block - 1;
-                for (u16 channel = 0; channel < audio.channel_count; channel++) {
+                for (u16 channel = 0; channel < slot->audio.channel_count; channel++) {
                     for (u64 frame = sample_start; frame < sample_end; frame++) {
-                        block->samples[channel][frame % au_audio_frames_per_block] = au_audio_sample_f64(&audio, channel, frame);
+                        block->samples[channel][frame % au_audio_frames_per_block] = au_audio_sample_f64(&slot->audio, channel, frame);
                     }
                 }
                 ty_write_barrier();
                 block->id = prepare.id;
                 ty_write_barrier();
-
-                // log->info("prefetched '%s' (%zu)", prepare.path, prepare.id.block);
                 continue;
             }
             default: UNREACHABLE();

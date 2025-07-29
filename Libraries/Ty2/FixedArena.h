@@ -1,6 +1,8 @@
 #pragma once
 #include "./Allocator.h"
 
+#include <stdarg.h>
+
 typedef struct { u8* value; } FixedMark;
 C_API inline FixedMark make_fixed_mark(u8* value) { return (FixedMark){value}; }
 
@@ -19,6 +21,18 @@ typedef struct FixedArena {
     void sweep(FixedMark mark);
 
     void* push(u64 size, u64 align);
+
+    [[gnu::format(printf, 2, 3)]]
+    c_string fmt(c_string, ...);
+
+    [[gnu::format(printf, 2, 0)]]
+    c_string vfmt(c_string, va_list);
+
+    [[gnu::format(printf, 2, 3)]]
+    c_string must_fmt(c_string, ...);
+
+    [[gnu::format(printf, 2, 0)]]
+    c_string must_vfmt(c_string, va_list);
 #endif
 } FixedArena;
 
@@ -32,3 +46,15 @@ C_API FixedMark fixed_arena_mark(FixedArena const*);
 C_API void fixed_arena_sweep(FixedArena*, FixedMark mark);
 
 C_API void* fixed_arena_push(FixedArena*, u64 size, u64 align);
+
+C_API [[gnu::format(printf, 2, 3)]]
+c_string fixed_arena_fmt(FixedArena*, c_string, ...);
+
+C_API [[gnu::format(printf, 2, 0)]]
+c_string fixed_arena_vfmt(FixedArena*, c_string, va_list);
+
+C_API [[gnu::format(printf, 2, 3)]]
+c_string fixed_arena_must_fmt(FixedArena*, c_string, ...);
+
+C_API [[gnu::format(printf, 2, 0)]]
+c_string fixed_arena_must_vfmt(FixedArena*, c_string, va_list);

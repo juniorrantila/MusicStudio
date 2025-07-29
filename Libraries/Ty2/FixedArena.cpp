@@ -1,3 +1,17 @@
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-fallthrough"
+#pragma clang diagnostic ignored "-Wunused"
+#pragma clang attribute push (__attribute__((no_sanitize("integer"))), apply_to=function)
+
+#define STB_SPRINTF_IMPLEMENTATION
+#define STB_SPRINTF_NOUNALIGNED
+#define STB_SPRINTF_STATIC
+#define STB_SPRINTF_DECORATE(x) stb_##x
+#include "./stb_sprintf.h"
+
+#pragma clang attribute pop
+#pragma clang diagnostic pop
+
 #include "./FixedArena.h"
 
 #include "./Allocator.h"
@@ -65,6 +79,68 @@ C_API void* fixed_arena_push(FixedArena* arena, u64 size, u64 align)
     arena->head += size;
     memunpoison(ptr, size);
     return ptr;
+}
+
+[[gnu::format(printf, 2, 3)]]
+c_string FixedArena::fmt(c_string format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    c_string result = vfmt(format, args);
+    va_end(args);
+    return result;
+}
+c_string fixed_arena_fmt(FixedArena* arena, c_string format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    c_string result = fixed_arena_vfmt(arena, format, args);
+    va_end(args);
+    return result;
+}
+
+[[gnu::format(printf, 2, 0)]]
+c_string FixedArena::vfmt(c_string format, va_list args) { return fixed_arena_vfmt(this, format, args); }
+c_string fixed_arena_vfmt(FixedArena* arena, c_string format, va_list args)
+{
+    int len = stb_vsnprintf(nullptr, 0, format, args);
+    if (len < 0) return nullptr;
+    if (len == 0) return "";
+    char* buf = (char*)arena->push(len + 1, 1);
+    memzero(buf, len + 1);
+    if (!buf) return nullptr;
+    int len2 = stb_vsnprintf(buf, len + 1, format, args);
+    VERIFY(len == len2);
+    return buf;
+}
+
+[[gnu::format(printf, 2, 3)]]
+c_string FixedArena::must_fmt(c_string format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    c_string result = fixed_arena_must_vfmt(this, format, args);
+    va_end(args);
+    return result;
+}
+C_API [[gnu::format(printf, 2, 3)]]
+c_string fixed_arena_must_fmt(FixedArena* arena, c_string format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    c_string result = fixed_arena_must_vfmt(arena, format, args);
+    va_end(args);
+    return result;
+}
+
+[[gnu::format(printf, 2, 0)]]
+c_string FixedArena::must_vfmt(c_string format, va_list args) { return fixed_arena_must_vfmt(this, format, args);  }
+C_API [[gnu::format(printf, 2, 0)]]
+c_string fixed_arena_must_vfmt(FixedArena* arena, c_string format, va_list args)
+{
+    c_string result = fixed_arena_vfmt(arena, format, args);
+    VERIFY(result != nullptr);
+    return result;
 }
 
 static bool owns(FixedArena const* arena, void* ptr)

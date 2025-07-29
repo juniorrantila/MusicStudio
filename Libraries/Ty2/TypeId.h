@@ -1,4 +1,6 @@
 #pragma once
+#if __cplusplus
+
 #include "./Base.h"
 
 namespace Ty2 {
@@ -55,4 +57,16 @@ static consteval inline TypeId type_id()
     return TypeId(id);
 }
 
+bool type_register(u16, c_string name);
+
 }
+
+#endif
+
+#if __cplusplus
+#define ty_type_register(T) [[maybe_unused]] static inline bool __ty2_register__##T = Ty2::type_register(Ty2::type_id<T>(), #T)
+#else
+#define ty_type_register(T)
+#endif
+
+C_API c_string ty_type_name(u16);

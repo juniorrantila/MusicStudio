@@ -3,6 +3,8 @@
 #include "./Verify.h"
 #include "./PageAllocator.h"
 #include "./Defer.h"
+#include "./TypeId.h"
+#include "./Bits.h"
 
 #include <string.h>
 #include <sys/mman.h>
@@ -12,43 +14,46 @@
 #include <sys/time.h>
 #include <signal.h>
 
+using nullptr_t = decltype(nullptr);
+ty_type_register(nullptr_t);
+
+typedef struct [[gnu::packed]] Message {
+    u16 tag;
+    u16 align; static_assert(ty_bits_fitting(message_align_max) <= 16);
+    u32 size; static_assert(ty_bits_fitting(message_size_max) <= 32);
+    u8 data[];
+} Message;
+static_assert(alignof(Message) == 1);
 
 static Message const* read_ptr(Mailbox const*);
 static Message* write_ptr(Mailbox const*);
 static u64 fill_count(Mailbox const*);
-static u64 slots_left(Mailbox const*);
+static u64 bytes_left(Mailbox const*);
 
-static void increment_read_ptr(Mailbox*);
-static void increment_write_ptr(Mailbox*);
-
-MailboxSuccess Message::unwrap(u16 tag, u64 size, u64 align, void* buf) const { return message_unwrap(this, tag, size, align, buf); }
-MailboxSuccess message_unwrap(Message const* message, u16 tag, u64 size, u64 align, void* buf)
-{
-    if (verify(message->tag == tag).failed) return mailbox_bad_argument(); 
-    if (verify(message->size == size).failed) return mailbox_bad_argument(); 
-    if (verify(message->align == align).failed) return mailbox_bad_argument(); 
-    memcpy(buf, message->data, size);
-    return mailbox_ok();
-}
+static void increment_read_ptr(Mailbox*, u64);
+static void increment_write_ptr(Mailbox*, u64);
 
 MailboxSuccess MailboxWriter::post(u16 tag, u64 size, u64 align, void const* data) { return mailbox_post(this, tag, size, align, data); }
 C_API MailboxSuccess mailbox_post(MailboxWriter* mb, u16 tag, u64 size, u64 align, void const* data)
 {
     if (verify(size <= message_size_max).failed) return mailbox_bad_argument();
     if (verify(align <= message_align_max).failed) return mailbox_bad_argument();
+    VERIFYS(ty_type_name(tag) != nullptr, "type has not been ty_type_register()'ed");
     VERIFY(mb->mailbox.writer_thread.is_tied);
     VERIFY(pthread_equal(mb->mailbox.writer_thread.thread, pthread_self()));
-    if (slots_left(&mb->mailbox) == 0) return mailbox_no_space();
+    if (bytes_left(&mb->mailbox) == 0) return mailbox_no_space();
+
+    if (size + sizeof(Message) >= bytes_left(&mb->mailbox))
+        return mailbox_no_space();
 
     Message* m = write_ptr(&mb->mailbox);
     *m = (Message){
         .tag = tag,
         .align = (u16)align,
         .size = (u16)size,
-        .data = {},
     };
     memcpy(m->data, data, size);
-    increment_write_ptr(&mb->mailbox);
+    increment_write_ptr(&mb->mailbox, size);
 
     if (mb->mailbox.reader_thread.is_tied) {
         pthread_kill(mb->mailbox.reader_thread.thread, SIGCONT);
@@ -56,36 +61,51 @@ C_API MailboxSuccess mailbox_post(MailboxWriter* mb, u16 tag, u64 size, u64 alig
     return mailbox_ok();
 }
 
-MailboxStatus MailboxReader::read(Message* message) { return mailbox_read(this, message); }
-C_API MailboxStatus mailbox_read(MailboxReader* mb, Message* out)
+MailboxSuccess MailboxReader::read(u16 tag, u64 size, u64 align, void* out) { return mailbox_read(this, tag, size, align, out); }
+C_API MailboxSuccess mailbox_read(MailboxReader* mb, u16 tag, u64 size, u64 align, void* out)
 {
     VERIFY(mb->mailbox.reader_thread.is_tied);
     VERIFY(pthread_equal(mb->mailbox.reader_thread.thread, pthread_self()));
-    if (mb->peek(out).found) {
-        increment_read_ptr(&mb->mailbox);
-        return mailbox_found();
-    }
-    return mailbox_empty();
+    u16 tag_in_box = 0;
+    if (!mb->peek(&tag_in_box).found)
+        return mailbox_error();
+    if (verify(tag_in_box == tag).failed)
+        return mailbox_bad_argument();
+    Message const* message = read_ptr(&mb->mailbox);
+    if (verify(message->size == size).failed)
+        return mailbox_bad_argument();
+    if (verify(message->align == align).failed)
+        return mailbox_bad_argument();
+    memcpy(out, message->data, size);
+    increment_read_ptr(&mb->mailbox, size);
+    return mailbox_ok();
 }
 
-MailboxStatus MailboxReader::peek(Message* message) const { return mailbox_peek(this, message); }
-C_API MailboxStatus mailbox_peek(MailboxReader const* mb, Message* out)
+MailboxStatus MailboxReader::peek(u16* tag) const { return mailbox_peek(this, tag); }
+C_API MailboxStatus mailbox_peek(MailboxReader const* mb, u16* tag)
 {
+    VERIFY(tag != nullptr);
     VERIFY(mb->mailbox.reader_thread.is_tied);
     VERIFY(pthread_equal(mb->mailbox.reader_thread.thread, pthread_self()));
     if (fill_count(&mb->mailbox) == 0) return mailbox_empty();
-    if (!out) return mailbox_found();
-    memcpy(out, read_ptr(&mb->mailbox), sizeof(Message));
+    *tag = read_ptr(&mb->mailbox)->tag;
     return mailbox_found();
 }
 
-void MailboxReader::toss(Message const* message) { return mailbox_toss(this, message); }
-C_API void mailbox_toss(MailboxReader* mb, Message const*)
+void MailboxReader::toss(u16 tag) { return mailbox_toss(this, tag); }
+C_API void mailbox_toss(MailboxReader* mb, u16 tag)
 {
     VERIFY(mb->mailbox.reader_thread.is_tied);
     VERIFY(pthread_equal(mb->mailbox.reader_thread.thread, pthread_self()));
-    if (verify(mailbox_peek(mb, nullptr).found).failed) return;
-    increment_read_ptr(&mb->mailbox);
+
+    u16 tag_in_box = 0;
+    if (!mb->peek(&tag_in_box).found)
+        return;
+    if (verify(tag_in_box == tag).failed)
+        return;
+
+    Message const* message = read_ptr(&mb->mailbox);
+    increment_read_ptr(&mb->mailbox, message->size);
 }
 
 MailboxDidTimeout MailboxReader::wait(struct timespec const* timeout) { return mailbox_wait(this, timeout); }
@@ -125,7 +145,7 @@ static Message const* read_ptr(Mailbox const* mb)
     VERIFY(mb->reader_thread.is_tied);
     VERIFY(pthread_equal(mb->reader_thread.thread, pthread_self()));
     u64 read_offset = mb->read_offset;
-    return mb->items + (read_offset % mb->capacity);
+    return (Message*)(mb->items + (read_offset % mb->capacity));
 }
 
 static Message* write_ptr(Mailbox const* mb)
@@ -133,22 +153,22 @@ static Message* write_ptr(Mailbox const* mb)
     VERIFY(mb->writer_thread.is_tied);
     VERIFY(pthread_equal(mb->writer_thread.thread, pthread_self()));
     u64 write_offset = mb->write_offset;
-    return mb->items + (write_offset % mb->capacity);
+    return (Message*)(mb->items + (write_offset % mb->capacity));
 }
 
-static void increment_read_ptr(Mailbox* mb)
+static void increment_read_ptr(Mailbox* mb, u64 amount)
 {
     VERIFY(mb->reader_thread.is_tied);
     VERIFY(pthread_equal(mb->reader_thread.thread, pthread_self()));
-    ++mb->read_offset;
+    mb->read_offset += (amount + sizeof(Message));
     VERIFY(fill_count(mb) >= 0);
 }
 
-static void increment_write_ptr(Mailbox* mb)
+static void increment_write_ptr(Mailbox* mb, u64 amount)
 {
     VERIFY(mb->writer_thread.is_tied);
     VERIFY(pthread_equal(mb->writer_thread.thread, pthread_self()));
-    ++mb->write_offset;
+    mb->write_offset += (amount + sizeof(Message));
     VERIFY(fill_count(mb) >= 0);
 }
 
@@ -160,11 +180,13 @@ static u64 fill_count(Mailbox const* mb)
     u64 write_offset = mb->write_offset;
     i64 count = (i64)write_offset - (i64)read_offset;
     VERIFY(count >= 0);
-    VERIFY(count <= (i64)mb->capacity);
+    i64 capacity = (i64)mb->capacity;
+    VERIFY(capacity >= 0);
+    VERIFY(count <= capacity);
     return count;
 }
 
-static u64 slots_left(Mailbox const* mb)
+static u64 bytes_left(Mailbox const* mb)
 {
     return mb->capacity - fill_count(mb);
 }
@@ -175,13 +197,11 @@ static inline u64 ceil_f64_to_u64(f64 x)
     return (u64)(truncation + (truncation < x));
 }
 
-C_API MailboxSuccess mailbox_init(u32 min_items, Mailbox* mb)
+C_API MailboxSuccess mailbox_init(u32 min_capacity, Mailbox* mb)
 {
-    if (verify(min_items != 0).failed) return mailbox_bad_argument();
+    if (verify(min_capacity != 0).failed) return mailbox_bad_argument();
 
-    u32 min_capacity = min_items * sizeof(Message);
-    u64 actual_capacity = ceil_f64_to_u64((f64)min_capacity / (f64)page_size()) * page_size();
-    u32 actual_items = actual_capacity / sizeof(Message);
+    u64 capacity = ceil_f64_to_u64((f64)min_capacity / (f64)page_size()) * page_size();
 
     char shm_path[] = "/dev/shm/ty2-mailbox-XXXXXX";
     char tmp_path[] = "/tmp/ty2-mailbox-XXXXXX";
@@ -198,32 +218,32 @@ C_API MailboxSuccess mailbox_init(u32 min_items, Mailbox* mb)
     if (unlink(chosen_path))
         return mailbox_error();
 
-    if (ftruncate(fd, (off_t)actual_capacity))
+    if (ftruncate(fd, (off_t)capacity))
         return mailbox_error();
 
-    u8* address = (u8*)mmap(NULL, actual_capacity * 2, PROT_NONE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    u8* address = (u8*)mmap(NULL, capacity * 2, PROT_NONE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     if (address == MAP_FAILED)
         return mailbox_error();
     Defer unmap_address = [&]{
-        munmap(address, 2 * actual_capacity);
+        munmap(address, 2 * capacity);
     };
 
-    u8* other_address = (u8*)mmap(address, actual_capacity, PROT_READ|PROT_WRITE,
+    u8* other_address = (u8*)mmap(address, capacity, PROT_READ|PROT_WRITE,
             MAP_FIXED|MAP_SHARED, fd, 0);
     if (other_address != address)
         return mailbox_error();
 
-    other_address = (u8*)mmap(address + actual_capacity, actual_capacity,
+    other_address = (u8*)mmap(address + capacity, capacity,
             PROT_READ|PROT_WRITE, MAP_FIXED|MAP_SHARED, fd, 0);
-    if (other_address != address + actual_capacity)
+    if (other_address != address + capacity)
         return mailbox_error();
 
     unmap_address.disarm();
     *mb = (Mailbox){
-        .items = (Message*)address,
+        .items = address,
         .read_offset = 0u,
         .write_offset = 0u,
-        .capacity = actual_items,
+        .capacity = capacity,
         .reader_thread = {
             .thread = 0,
             .is_tied = false,
@@ -266,6 +286,5 @@ void Mailbox::attach_memory_poker(MemoryPoker* poker) const { return mailbox_att
 C_API void mailbox_attach_memory_poker(Mailbox const* mailbox, MemoryPoker* poker)
 {
     VERIFY(mailbox->items != nullptr);
-    u64 size = sizeof(Message) * (u64)mailbox->capacity;
-    poker->push(mailbox->items, size);
+    poker->push(mailbox->items, mailbox->capacity);
 }

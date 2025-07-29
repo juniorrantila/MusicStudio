@@ -23,24 +23,8 @@ C_INLINE MailboxStatus mailbox_empty(void) { return (MailboxStatus){false}; }
 C_INLINE MailboxStatus mailbox_found(void) { return (MailboxStatus){true}; }
 
 
-constexpr u64 message_size_max = 1274;
+constexpr u64 message_size_max = 4294967295;
 constexpr u64 message_align_max = 65535;
-typedef struct alignas(256) Message {
-    u16 tag;
-    u16 align;
-    u16 size;
-    u8 data[message_size_max];
-
-#ifdef __cplusplus
-    MailboxSuccess unwrap(u16 tag, u64 size, u64 align, void*) const;
-
-    template <typename T>
-    MailboxSuccess unwrap(T* buf) const { return unwrap(Ty2::type_id<T>(), sizeof(T), alignof(T), buf); }
-#endif
-} Message;
-static_assert(sizeof(Message) == 1280);
-
-C_API MailboxSuccess message_unwrap(Message const*, u16 tag, u64 size, u64 align, void*);
 
 typedef struct Mailbox Mailbox;
 typedef struct MailboxReader MailboxReader;
@@ -50,10 +34,10 @@ typedef struct { bool did_timeout; } MailboxDidTimeout;
 
 struct timespec;
 typedef struct Mailbox {
-    Message* items;
-    _Atomic u32 read_offset;
-    _Atomic u32 write_offset;
-    u32 capacity;
+    u8* items;
+    _Atomic u64 read_offset;
+    _Atomic u64 write_offset;
+    u64 capacity;
 
     struct {
         pthread_t thread;
@@ -76,9 +60,13 @@ typedef struct MailboxReader {
     Mailbox mailbox;
 
 #ifdef __cplusplus
-    MailboxStatus peek(Message*) const;
-    void toss(Message const*);
-    MailboxStatus read(Message*);
+    MailboxStatus peek(u16* tag) const;
+    MailboxSuccess read(u16 tag, u64 size, u64 align, void*);
+
+    template <typename T>
+    MailboxSuccess read(T* out) { return read(Ty2::type_id<T>(), sizeof(T), alignof(T), out); }
+
+    void toss(u16 tag);
 
     MailboxDidTimeout wait(struct timespec const* timeout = nullptr);
     MailboxDidTimeout wait(struct timespec const& timeout) { return wait(&timeout); }
@@ -100,16 +88,16 @@ typedef struct MailboxWriter {
 static_assert(sizeof(MailboxWriter) == sizeof(Mailbox));
 static_assert(ty_offsetof(MailboxWriter, mailbox) == 0);
 
-C_API MailboxSuccess mailbox_init(u32 min_items, Mailbox*);
+C_API MailboxSuccess mailbox_init(u32 min_capacity, Mailbox*);
 C_API MailboxReader* mailbox_reader(Mailbox*, pthread_t);
 C_API MailboxWriter* mailbox_writer(Mailbox*, pthread_t);
 
 C_API void mailbox_attach_memory_poker(Mailbox const*, MemoryPoker*);
 
 C_API MailboxSuccess mailbox_post(MailboxWriter*, u16 tag, u64 size, u64 align, void const* data);
-C_API MailboxStatus mailbox_read(MailboxReader*, Message*);
-C_API MailboxStatus mailbox_peek(MailboxReader const*, Message*);
-C_API void mailbox_toss(MailboxReader*, Message const*);
+C_API MailboxSuccess mailbox_read(MailboxReader*, u16 tag, u64 size, u64 align, void*);
+C_API MailboxStatus mailbox_peek(MailboxReader const*, u16* tag);
+C_API void mailbox_toss(MailboxReader*, u16 tag);
 C_API MailboxDidTimeout mailbox_wait(MailboxReader*, struct timespec const* timeout);
 
 C_API MailboxDidTimeout mailbox_wait_any(struct timespec const* timeout);

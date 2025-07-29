@@ -2,12 +2,13 @@
 #include "./Base.h"
 
 #include "./MemoryPoker.h"
-
-#ifdef __cplusplus
 #include "./TypeId.h"
-#endif
 
 #include <pthread.h>
+
+#define ty_define_message(T) \
+    typedef struct T const* T ## Ref; ty_type_register(T ##Ref); \
+    typedef struct T T; ty_type_register(T); struct T
 
 typedef struct [[nodiscard]] { bool ok; } MailboxSuccess;
 C_INLINE MailboxSuccess mailbox_ok(void) { return (MailboxSuccess){true}; }

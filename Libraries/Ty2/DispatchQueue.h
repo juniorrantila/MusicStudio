@@ -28,6 +28,6 @@ typedef struct DispatchQueue {
 #endif
 } DispatchQueue;
 
-C_API DispatchStatus dispatch_queue_init(Allocator*, u64 mailbox_capacity, DispatchQueue*);
+C_API DispatchStatus dispatch_queue_init(Allocator*, u64 min_mailbox_capacity, DispatchQueue*);
 C_API void dispatch_queue(DispatchQueue*, void* user1, void* user2, u64 size, u64 batch_size, void(*)(u64 worker, void* user1, void* user2, u64 begin, u64 end));
 C_API void dispatch_queue_sync(DispatchQueue*);

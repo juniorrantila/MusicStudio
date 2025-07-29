@@ -24,7 +24,7 @@ struct Done {
     u64 failed_posts;
 };
 
-C_API DispatchStatus dispatch_queue_init(Allocator* a, u64 mailbox_capacity, DispatchQueue* out)
+C_API DispatchStatus dispatch_queue_init(Allocator* a, u64 min_mailbox_capacity, DispatchQueue* out)
 {
     i64 worker_count = sysconf(_SC_NPROCESSORS_ONLN);
     if (worker_count < 0) return dispatch_fail();
@@ -46,9 +46,9 @@ C_API DispatchStatus dispatch_queue_init(Allocator* a, u64 mailbox_capacity, Dis
             .thread = {},
             .main = {},
         };
-        if (!mailbox_init(mailbox_capacity, &worker->thread).ok)
+        if (!mailbox_init(min_mailbox_capacity, &worker->thread).ok)
             return dispatch_fail();
-        if (!mailbox_init(mailbox_capacity, &worker->main).ok)
+        if (!mailbox_init(min_mailbox_capacity, &worker->main).ok)
             return dispatch_fail();
         if (pthread_create(&worker->pthread, nullptr, dispatch_thread, worker) != 0)
             return dispatch_fail();
@@ -106,12 +106,9 @@ C_API void dispatch_queue_sync(DispatchQueue* q)
         mailbox_wait_any(ms(16));
         __builtin_printf("%zu\n", q->running);
         for (u64 i = 0; i < q->count; i++) {
-            Message message;
-            if (q->workers[i].main.reader()->read(&message).found) {
+            Done done;
+            if (q->workers[i].main.reader()->read(&done).ok) {
                 q->running -= 1;
-
-                Done done;
-                VERIFY(message.unwrap(&done).ok);
                 q->running -= done.failed_posts;
             }
         }
@@ -120,6 +117,7 @@ C_API void dispatch_queue_sync(DispatchQueue* q)
 
 static void* dispatch_thread(void* ptr)
 {
+    pthread_setname_np("dispatch-queue");
     auto ms = [](u64 value) -> struct timespec {
         struct timespec time = {
             .tv_sec = 0,
@@ -142,10 +140,8 @@ static void* dispatch_thread(void* ptr)
     for (;;) {
         auto* reader = ctx->thread.reader();
         reader->wait(ms(16));
-        Message message;
-        while (reader->read(&message).found) {
-            Work work;
-            VERIFY(message.unwrap(&work).ok);
+        Work work;
+        while (reader->read(&work).ok) {
             work.callback(work.worker, work.user1, work.user2, work.start, work.end);
             if (ctx->main.writer()->post(Done{.failed_posts = failed}).ok) failed = 0;
             else failed += 1;

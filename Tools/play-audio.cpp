@@ -50,9 +50,9 @@ static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_audio(FixedAren
 ErrorOr<int> Main::main(int argc, c_string argv[]) {
     auto argument_parser = CLI::ArgumentParser();
     
-    auto wav_path = StringView();
+    c_string wav_path = nullptr;
     TRY(argument_parser.add_positional_argument("wav-path", [&](c_string arg) {
-        wav_path = StringView::from_c_string(arg);
+        wav_path = arg;
     }));
 
     auto wasm_plugin_paths = Vector<StringView>();

@@ -97,3 +97,11 @@ C_API void __asan_unpoison_memory_region(void const volatile *addr, usize size);
 #define memunpoison(addr, size) __asan_unpoison_memory_region((addr), (size))
 
 #define ty_write_barrier() __sync_synchronize()
+
+#ifdef __cplusplus
+#define TY_CPP 1
+#else
+#define TY_CPP 0
+#endif
+
+#define TY_CPP_ONLY() static_assert(TY_CPP, "this file only works in C++ mode")

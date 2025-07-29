@@ -1,9 +1,6 @@
 #pragma once
 #include "./Base.h"
-
-#ifndef __cplusplus
-#error "This file only works in C++"
-#endif
+TY_CPP_ONLY();
 
 struct FixedArena;
 struct ArenaMark { u64 value; };

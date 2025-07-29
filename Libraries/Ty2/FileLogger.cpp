@@ -1,6 +1,7 @@
 #include "./FileLogger.h"
 #include "./Logger.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -25,6 +26,7 @@ C_API FileLogger file_logger_init(c_string name, FILE* file)
 static c_string severity(LoggerEventTag tag)
 {
     switch (tag) {
+    case LoggerEventTag_Format: return "";
     case LoggerEventTag_Debug: return "DEBG";
     case LoggerEventTag_Info: return "INFO";
     case LoggerEventTag_Warning: return "WARN";
@@ -43,6 +45,7 @@ static c_string color(LoggerEventTag tag, bool is_tty)
 {
     if (!is_tty) return "";
     switch (tag) {
+    case LoggerEventTag_Format: return "";
     case LoggerEventTag_Debug: return CYAN;
     case LoggerEventTag_Info: return BLUE;
     case LoggerEventTag_Warning: return YELLOW;
@@ -54,6 +57,12 @@ static c_string color(LoggerEventTag tag, bool is_tty)
 static void dispatch(struct Logger* l, LoggerEvent event)
 {
     FileLogger* file_logger = field_base(FileLogger, logger, l);
+    if (event.tag == LoggerEventTag_Format) {
+        (void)fwrite(event.message, event.message_size, 1, file_logger->file);
+        (void)fflush(file_logger->file);
+        return;
+    }
+
     int len = (int)event.message_size;
     int pid = getpid();
 
@@ -89,5 +98,8 @@ static void dispatch(struct Logger* l, LoggerEvent event)
             event.message
         );
     }
+
+    (void)fflush(file_logger->file);
+
     if (event.tag == LoggerEventTag_Fatal) abort();
 }

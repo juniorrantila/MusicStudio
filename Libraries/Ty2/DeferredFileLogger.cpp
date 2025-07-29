@@ -3,6 +3,7 @@
 #include "./Logger.h"
 #include "./FileLogger.h"
 
+#include <stdio.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -31,6 +32,7 @@ C_API DeferredFileLogger deferred_file_logger_init(c_string name, Mailbox* mailb
 static c_string severity(LoggerEventTag tag)
 {
     switch (tag) {
+    case LoggerEventTag_Format: return "";
     case LoggerEventTag_Debug: return "DBUG";
     case LoggerEventTag_Info: return "INFO";
     case LoggerEventTag_Warning: return "WARN";
@@ -49,6 +51,7 @@ static c_string color(LoggerEventTag tag, bool is_tty)
 {
     if (!is_tty) return "";
     switch (tag) {
+    case LoggerEventTag_Format: return "";
     case LoggerEventTag_Debug: return CYAN;
     case LoggerEventTag_Info: return BLUE;
     case LoggerEventTag_Warning: return YELLOW;
@@ -104,6 +107,12 @@ static void dispatch(struct Logger* l, LoggerEvent event)
 void DeferredFileLogger::handle_event(DeferredLogEvent const* event) { return deferred_file_logger_handle_event(this, event); }
 void deferred_file_logger_handle_event(DeferredFileLogger* logger, DeferredLogEvent const* event)
 {
+    if (event->severity == LoggerEventTag_Format) {
+        (void)fwrite(event->message, event->message_size, 1, logger->file);
+        (void)fflush(logger->file);
+        return;
+    }
+
     bool is_tty = logger->is_tty;
     auto tag = event->severity;
     if (logger->name) {
@@ -137,5 +146,8 @@ void deferred_file_logger_handle_event(DeferredFileLogger* logger, DeferredLogEv
             event->message       // i
         );
     }
+
+    (void)fflush(logger->file);
+
     if (tag == LoggerEventTag_Fatal) abort();
 }

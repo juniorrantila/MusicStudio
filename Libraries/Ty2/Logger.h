@@ -7,6 +7,7 @@
 #include <stdarg.h>
 
 typedef enum LoggerEventTag {
+    LoggerEventTag_Format,
     LoggerEventTag_Debug,
     LoggerEventTag_Info,
     LoggerEventTag_Warning,
@@ -23,9 +24,15 @@ typedef struct LoggerEvent {
 
 typedef struct Logger {
     void (*dispatch)(struct Logger*, LoggerEvent);
-    char arena_buffer[1 * KiB];
+    char arena_buffer[64 * KiB];
 
 #ifdef __cplusplus
+
+    [[gnu::format(printf, 2, 3)]]
+    void format(c_string, ...);
+
+    [[gnu::format(printf, 2, 0)]]
+    void vformat(c_string, va_list);
 
     [[gnu::format(printf, 2, 3)]]
     void debug(c_string, ...);
@@ -65,6 +72,11 @@ C_API inline Logger logger_init(void(*dispatch)(struct Logger*, LoggerEvent))
         .arena_buffer = {},
     };
 }
+
+__attribute__((format(printf, 2, 3)))
+C_API void log_format(Logger*, c_string, ...);
+__attribute__((format(printf, 2, 0)))
+C_API void vlog_format(Logger*, c_string, va_list);
 
 __attribute__((format(printf, 2, 3)))
 C_API void log_debug(Logger*, c_string, ...);

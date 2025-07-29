@@ -1,17 +1,21 @@
 #include <pthread.h>
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough"
 #pragma clang diagnostic ignored "-Wunused"
+#pragma clang attribute push (__attribute__((no_sanitize("integer"))), apply_to=function)
+
 #define STB_SPRINTF_IMPLEMENTATION
 #define STB_SPRINTF_NOUNALIGNED
 #define STB_SPRINTF_STATIC
 #define STB_SPRINTF_DECORATE(x) stb_##x
 #include "./stb_sprintf.h"
+
+#pragma clang attribute pop
 #pragma clang diagnostic pop
 
 #include "./Logger.h"
 #include "./Verify.h"
-#include "./Defer.h"
 
 #include <stdarg.h>
 
@@ -41,11 +45,20 @@ static void log_generic(Logger* l, LoggerEventTag tag, c_string fmt, va_list arg
     });
 }
 
+C_API void vlog_format(Logger* l, c_string fmt, va_list args) { log_generic(l, LoggerEventTag_Format, fmt, args); }
 C_API void vlog_debug(Logger* l, c_string fmt, va_list args) { log_generic(l, LoggerEventTag_Debug, fmt, args); }
 C_API void vlog_info(Logger* l, c_string fmt, va_list args)  { log_generic(l, LoggerEventTag_Info, fmt, args); }
 C_API void vlog_warning(Logger* l, c_string fmt, va_list args) { log_generic(l, LoggerEventTag_Warning, fmt, args); }
 C_API void vlog_error(Logger* l, c_string fmt, va_list args) { log_generic(l, LoggerEventTag_Error, fmt, args); }
 C_API void vlog_fatal(Logger* l, c_string fmt, va_list args) { log_generic(l, LoggerEventTag_Fatal, fmt, args); __builtin_abort(); }
+
+C_API void log_format(Logger* l, c_string fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vlog_format(l, fmt, args);
+    va_end(args);
+}
 
 C_API void log_debug(Logger* l, c_string fmt, ...)
 {
@@ -87,6 +100,16 @@ C_API void log_fatal(Logger* l, c_string fmt, ...)
     va_end(args);
 }
 
+void Logger::vformat(c_string fmt, va_list args) { vlog_format(this, fmt, args); }
+void Logger::format(c_string fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vformat(fmt, args);
+    va_end(args);
+}
+
+void Logger::vdebug(c_string fmt, va_list args) { vlog_debug(this, fmt, args); }
 void Logger::debug(c_string fmt, ...)
 {
     va_list args;
@@ -94,8 +117,8 @@ void Logger::debug(c_string fmt, ...)
     vdebug(fmt, args);
     va_end(args);
 }
-void Logger::vdebug(c_string fmt, va_list args) { vlog_debug(this, fmt, args); }
 
+void Logger::vinfo(c_string fmt, va_list args) { vlog_info(this, fmt, args); }
 void Logger::info(c_string fmt, ...)
 {
     va_list args;
@@ -103,8 +126,8 @@ void Logger::info(c_string fmt, ...)
     vinfo(fmt, args);
     va_end(args);
 }
-void Logger::vinfo(c_string fmt, va_list args) { vlog_info(this, fmt, args); }
 
+void Logger::vwarning(c_string fmt, va_list args) { vlog_warning(this, fmt, args); }
 void Logger::warning(c_string fmt, ...)
 {
     va_list args;
@@ -112,8 +135,8 @@ void Logger::warning(c_string fmt, ...)
     vwarning(fmt, args);
     va_end(args);
 }
-void Logger::vwarning(c_string fmt, va_list args) { vlog_warning(this, fmt, args); }
 
+void Logger::verror(c_string fmt, va_list args) { vlog_error(this, fmt, args); }
 void Logger::error(c_string fmt, ...)
 {
     va_list args;
@@ -121,8 +144,8 @@ void Logger::error(c_string fmt, ...)
     verror(fmt, args);
     va_end(args);
 }
-void Logger::verror(c_string fmt, va_list args) { vlog_error(this, fmt, args); }
 
+void Logger::vfatal(c_string fmt, va_list args) { vlog_fatal(this, fmt, args); }
 void Logger::fatal(c_string fmt, ...)
 {
     va_list args;
@@ -130,7 +153,6 @@ void Logger::fatal(c_string fmt, ...)
     vfatal(fmt, args);
     va_end(args);
 }
-void Logger::vfatal(c_string fmt, va_list args) { vlog_fatal(this, fmt, args); }
 
 
 C_API void log_debug_if(Logger* l, c_string fmt, ...)

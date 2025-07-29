@@ -259,12 +259,12 @@ static bool link_program(Logger* log, GLuint vert, GLuint frag, GLuint* out)
     GLint linked = 0;
     glGetProgramiv(program, GL_LINK_STATUS, &linked);
     if (!linked) {
-        glDeleteProgram(program);
         GLsizei message_size = 0;
         GLchar message[1024];
 
         glGetProgramInfoLog(program, sizeof(message), &message_size, message);
         log->error("could not link: %.*s", message_size, message);
+        glDeleteProgram(program);
         return false;
     }
 

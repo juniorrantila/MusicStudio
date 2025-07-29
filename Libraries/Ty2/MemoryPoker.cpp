@@ -57,6 +57,8 @@ C_API void memory_poker_push(MemoryPoker* poker, void const* memory, u64 size)
 [[clang::no_sanitize("address")]]
 static void* poker_thread(void* user)
 {
+    pthread_setname_np("memory-poker");
+
     MemoryPoker const* poker = (MemoryPoker const*)user; 
     u64 page_size = ::page_size();
     for (;;) {

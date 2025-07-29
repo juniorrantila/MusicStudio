@@ -72,7 +72,7 @@ static void* poker_thread(void* user)
                 start[(page + 1) * page_size];
         }
 
-        auto interval = 500_ms;
+        auto interval = 1000_ms;
         nanosleep(&interval, nullptr);
     }
 

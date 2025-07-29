@@ -119,4 +119,8 @@ static consteval u64 ty_bituint_max(u8 bits)
     return (1LLU << (bits + 1)) - 1;
 }
 
+#else
+
+#define ty_bits_fitting(v) ((u8)(64 - __builtin_clzll((u64)(v)) - 1))
+
 #endif

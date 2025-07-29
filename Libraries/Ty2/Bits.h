@@ -6,6 +6,27 @@ static constexpr u64 MiB = 1024 * KiB;
 static constexpr u64 GiB = 1024 * KiB;
 static constexpr u64 TiB = 1024 * GiB;
 
+C_INLINE void ty_trans_migrate_impl(u64* buf, u64 stored_version, u64 new_version)
+{
+    stored_version /= sizeof(u64);
+    new_version /= sizeof(u64);
+    for (u64 i = stored_version; i < new_version; i++) buf[i] = 0;
+}
+#define ty_trans_migrate(field) \
+    do {                                                                            \
+        static_assert(alignof(__typeof(*(field))) >= alignof(u64));                 \
+        static_assert(sizeof(__typeof(*(field))) >= sizeof(u64));                   \
+        ty_trans_migrate_impl(((u64*)(field)), (field)->version, sizeof(*(field))); \
+        (field)->version = sizeof(*(field));                                        \
+    } while(0)
+
+#define ty_is_initialized(field) ((field)->version == sizeof(*(field)))
+
+#define ty_set_initialized(field)               \
+    do {                                        \
+        (field)->version = sizeof(*(field));    \
+    } while(0)
+
 C_INLINE u16 ty_device_endian_from_u16le(u16 value)
 {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__

@@ -50,3 +50,8 @@ StringView StringSlice::as_view() const
 {
     return StringView::from_parts(items, count);
 }
+
+Bytes StringSlice::as_bytes() const
+{
+    return bytes(items, count);
+}

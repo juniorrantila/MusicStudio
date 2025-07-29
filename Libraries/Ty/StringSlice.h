@@ -6,6 +6,7 @@
 #endif
 
 #include <Ty2/Allocator.h>
+#include <Ty2/Bytes.h>
 
 typedef struct StringSlice {
     char const* items;
@@ -17,6 +18,7 @@ typedef struct StringSlice {
     Optional<StringSlice> resolve_path(Allocator*) const;
 
     StringView as_view() const;
+    Bytes as_bytes() const;
 #endif
 } StringSlice;
 

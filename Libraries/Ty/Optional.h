@@ -167,6 +167,17 @@ struct [[nodiscard]] Optional {
         return Optional<Return>{};
     }
 
+    template <typename F>
+    constexpr auto then(F callback) const {
+        using Return = decltype(callback(this->value()));
+
+        if (has_value()) {
+            return Return(callback(this->value()));
+        }
+
+        return Return{};
+    }
+
 private:
     constexpr void clear_if_needed()
     {

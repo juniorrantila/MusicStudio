@@ -50,22 +50,22 @@ C_API Tar tar_init(void const* data, u64 size)
         .base = data,
         .head = data,
         .seek = data,
-        .end = data + size,
+        .end = data + size - sizeof(TarHeader),
     };
 }
 
 C_API bool untar(Tar* tar, char const** path, u64* path_size, u8 const** content, u64* content_size)
 {
-    while (tar->seek < tar->end) {
+    static_assert(sizeof(TarHeader) == 512);
+    for (; tar->seek < tar->end; tar->seek += sizeof(TarHeader)) {
         TarHeader* header = (TarHeader*)tar->seek;
-        tar->seek += sizeof(TarHeader);
 
         if (!decode_header(header, path, path_size, content, content_size))
             continue;
-
         if (*content + *content_size > tar->end)
             continue;
-
+        tar->seek += *content_size;
+        tar->seek = __builtin_align_up(tar->seek, sizeof(TarHeader));
         return true;
     }
     return false;
@@ -174,49 +174,42 @@ static bool decode_header(TarHeader const* header, char const** path, u64* path_
     u64 checksum = decode_octal(h.checksum, sizeof(h.checksum));
     memset(h.checksum, ' ', sizeof(h.checksum));
 
-    i8* ibuf = (i8*)header;
-    u8* ubuf = (u8*)header;
+    i8* ibuf = (i8*)&h;
+    u8* ubuf = (u8*)&h;
     u64 usum = 0;
-    u64 isum = 0;
+    i64 isum = 0;
     for (u32 i = 0; i < sizeof(TarHeader); i++) {
         isum += ibuf[i];
         usum += ubuf[i];
     }
-    if (usum != checksum && isum != checksum) {
+    if (usum != checksum && isum != (i64)checksum) {
         return false;
     }
 
     *content = (void const*)&header[1];
     *content_size = decode_octal(h.file_size, sizeof(h.file_size));
 
-    char* path_end = &h.path[sizeof(h.path) - 1];
-    while (path_end > h.path) {
-        char e = *path_end;
+    u64 size = sizeof(h.path) - 1;
+    for (; size-->0; ) {
+        char e = h.path[size];
         if (e != ' ' && e != '\0') break;
-        path_end -= 1;
     }
-    *path_size = path_end - h.path;
-    *path = h.path;
+    *path_size = size;
+    *path = header->path;
 
     return true;
 }
 
 static u64 decode_octal(char const* buf, u64 size)
 {
-    char const* end = buf + size;
-
-    while (end > buf) {
-        char e = *end;
-        if (e != ' ' && e != '\0') break;
-        end -= 1;
-    }
-
-    u64 radix = 1;
-    u64 result = 0;
-    for (char const* c = buf; c < end; c += 1) {
-        u8 n = ((u8)*c) - (u8)'0';
-        result += n * radix;
-        radix *= 8;
+    u32 radix = 1;
+    u32 result = 0;
+    for (u64 i = size; i-->0;) {
+        if (buf[i] >= '0' && buf[i] <= '9') {
+            u8 n = buf[i] - (u8)'0';
+            result += n * radix;
+            radix *= 8;
+        }
     }
     return result;
 }

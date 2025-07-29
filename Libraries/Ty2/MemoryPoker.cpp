@@ -67,7 +67,6 @@ static void* poker_thread(void* user)
             u8 volatile const* start = poker->pages[i];
             u64 page_count = poker->page_counts[i];
 
-            start[0];
             for (u64 page = 0; page < page_count; page++)
                 start[(page + 1) * page_size];
         }

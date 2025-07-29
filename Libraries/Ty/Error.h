@@ -118,7 +118,7 @@ private:
     }
 
     constexpr Error(c_string message, c_string function, c_string file, u32 line, int errno_code)
-        : Error(message, function, file, line, errno_domain, (u16)__builtin_abs(errno_code))
+        : Error(message, function, file, line, errno_domain, (u16)(errno_code < 0 ? -errno_code : errno_code))
     {
         VERIFY(__builtin_abs(errno_code) < 65536);
     }

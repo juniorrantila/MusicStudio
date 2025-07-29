@@ -1,6 +1,7 @@
 #pragma once
-#include "AudioDecoder.h"
+#include "./AudioDecoder.h"
 
+#include <Ty2/Bits.h>
 #include <Ty2/MemoryPoker.h>
 #include <Ty2/Base.h>
 #include <Ty2/Mailbox.h>
@@ -10,9 +11,9 @@
 #include <pthread.h>
 #include <sys/syslimits.h>
 
-constexpr i64 au_audio_frames_per_block = 1024;
-constexpr u64 au_audio_block_max = 1024;
-constexpr u64 au_audio_block_channel_max = 24;
+constexpr i64 au_audio_frames_per_block = 512;
+constexpr u64 au_audio_block_max = 16384;
+constexpr u64 au_audio_channel_max = 24;
 constexpr u64 au_audio_file_max = OPEN_MAX;
 
 constexpr u64 au_audio_file_path_max = PATH_MAX;

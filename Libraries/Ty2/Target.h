@@ -12,6 +12,30 @@
 #error "unknown architecture"
 #endif
 
+#ifndef TARGET_OS_LINUX
+#ifdef __linux__
+#define TARGET_OS_LINUX 1
+#define TARGET_OS_MAC 0
+#define TARGET_OS_WINDOWS 0
+#endif
+#endif
+
+#ifndef TARGET_OS_MAC
+#ifdef __APPLE__
+#define TARGET_OS_LINUX 0
+#define TARGET_OS_MAC 1
+#define TARGET_OS_WINDOWS 0
+#endif
+#endif
+
+#ifndef TARGET_OS_WINDOWS
+#ifdef _WIN32
+#define TARGET_OS_LINUX 0
+#define TARGET_OS_MAC 0
+#define TARGET_OS_WINDOWS 1
+#endif
+#endif
+
 #if TARGET_OS_LINUX
 #define TY_TARGET_ABI "gnu"
 #define TY_TARGET_OS "linux"

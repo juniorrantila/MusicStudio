@@ -7,14 +7,14 @@
 
 constexpr u64 deferred_log_event_message_size_max = 227;
 typedef struct DeferredFileLogger DeferredFileLogger;
-typedef struct {
+ty_define_message(DeferredLogEvent) {
     DeferredFileLogger* logger;
     LoggerEventTag severity;
     i32 pid;
     u32 seq;
     u8 message_size;
     char message[deferred_log_event_message_size_max];
-} DeferredLogEvent;
+};
 static_assert(sizeof(DeferredLogEvent) <= message_size_max);
 
 typedef struct DeferredFileLogger {

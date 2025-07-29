@@ -17,8 +17,6 @@
 
 namespace Core {
 
-struct MappedFile;
-
 struct File {
     File(File const&) = delete;
     File& operator=(File const&) = delete;

@@ -132,7 +132,7 @@ struct [[nodiscard]] Optional {
 
     constexpr bool has_value() const { return m_has_value; }
 
-    T unwrap()
+    constexpr T unwrap()
     {
         VERIFY(has_value());
         return release_value();
@@ -203,7 +203,7 @@ struct [[nodiscard]] Optional<T*> {
     {
     }
 
-    ~Optional() { m_value = nullptr; }
+    constexpr ~Optional() { m_value = nullptr; }
 
     constexpr Optional(Optional&& other)
         : m_value(other.m_value)
@@ -254,7 +254,7 @@ struct [[nodiscard]] Optional<T*> {
     }
 
     template <typename E>
-    ErrorOr<T*, E> or_error(E error)
+    constexpr ErrorOr<T*, E> or_error(E error)
     {
         if (has_value())
             return release_value();
@@ -287,14 +287,25 @@ struct [[nodiscard]] Optional<T*> {
         return Optional<Return>{};
     }
 
-    T* unwrap()
+    template <typename F>
+    constexpr auto then(F callback) const {
+        using Return = decltype(callback(this->value()));
+
+        if (has_value()) {
+            return Return(callback(this->value()));
+        }
+
+        return Return{};
+    }
+
+    constexpr T* unwrap()
     {
         VERIFY(has_value());
         return release_value();
     }
 
-    operator T*&() { return m_value; }
-    operator T*() const { return m_value; }
+    constexpr operator T*&() { return m_value; }
+    constexpr operator T*() const { return m_value; }
 
 private:
     T* m_value { nullptr };

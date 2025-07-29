@@ -1,7 +1,7 @@
 #pragma once
 #include "./Base.h"
 
-#define NO_OVERFLOW_CHECK __attribute__((no_sanitize("unsigned-integer-overflow")))
+#define NO_OVERFLOW_CHECK __attribute__((no_sanitize("integer")))
 
 static const u64 djb2_initial_seed = 5381;
 
@@ -26,7 +26,7 @@ C_INLINE u64 djb2_u64(u64 seed, u64 value)
     return djb2(seed, &value, sizeof(value));
 }
 
-static const u64 sdbm_initial_seed = 5381;
+static const u64 sdbm_initial_seed = 0;
 NO_OVERFLOW_CHECK
 C_INLINE u64 sdbm(u64 seed, void const* value, u64 size)
 {

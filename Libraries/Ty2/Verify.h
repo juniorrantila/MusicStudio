@@ -28,7 +28,8 @@ typedef struct [[nodiscard]] { bool failed; } VerifyFail;
 #ifndef VERIFY
 #define VERIFY(__expression)                            \
     do {                                                \
-        if (verify((__expression)).failed) {            \
+        if (!(__expression)) { \
+            __builtin_printf(VERIFY_RED "VERIFY" VERIFY_NORMAL ": %s: \"" VERIFY_CYAN "%s" VERIFY_NORMAL "\" " VERIFY_RED "failed" VERIFY_NORMAL " [%s:%d]\n", __FUNCTION__, #__expression, __FILE__, __LINE__);  \
             __builtin_trap();                           \
         }                                               \
     } while (0)
@@ -38,7 +39,8 @@ typedef struct [[nodiscard]] { bool failed; } VerifyFail;
 #ifndef VERIFYS
 #define VERIFYS(__expression, message)                  \
     do {                                                \
-        if (verifys((__expression), message).failed) {  \
+        if (!(__expression)) {                          \
+            __builtin_printf(VERIFY_RED "VERIFY" VERIFY_NORMAL ": %s: \"" VERIFY_CYAN "%s" VERIFY_NORMAL "\" " VERIFY_RED "failed" VERIFY_NORMAL " (" message ") [%s:%d]\n", __FUNCTION__, #__expression, __FILE__, __LINE__); \
             __builtin_trap();                           \
         }                                               \
     } while (0)

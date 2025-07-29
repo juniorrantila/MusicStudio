@@ -178,6 +178,7 @@ static void assert_no_err(int err) {
 }
 
 static void *run_pthread(void *userdata) {
+    pthread_setname_np("soundio");
     struct SoundIoOsThread *thread = (struct SoundIoOsThread *)userdata;
     thread->run(thread->arg);
     return NULL;

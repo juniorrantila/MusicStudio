@@ -48,7 +48,8 @@ C_API ByteFound byte_peek_u16le(ByteDecoder const* decoder, u16* out)
     Bytes bytes = decoder->bytes.slice(decoder->cursor, sizeof(u16));
     if (bytes.count != sizeof(u16))
         return byte_not_found();
-    *out = ty_device_endian_from_u16le(*(u16*)bytes.items);
+    u16 value; memcpy(&value, bytes.items, sizeof(value));
+    *out = ty_device_endian_from_u16le(value);
     return byte_found();
 }
 
@@ -58,7 +59,8 @@ C_API ByteFound byte_peek_u32le(ByteDecoder const* decoder, u32* out)
     Bytes bytes = decoder->bytes.slice(decoder->cursor, sizeof(u32));
     if (bytes.count != sizeof(u32))
         return byte_not_found();
-    *out = ty_device_endian_from_u16le(*(u32*)bytes.items);
+    u32 value; memcpy(&value, bytes.items, sizeof(value));
+    *out = ty_device_endian_from_u32le(value);
     return byte_found();
 }
 
@@ -68,7 +70,8 @@ C_API ByteFound byte_peek_u64le(ByteDecoder const* decoder, u64* out)
     Bytes bytes = decoder->bytes.slice(decoder->cursor, sizeof(u64));
     if (bytes.count != sizeof(u64))
         return byte_not_found();
-    *out = ty_device_endian_from_u16le(*(u64*)bytes.items);
+    u64 value; memcpy(&value, bytes.items, sizeof(value));
+    *out = ty_device_endian_from_u64le(value);
     return byte_found();
 }
 
@@ -78,7 +81,8 @@ C_API ByteFound byte_peek_u16be(ByteDecoder const* decoder, u16* out)
     Bytes bytes = decoder->bytes.slice(decoder->cursor, sizeof(u16));
     if (bytes.count != sizeof(u16))
         return byte_not_found();
-    *out = ty_device_endian_from_u16be(*(u16*)bytes.items);
+    u16 value; memcpy(&value, bytes.items, sizeof(value));
+    *out = ty_device_endian_from_u16be(value);
     return byte_found();
 }
 
@@ -88,7 +92,8 @@ C_API ByteFound byte_peek_u32be(ByteDecoder const* decoder, u32* out)
     Bytes bytes = decoder->bytes.slice(decoder->cursor, sizeof(u32));
     if (bytes.count != sizeof(u32))
         return byte_not_found();
-    *out = ty_device_endian_from_u16be(*(u32*)bytes.items);
+    u32 value; memcpy(&value, bytes.items, sizeof(value));
+    *out = ty_device_endian_from_u32be(value);
     return byte_found();
 }
 
@@ -98,7 +103,8 @@ C_API ByteFound byte_peek_u64be(ByteDecoder const* decoder, u64* out)
     Bytes bytes = decoder->bytes.slice(decoder->cursor, sizeof(u64));
     if (bytes.count != sizeof(u64))
         return byte_not_found();
-    *out = ty_device_endian_from_u16be(*(u64*)bytes.items);
+    u64 value; memcpy(&value, bytes.items, sizeof(value));
+    *out = ty_device_endian_from_u64be(value);
     return byte_found();
 }
 

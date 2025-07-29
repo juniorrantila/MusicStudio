@@ -1,7 +1,8 @@
 #include "./FSVolume.h"
-#include "Ty/StringSlice.h"
-#include "Ty2/FixedArena.h"
 
+#include <Ty/StringSlice.h>
+#include <Ty2/Base.h>
+#include <Ty2/FixedArena.h>
 #include <Ty/Verify.h>
 #include <Ty/Defer.h>
 #include <Ty2/PageAllocator.h>
@@ -20,14 +21,11 @@
 #include <fcntl.h>
 #include <errno.h>
 
-static bool expand_if_needed(FSVolume* volume);
-
 C_API void fs_volume_init(FSVolume* volume)
 {
     *volume = (FSVolume){};
     memset(volume, 0, sizeof(FSVolume));
     volume->watch_fd = -1;
-    volume->event_arena = fixed_arena_init(volume->arena_store, sizeof(volume->arena_store));
 }
 
 Optional<Tar*> FSVolume::as_tar(Allocator* gpa) const { return fs_volume_as_tar(this, gpa); }
@@ -59,14 +57,14 @@ C_API StringSlice const* fs_volume_open(FSVolume* volume, StringSlice path)
 }
 
 
-FSFile FSVolume::use(FileID id) const { return fs_volume_use(this, id); }
-C_API FSFile fs_volume_use(FSVolume const* volume, FileID id)
+FSFile FSVolume::use(FileID id) { return fs_volume_use(this, id); }
+C_API FSFile fs_volume_use(FSVolume* volume, FileID id)
 {
     return *fs_volume_use_ref(volume, id);
 }
 
-FSFile* FSVolume::use_ref(FileID id) const { return fs_volume_use_ref(this, id); }
-C_API FSFile* fs_volume_use_ref(FSVolume const* volume, FileID id)
+FSFile* FSVolume::use_ref(FileID id) { return fs_volume_use_ref(this, id); }
+C_API FSFile* fs_volume_use_ref(FSVolume* volume, FileID id)
 {
     VERIFY(id.index < volume->count);
     return &volume->items[id.index];
@@ -74,12 +72,11 @@ C_API FSFile* fs_volume_use_ref(FSVolume const* volume, FileID id)
 
 static bool mount_no_cache(FSVolume* volume, FSFile file, FileID* out)
 {
-    if (!expand_if_needed(volume)) return false;
-    usize id = volume->count++;
+    if (verify(volume->count < ty_array_size(volume->items)).failed)
+        return false;
+    u16 id = volume->count++;
     volume->items[id] = file;
-    if (out) {
-        *out = (FileID){ id };
-    }
+    if (out) *out = (FileID){ id };
     return true;
 }
 
@@ -99,7 +96,7 @@ C_API bool fs_volume_find(FSVolume* volume, StringSlice path, FileID* id)
     if (!resolved_path.has_value()) {
         return false;
     }
-    for (usize i = 0; i < volume->count; i++) {
+    for (u16 i = 0; i < volume->count; i++) {
         auto other = fs_virtual_path(volume->items[i]);
         if (resolved_path->equal(other)) {
             if (id) *id = (FileID){ .index = i };
@@ -154,80 +151,49 @@ static bool is_file_deleted(FSFile const* file)
     }
 }
 
-static struct kevent* alloc_kevent(FixedArena* arena, usize count)
-{
-    auto* events = (struct kevent*)arena->push(count * sizeof(struct kevent), alignof(struct kevent));
-    if (events) memset(events, 0, count * sizeof(struct kevent));
-    return events;
-}
-
-static usize system_file_count(FSVolume const* volume)
-{
-    usize count = 0;
-    for (usize i = 0; i < volume->count; i++) {
-        if (volume->items[i].kind == FSFileMount_SystemMount)
-            count += 1;
-    }
-    return count;
-}
-
-static int fill_in_events(FSVolume const* volume, struct kevent* events, usize count)
+static int fill_in_events(FSVolume* volume)
 {
     int event_id = 0;
-    for (usize i = 0; i < volume->count; i++) {
+    for (u64 i = 0; i < volume->count; i++) {
         FSFile* file = &volume->items[i];
         if (file->kind == FSFileMount_SystemMount) {
-            usize id = event_id++;
-            VERIFY(id < count);
-            events[id] = (struct kevent) {
+            u64 id = event_id++;
+            VERIFY(id < ty_array_size(volume->trans.in_events));
+            volume->trans.in_events[id] = (struct kevent) {
                 .ident = (uptr)file->system_mount.fd,
                 .filter = EVFILT_VNODE,
                 .flags = EV_ADD | EV_ONESHOT,
                 .fflags = NOTE_WRITE | NOTE_DELETE,
                 .data = 0,
-                .udata = file,
+                .udata = (void*)(uptr)i,
             };
         }
     }
     return event_id;
 }
 
-static FSEvent* alloc_events(FixedArena* arena, usize count)
+static FileID* reopen_deleted_files(FSVolume* volume, u64* count)
 {
-    auto* events = (FSEvent*)arena->push(count * sizeof(FSEvent), alignof(FSEvent));
-    if (events) memset(events, 0, count * sizeof(FSEvent));
-    return events;
-}
-
-static FSFile** reopen_deleted_files(FSVolume const* volume, FixedArena* arena, usize* count)
-{
-    usize deleted_files = 0;
-    for (usize i = 0; i < volume->count; i++) {
-        if (is_file_deleted(&volume->items[i])) deleted_files++;
-    }
-    if (deleted_files == 0) {
-        return *count = 0, nullptr;
-    }
-
-    usize opened_count = 0;
-    auto* files = (FSFile**)arena->push(deleted_files * sizeof(FSFile*), alignof(FSFile*));
-    if (!files) return *count = 0, nullptr;
-
-    for (usize i = 0; i < volume->count; i++) {
+    u64 opened_count = 0;
+    for (u16 i = 0; i < volume->count; i++) {
         auto* file = &volume->items[i];
+        if (file->kind != FSFileMount_SystemMount)
+            continue;
         if (!is_file_deleted(file))
             continue;
-        VERIFY(file->kind == FSFileMount_SystemMount);
         auto* mount = &file->system_mount;
         int fd = open(mount->path.items, O_RDONLY);
         if (fd < 0) continue;
         mount->fd = fd;
         mount->stale_at = mount->deleted_at;
         mount->deleted_at = 0.0;
-        files[opened_count++] = file;
+        u64 id = opened_count + 1;
+        VERIFY(id < ty_array_size(volume->trans.reopened_files));
+        volume->trans.reopened_files[id] = (FileID){i};
+        opened_count = id;
     }
 
-    return *count = opened_count, files;
+    return *count = opened_count, volume->trans.reopened_files;
 }
 
 C_API FSEvents fs_volume_poll_events(FSVolume* volume, struct timespec const* timeout)
@@ -237,20 +203,9 @@ C_API FSEvents fs_volume_poll_events(FSVolume* volume, struct timespec const* ti
         if (fd < 0) return {};
         volume->watch_fd = fd;
     }
-    auto* arena = &volume->event_arena;
-    arena->drain();
 
-    FSEvents* events = &volume->events;
-    memset(events, 0, sizeof(*events));
-
-    usize system_count = system_file_count(volume);
-    auto* in_events = alloc_kevent(arena, system_count);
-    if (!in_events) return {};
-    auto* out_events = alloc_kevent(arena, system_count);
-    if (!out_events) return {};
-
-    int in_event_count = fill_in_events(volume, in_events, system_count);
-    int kevent_count = kevent(volume->watch_fd, in_events, in_event_count, out_events, in_event_count, timeout);
+    int in_event_count = fill_in_events(volume);
+    int kevent_count = kevent(volume->watch_fd, volume->trans.in_events, in_event_count, volume->trans.out_events, in_event_count, timeout);
     if (kevent_count < 0) {
         if (errno == EWOULDBLOCK) return {};
         char buf[1024];
@@ -260,84 +215,74 @@ C_API FSEvents fs_volume_poll_events(FSVolume* volume, struct timespec const* ti
         return {};
     }
 
-    usize reopened_count = 0;
-    FSFile** reopened = reopen_deleted_files(volume, arena, &reopened_count);
+    FSEvents* events = &volume->trans.events;
+    {
+        events->count = 0;
 
-    usize event_count = 2ULL * (usize)kevent_count;
-    events->count = 0;
-    events->items = alloc_events(arena, event_count + system_count + reopened_count);
-    if (!events->items)
-        return {};
-    for (usize i = 0; i < reopened_count; i++) {
-        events->items[events->count++] = (FSEvent) {
-            .file = reopened[i],
-            .kind = FSEventKind_Create,
-        };
+        u64 reopened_count = 0;
+        FileID* reopened = reopen_deleted_files(volume, &reopened_count);
+
+        for (u64 i = 0; i < reopened_count; i++) {
+            if (verify(events->count + 1 < ty_array_size(events->file)).failed)
+                break;
+            u64 id = events->count++;
+            events->file[id] = reopened[i];
+            events->kind[id] = FSEventKind_Create;
+        }
     }
 
-    usize deleted_just_now_count = 0;
-    auto* deleted_just_now = (FSEvent**)arena->push(kevent_count * sizeof(FSEvent*), alignof(FSEvent));
-
+    u16 deleted_just_now_count = 0;
     for (int i = 0; i < kevent_count; i++) {
-        if (out_events[i].flags & EV_ERROR) {
+        if (volume->trans.out_events[i].flags & EV_ERROR) {
             if (volume->debug) {
                 char buf[1024];
                 memset(buf, 0, sizeof(buf));
-                strerror_r((int)out_events[i].data, buf, sizeof(buf));
+                strerror_r((int)volume->trans.out_events[i].data, buf, sizeof(buf));
                 volume->debug->error("volume error: %s", buf);
             }
             continue;
         }
-        FSFile* file = (FSFile*)out_events[i].udata;
-        if (out_events[i].fflags & NOTE_DELETE) {
+        FileID file_id = (FileID){(u16)(uptr)volume->trans.out_events[i].udata};
+        auto* file = fs_volume_use_ref(volume, file_id);
+        if (volume->trans.out_events[i].fflags & NOTE_DELETE) {
             VERIFY(file->kind == FSFileMount_SystemMount);
             file->system_mount.deleted_at = core_time_since_start();
-            usize id = events->count++;
-            events->items[id] = (FSEvent) {
-                .file = file,
-                .kind = FSEventKind_Delete,
-            };
-            if (deleted_just_now) deleted_just_now[deleted_just_now_count++] = &events->items[id];
+            u16 id = events->count++;
+            VERIFY(id < ty_array_size(events->file));
+            events->file[id] = file_id;
+            events->kind[id] = FSEventKind_Delete;
+            if (verify(deleted_just_now_count + 1 < ty_array_size(volume->trans.deleted_just_now)).failed)
+                continue;
+            volume->trans.deleted_just_now[deleted_just_now_count++] = (FSEventID){id};
             continue;
         }
-        if (out_events[i].fflags & NOTE_WRITE) {
+        if (volume->trans.out_events[i].fflags & NOTE_WRITE) {
             VERIFY(file->kind == FSFileMount_SystemMount);
             file->system_mount.stale_at = core_time_since_start();
-            usize id = events->count++;
-            events->items[id] = (FSEvent) {
-                .file = file,
-                .kind = FSEventKind_Modify,
-            };
+            u64 id = events->count++;
+            VERIFY(id < ty_array_size(events->file));
+            events->file[id] = file_id;
+            events->kind[id] = FSEventKind_Modify;
             continue;
         }
     }
 
-    reopened_count = 0;
-    reopened = reopen_deleted_files(volume, arena, &reopened_count);
-    if (!reopened) return *events;
-
-    auto steal_delete_event = [&](usize reopened_index){
-        if (!deleted_just_now) return false;
-        for (usize i = 0; i < deleted_just_now_count; i++) {
-            auto* event = deleted_just_now[i];
-            if (event->file == reopened[reopened_index]) {
-                if (event->kind == FSEventKind_Delete) {
-                    event->kind = FSEventKind_Modify;
-                    return true;
+    {
+        u64 reopened_count = 0;
+        FileID* reopened = reopen_deleted_files(volume, &reopened_count);
+        auto* events = &volume->trans.events;
+        for (u64 reopened_index = 0; reopened_index < reopened_count; reopened_index++) {
+            for (u64 i = 0; i < deleted_just_now_count; i++) {
+                auto event_id = volume->trans.deleted_just_now[i];
+                if (events->kind[event_id.index] == FSEventKind_Delete) {
+                    if (events->file[event_id.index].index == reopened[reopened_index].index) {
+                        events->kind[event_id.index] = FSEventKind_Modify;
+                        goto next;
+                    }
                 }
             }
+next:
         }
-        return false;
-    };
-
-    for (usize i = 0; i < reopened_count; i++) {
-        if (steal_delete_event(i))
-            continue;
-        usize id = events->count++;
-        events->items[id] = (FSEvent) {
-            .file = reopened[i],
-            .kind = FSEventKind_Modify,
-        };
     }
 
     return *events;
@@ -416,13 +361,13 @@ C_API bool fs_file_reload(FSFile* file)
     }
     auto* mount = &file->system_mount;
 
-    usize old_size = mount->content.count;
+    u64 old_size = mount->content.count;
     void* old_ptr = (void*)mount->content.items;
 
     struct stat st;
     if (fstat(mount->fd, &st) < 0)
         return false;
-    usize size = st.st_size;
+    u64 size = st.st_size;
     void* new_content = mmap(0, size, PROT_READ, MAP_PRIVATE, mount->fd, 0);
     if (new_content == MAP_FAILED)
         return false;
@@ -432,6 +377,7 @@ C_API bool fs_file_reload(FSFile* file)
         munmap(old_ptr, old_size);
     }
 
+    mount->deleted_at = 0.0;
     mount->stale_at = 0.0;
     return true;
 }
@@ -449,7 +395,7 @@ C_API StringSlice fs_content(FSFile file)
 
 C_API bool fs_volume_needs_reload(FSVolume const* volume)
 {
-    for (usize i = 0; i < volume->count; i++) {
+    for (u64 i = 0; i < volume->count; i++) {
         if (fs_file_needs_reload(&volume->items[i]))
             return true;
     }
@@ -459,7 +405,7 @@ C_API bool fs_volume_needs_reload(FSVolume const* volume)
 C_API bool fs_volume_reload(FSVolume* volume)
 {
     bool all_ok = true;
-    for (usize i = 0; i < volume->count; i++) {
+    for (u64 i = 0; i < volume->count; i++) {
         FSFile* file = &volume->items[i];
         if (fs_file_needs_reload(file)) {
             all_ok &= fs_file_reload(file);
@@ -476,16 +422,4 @@ C_API bool fs_file_needs_reload(FSFile const* file)
     case FSFileMount_SystemMount:
         return file->system_mount.stale_at != 0.0;
     }
-}
-
-static bool expand_if_needed(FSVolume* volume)
-{
-    if (volume->count >= volume->capacity) {
-        usize new_capacity = volume->capacity == 0 ? 16 : volume->capacity * 2;
-        auto* files = (FSFile*)memrealloc(page_allocator(), volume->items, volume->capacity * sizeof(FSFile), new_capacity * sizeof(FSFile), alignof(FSFile));
-        if (!files) return false;
-        volume->items = files;
-        volume->capacity = new_capacity;
-    }
-    return true;
 }

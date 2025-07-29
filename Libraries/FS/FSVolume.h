@@ -1,17 +1,21 @@
 #pragma once
 #include "./Forward.h"
 
+#include <Ty2/Bits.h>
 #include <Ty2/Logger.h>
 #include <Ty2/Allocator.h>
 #include <Ty/StringSlice.h>
 #include <Tar/Tar.h>
 #include <Ty2/FixedArena.h>
 
+#include <sys/syslimits.h>
+#include <sys/event.h>
+
 #if __cplusplus
 #include <Ty/Optional.h>
 #endif
 
-typedef enum FSFileMount {
+typedef enum FSFileMount : u8 {
     FSFileMount_VirtualMount,
     FSFileMount_SystemMount,
 } FSFileMount;
@@ -37,56 +41,64 @@ typedef struct FSFile {
     };
     FSFileMount kind;
 } FSFile;
+static_assert(sizeof(FSFile) == 88);
 
-typedef struct { usize index; } FileID;
+typedef struct { u16 index; } FileID; static_assert(ty_bits_fitting(OPEN_MAX) < 16);
 
-typedef enum FSEventKind {
+typedef enum FSEventKind : u8 {
     FSEventKind_Modify,
     FSEventKind_Delete,
     FSEventKind_Create,
 } FSEventKind;
 
-typedef struct FSEvent {
-    FSFile* file;
-    FSEventKind kind;
-} FSEvent;
+constexpr u64 fs_open_directory_max = 256;
+constexpr u64 fs_open_file_max = OPEN_MAX - fs_open_directory_max;
+constexpr u64 fs_open_max = OPEN_MAX;
+
+typedef struct FSEventID { u16 index; } FSEventID;
 
 typedef struct FSEvents {
-    FSEvent* items;
-    usize count;
+    FileID file[fs_open_max * 3]; // Create, Write, Delete
+    FSEventKind kind[fs_open_max * 3]; // Create, Write, Delete
+    u16 count; static_assert(ty_bits_fitting(fs_open_max) < 16);
 } FSEvents;
 
-constexpr u64 fs_volume_arena_capacity = 1 * MiB;
 typedef struct FSVolume {
-    FixedArena event_arena;
-
     Logger* debug; // May be null.
-    FSFile* items;
-    usize count;
-    usize capacity;
+    u16 count; static_assert(ty_bits_fitting(fs_open_file_max) < 16);
+    u16 unique_directory_count; static_assert(ty_bits_fitting(fs_open_directory_max) < 16);
 
-    FSEvents events;
     int watch_fd;
     bool automount_when_not_found;
 
-    u8 arena_store[fs_volume_arena_capacity];
+    FSFile items[fs_open_file_max];
+
+    struct {
+        struct kevent in_events[fs_open_max];
+        struct kevent out_events[fs_open_max];
+        FileID reopened_files[fs_open_max];
+        FSEventID deleted_just_now[fs_open_max];
+        FSEvents events;
+    } trans;
+
 #ifdef __cplusplus
     Optional<Tar*> as_tar(Allocator*) const;
     Optional<StringSlice const*> open(StringSlice path);
-    FSFile use(FileID) const;
-    FSFile* use_ref(FileID) const;
+    FSFile use(FileID);
+    FSFile* use_ref(FileID);
     Optional<FileID> find(StringSlice path);
 
     Optional<FileID> mount(FSFile file);
 #endif
 } FSVolume;
+static_assert(sizeof(FSVolume) < 2 * MiB);
 
 C_API void fs_volume_init(FSVolume*);
 
 C_API Tar* fs_volume_as_tar(FSVolume const*, Allocator*);
 C_API StringSlice const* fs_volume_open(FSVolume*, StringSlice path);
-C_API FSFile fs_volume_use(FSVolume const*, FileID);
-C_API FSFile* fs_volume_use_ref(FSVolume const*, FileID);
+C_API FSFile fs_volume_use(FSVolume*, FileID);
+C_API FSFile* fs_volume_use_ref(FSVolume*, FileID);
 C_API bool fs_volume_find(FSVolume*, StringSlice path, FileID*);
 
 C_API [[nodiscard]] bool fs_volume_mount(FSVolume*, FSFile file, FileID*);

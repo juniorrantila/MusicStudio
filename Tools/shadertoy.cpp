@@ -117,10 +117,10 @@ ErrorOr<int> Main::main(int argc, char const* argv[])
         struct timespec time {};
         auto events = fs_volume_poll_events(&volume, &time);
         for (usize i = 0; i < events.count; i++) {
-            if (events.items[i].kind == FSEventKind_Modify)
-                fs_file_reload(events.items[i].file);
-            if (events.items[i].kind == FSEventKind_Create)
-                fs_file_reload(events.items[i].file);
+            if (events.kind[i] == FSEventKind_Modify)
+                fs_file_reload(fs_volume_use_ref(&volume, events.file[i]));
+            if (events.kind[i] == FSEventKind_Create)
+                fs_file_reload(fs_volume_use_ref(&volume, events.file[i]));
         }
 
         ui_window_gl_make_current_context(window);

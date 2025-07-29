@@ -33,7 +33,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
         return Error::from_string_literal("no path specified (see --help)");
     }
 
-    FSVolume volume = (FSVolume){};
+    static FSVolume volume = (FSVolume){};
     fs_volume_init(&volume);
 
     for (usize i = 0; i < path_count; i++) {
@@ -56,16 +56,17 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
         };
         FSEvents events = fs_volume_poll_events(&volume, &timeout);
         for (usize i = 0; i < events.count; i++) {
-            FSEvent event = events.items[i];
-            auto path = fs_virtual_path(*event.file);
-            switch (event.kind) {
+            auto* file = fs_volume_use_ref(&volume, events.file[i]);
+            auto path = fs_virtual_path(*file);
+            auto kind = events.kind[i];
+            switch (kind) {
             case FSEventKind_Modify: {
                 dprintln("modified file: {}", path.as_view());
-                if (!fs_file_reload(event.file)) {
+                if (!fs_file_reload(file)) {
                     dprintln("could not load modified content");
                     continue;
                 }
-                auto content = fs_content(*event.file);
+                auto content = fs_content(*file);
                 dprintln("new content:");
                 dprintln("{}", content.as_view());
                 continue;

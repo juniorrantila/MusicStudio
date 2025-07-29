@@ -120,6 +120,29 @@ auto const play_audio = cc_binary("play-audio", {
     }
 });
 
+auto const play_managed_audio = cc_binary("play-managed-audio", {
+    .srcs = {
+        "./play-managed-audio.cpp",
+    },
+    .compile_flags = {},
+    .linker_flags = {
+#ifdef __APPLE__
+    "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
+    "-framework", "CoreFoundation",
+    "-framework", "CoreAudio",
+    "-framework", "AudioUnit",
+#endif
+    },
+    .target_triple = {},
+    .deps = {
+        libraries.main,
+        libraries.soundio,
+        libraries.ty2,
+        libraries.cli,
+        libraries.au,
+    }
+});
+
 
 auto const pipe_audio = cc_binary("pipe-audio", {
     .srcs = {

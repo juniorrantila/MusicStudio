@@ -1,10 +1,11 @@
 #pragma once
-#include "Base.h"
-#include "Forward.h"
-#include "Optional.h"
-#include "Traits.h"
+#include "./Base.h"
+#include "./Forward.h"
+#include "./Optional.h"
+#include "./Traits.h"
 #include "./StringSlice.h"
 
+#include <Ty2/StringView.h>
 #include <Ty2/Bytes.h>
 
 namespace Ty {
@@ -13,55 +14,51 @@ constexpr StringView operator""sv(c_string data, usize size);
 struct StringView {
     constexpr StringView() = default;
 
-    [[gnu::flatten]] static constexpr StringView from_c_string(
-        c_string data)
+    constexpr StringView(StringView2 inner)
+        : inner(inner)
     {
-        return StringView(data, length_of(data));
-    }
-
-    static constexpr StringView from_c_string_with_max_size(c_string data, usize max_size)
-    {
-        return StringView(data, length_of_or_max(data, max_size));
-    }
-
-    static constexpr StringView from_parts(char const* data, u32 size)
-    {
-        return StringView(data, size);
     }
 
     constexpr StringView(char const* data, u32 size)
-        : m_data(data)
-        , m_size(size)
+        : inner({
+            .items = data,
+            .count = size,
+        })
+    {
+    }
+
+    consteval StringView(c_string data)
+        : inner({
+            .items = data,
+            .count = data == nullptr ? 0 : __builtin_strlen(data),
+        })
     {
     }
 
     StringView(View<char const> view);
     StringView(View<char> view);
 
-    consteval StringView(c_string data)
-        : m_data(data)
-        , m_size(data == nullptr ? 0 : __builtin_strlen(data))
+    static constexpr StringView from_c_string(c_string data)
     {
+        return StringView2::from_c_string(data);
     }
 
-    [[gnu::flatten]] constexpr bool operator==(
-        StringView other) const
+    static constexpr StringView from_c_string_with_max_size(c_string data, usize max_size)
     {
-        if (m_size != other.size())
-            return false;
-
-        if (m_size == 0)
-            return true;
-
-        if (!is_constant_evaluated()) {
-            if (m_data == other.data())
-                return true;
-        }
-
-        return __builtin_memcmp(data(), other.data(), size()) == 0;
+        return StringView2::from_c_string_with_max_size(data, max_size);
     }
 
-    constexpr bool is_empty() const { return data() == nullptr || size() == 0; }
+    static constexpr StringView from_parts(char const* data, u32 size)
+    {
+        return StringView2::from_parts(data, size);
+    }
+
+    bool operator==(StringView other) const
+    {
+        return inner.equal(other.inner);
+    }
+
+    bool is_empty() const { return inner.is_empty(); }
 
     char const& operator[](u32 index) const
     {
@@ -69,72 +66,24 @@ struct StringView {
         return data()[index];
     }
 
-    constexpr bool contains(char character) const
-    {
-        for (u32 i = 0; i < size(); i++) {
-            if (data()[i] == character)
-                return true;
-        }
-        return false;
-    }
+    bool contains(char character) const { return inner.contains(character); }
 
-    [[gnu::flatten]] constexpr u32 unchecked_copy_to(char* other,
-        u32 size) const
-    {
-        if (m_data == other)
-            return m_size;
-        for (u32 i = 0; i < size; i++)
-            other[i] = m_data[i];
-        return size;
-    }
+    u32 unchecked_copy_to(char* __restrict other) const { return strncpy(other, *this); }
 
-    [[gnu::flatten]] constexpr u32 unchecked_copy_to(
-        char* __restrict other) const
-    {
-        return strncpy(other, *this);
-    }
+    StringView sub_view(u32 start, u32 size) const { return inner.slice(start, size); }
 
-    [[gnu::always_inline]] constexpr StringView sub_view(u32 start, u32 size) const
-    {
-        auto remaining = m_size - start;
-        if (remaining < size) [[unlikely]] {
-            size = remaining;
-        }
-        return { &m_data[start], size };
-    }
-
-    constexpr StringView part(u32 start, u32 end) const
-    {
-        return { &m_data[start], end - start };
-    }
+    StringView part(u32 start, u32 end) const { return inner.part(start, end); }
 
     constexpr StringView shrink(u32 amount) const
     {
         return { data(), size() - amount };
     }
 
-    constexpr bool starts_with(StringView other) const
-    {
-        if (m_size < other.size())
-            return false;
-        return sub_view(0, other.size()) == other;
-    }
+    bool starts_with(StringView other) const { return inner.starts_with(other.inner); }
+    bool ends_with(StringView other) const { return inner.ends_with(other.inner); }
 
-    constexpr bool ends_with(StringView other) const
-    {
-        if (m_size < other.size())
-            return false;
-        return part(m_size - other.size(), m_size) == other;
-    }
-
-    constexpr StringView shrink_from_start(u32 amount) const
-    {
-        return { &m_data[amount], m_size - amount };
-    }
-    constexpr StringView chop_left(u32 amount) const
-    {
-        return shrink_from_start(amount);
-    }
+    StringView shrink_from_start(u32 amount) const { return inner.chop_left(amount); }
+    StringView chop_left(u32 amount) const { return inner.chop_left(amount); }
 
     ErrorOr<Vector<StringView>> split_on(char character) const;
     ErrorOr<Vector<StringView>> split_on(StringView sequence) const;
@@ -142,19 +91,18 @@ struct StringView {
     ErrorOr<Vector<u32>> find_all(StringView sequence) const;
     Optional<u32> find_first(char character) const
     {
-        for (u32 i = 0; i < m_size; i++) {
-            if (m_data[i] == character)
-                return i;
-        }
+        u64 index = 0;
+        if (inner.find_first(character, &index))
+            return index;
         return {};
     }
 
     constexpr StringView remove_trailing_null() const
     {
-        auto view = *this;
-        for (u32 i = view.size(); i -- > 0;) {
-            if (view[i] == '\0')
-                view.m_size--;
+        auto view = inner;
+        for (u32 i = view.count; i -- > 0;) {
+            if (view.items[i] == '\0')
+                view.count--;
         }
         return view;
     }
@@ -168,8 +116,8 @@ struct StringView {
 
     ErrorOr<StringBuffer> join(View<StringView const>) const;
 
-    constexpr char const* data() const { return m_data; }
-    constexpr u32 size() const { return m_size; }
+    constexpr char const* data() const { return inner.items; }
+    constexpr u32 size() const { return inner.count; }
 
     ErrorOr<StringBuffer> resolve_path(StringView root = ""sv) const;
 
@@ -203,8 +151,7 @@ private:
         return size;
     }
 
-    char const* m_data { "" };
-    u32 m_size { 0 };
+    StringView2 inner;
 };
 
 constexpr StringView operator""sv(c_string data, usize size)

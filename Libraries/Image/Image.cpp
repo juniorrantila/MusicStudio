@@ -1,9 +1,10 @@
 #include "./Image.h"
 
-#include <STB/Image.h>
 #include <Ty/Defer.h>
 #include <Ty/ErrorOr.h>
 #include <Ty/Bytes.h>
+
+#include <stb/image.h>
 
 ErrorOr<Image> Image::load_from_bytes(Bytes bytes)
 {

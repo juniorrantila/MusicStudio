@@ -1521,6 +1521,7 @@ Clay_ElementConfigUnion Clay__FindElementConfigWithType(Clay_LayoutElement *elem
     return CLAY__INIT(Clay_ElementConfigUnion) { NULL };
 }
 
+__attribute__((no_sanitize("integer")))
 Clay_ElementId Clay__HashNumber(const uint32_t offset, const uint32_t seed) {
     uint32_t hash = seed;
     hash += (offset + 48);
@@ -1533,6 +1534,7 @@ Clay_ElementId Clay__HashNumber(const uint32_t offset, const uint32_t seed) {
     return CLAY__INIT(Clay_ElementId) { .id = hash + 1, .offset = offset, .baseId = seed, .stringId = CLAY__STRING_DEFAULT }; // Reserve the hash result of zero as "null id"
 }
 
+__attribute__((no_sanitize("integer")))
 Clay_ElementId Clay__HashString(Clay_String key, const uint32_t offset, const uint32_t seed) {
     uint32_t hash = 0;
     uint32_t base = seed;
@@ -1568,6 +1570,7 @@ Clay_ElementId Clay__Rehash(Clay_ElementId elementId, uint32_t number) {
     return CLAY__INIT(Clay_ElementId) { .id = id, .offset = number, .baseId = elementId.baseId, .stringId = elementId.stringId };
 }
 
+__attribute__((no_sanitize("integer")))
 uint32_t Clay__RehashWithNumber(uint32_t id, uint32_t number) {
     id += number;
     id += (id << 10);
@@ -1579,6 +1582,7 @@ uint32_t Clay__RehashWithNumber(uint32_t id, uint32_t number) {
     return id;
 }
 
+__attribute__((no_sanitize("integer")))
 uint32_t Clay__HashTextWithConfig(Clay_String *text, Clay_TextElementConfig *config) {
     uint32_t hash = 0;
     uintptr_t pointerAsNumber = (uintptr_t)text->chars;

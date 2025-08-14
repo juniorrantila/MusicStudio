@@ -2,7 +2,9 @@
 
 #include "./Base.h"
 #include "./Verify.h"
-#include "FixedArena.h"
+#include "./FixedArena.h"
+
+#include <stb/sprintf.h>
 
 FixedArena ArenaBase::fixed_arena()
 {

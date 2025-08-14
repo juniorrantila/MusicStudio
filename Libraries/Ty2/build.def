@@ -1,6 +1,8 @@
 #pragma once
 #include "../../bs.h"
 
+#include "../../Vendor/stb/sprintf/build.def"
+
 static auto const ty2 = cc_library("Ty2", {
     .srcs = {
         "Allocator.cpp",
@@ -52,5 +54,7 @@ static auto const ty2 = cc_library("Ty2", {
     .linker_flags = {},
     .target_triple = {},
     .link_style = "static",
-    .deps = {},
+    .deps = {
+        stb_sprintf,
+    },
 });

@@ -1,0 +1,18 @@
+#pragma once
+#include "../../../bs.h"
+
+static auto const stb_sprintf = cc_library("stb-sprintf", {
+    .srcs = {
+        "./sprintf.c",
+    },
+    .exported_headers = {
+        "./sprintf.h",
+        "./stb_sprintf.h",
+    },
+    .header_namespace = "stb",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {},
+});

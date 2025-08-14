@@ -1,0 +1,5 @@
+#pragma once
+#include "../../bs.h"
+#include "./image/build.def"
+#include "./sprintf/build.def"
+#include "./truetype/build.def"

@@ -1,15 +1,15 @@
 #pragma once
 #include "../../../bs.h"
 
-static auto const stb = cc_library("STB", {
+static auto const stb_image = cc_library("stb-image", {
     .srcs = {
-        "./Image.c",
+        "./image.c",
     },
     .exported_headers = {
-        "./Image.h",
+        "./image.h",
         "./stb_image.h",
     },
-    .header_namespace = "STB",
+    .header_namespace = "stb",
     .compile_flags = {},
     .linker_flags = {},
     .target_triple = {},

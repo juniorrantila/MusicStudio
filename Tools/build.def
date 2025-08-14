@@ -1,6 +1,7 @@
 #pragma once
 #include "../bs.h"
 #include "../Libraries/build.def"
+#include "../Vendor/build.def"
 
 auto const ms_tar = cc_binary("ms-tar", {
     .srcs = {
@@ -46,9 +47,10 @@ auto const list_devices = cc_binary("list-devices", {
     .target_triple = {},
     .deps = {
         libraries.main,
-        libraries.soundio,
         libraries.ty,
         libraries.cli,
+
+        vendor.soundio,
     }
 });
 
@@ -71,10 +73,11 @@ auto const vst_run_gui = cc_binary("vst-run-gui", {
     .deps = {
         libraries.main,
         libraries.ms,
-        libraries.soundio,
         libraries.ty,
         libraries.cli,
-        libraries.ui
+        libraries.ui,
+
+        vendor.soundio,
     }
 });
 
@@ -111,12 +114,13 @@ auto const play_audio = cc_binary("play-audio", {
     .target_triple = {},
     .deps = {
         libraries.main,
-        libraries.soundio,
         libraries.ty,
         libraries.cli,
         libraries.au,
         libraries.ms,
         libraries.ui,
+
+        vendor.soundio,
     }
 });
 
@@ -136,10 +140,11 @@ auto const play_managed_audio = cc_binary("play-managed-audio", {
     .target_triple = {},
     .deps = {
         libraries.main,
-        libraries.soundio,
         libraries.ty2,
         libraries.cli,
         libraries.au,
+
+        vendor.soundio,
     }
 });
 
@@ -163,11 +168,12 @@ auto const pipe_audio = cc_binary("pipe-audio", {
     .target_triple = {},
     .deps = {
         libraries.main,
-        libraries.soundio,
         libraries.ty,
         libraries.cli,
         libraries.au,
         libraries.ms,
+
+        vendor.soundio,
     }
 });
 
@@ -191,10 +197,11 @@ auto const play_pipe = cc_binary("play-pipe", {
     .target_triple = {},
     .deps = {
         libraries.main,
-        libraries.soundio,
         libraries.ty,
         libraries.cli,
         libraries.au,
+
+        vendor.soundio,
     }
 });
 

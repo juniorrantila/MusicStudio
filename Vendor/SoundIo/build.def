@@ -1,5 +1,5 @@
 #pragma once
-#include "../../../bs.h"
+#include "../../bs.h"
 
 static auto const soundio = cc_library("SoundIo", {
     .srcs = {

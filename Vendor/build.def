@@ -1,0 +1,29 @@
+#pragma once
+#include "../bs.h"
+#include "./Clay/build.def"
+#include "./NanoVG/build.def"
+#include "./SoundIo/build.def"
+#include "./WASM3/build.def"
+#include "./stb/build.def"
+
+typedef struct Vendor {
+    Target clay;
+    Target nanovg;
+    Target soundio;
+    Target wasm3;
+    Target stb_image;
+    Target stb_sprintf;
+    Target stb_truetype;
+} Vendor;
+
+static auto const vendor = target([] {
+    return (Vendor) {
+        .clay = clay,
+        .nanovg = nanovg,
+        .soundio = soundio,
+        .wasm3 = wasm3,
+        .stb_image = stb_image,
+        .stb_sprintf = stb_sprintf,
+        .stb_truetype = stb_truetype,
+    };
+});

@@ -1,6 +1,7 @@
 #pragma once
 #include "../bs.h"
 #include "../Libraries/build.def"
+#include "../Vendor/build.def"
 
 auto const sine = cc_binary("sine", {
     .srcs = {
@@ -18,9 +19,10 @@ auto const sine = cc_binary("sine", {
     .target_triple = {},
     .deps = {
         libraries.main,
-        libraries.soundio,
         libraries.ty,
         libraries.cli,
+
+        vendor.soundio,
     }
 });
 

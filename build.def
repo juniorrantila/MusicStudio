@@ -1,3 +1,4 @@
+#include "./Vendor/build.def"
 #include "./Libraries/build.def"
 #include "./Fonts/build.def"
 #include "./Shaders/build.def"

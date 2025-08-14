@@ -1,5 +1,5 @@
 #pragma once
-#include "../../../bs.h"
+#include "../../bs.h"
 
 static auto const wasm3 = cc_library("WASM3", {
     .srcs = {

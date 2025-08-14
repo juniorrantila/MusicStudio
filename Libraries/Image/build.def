@@ -1,7 +1,7 @@
 #pragma once
 #include "../../bs.h"
 #include "../Ty/build.def"
-#include "../Vendor/STB/build.def"
+#include "../../Vendor/stb/image/build.def"
 
 static auto const image = cc_library("Image", {
     .srcs = {
@@ -17,6 +17,6 @@ static auto const image = cc_library("Image", {
     .link_style = "static",
     .deps = {
         ty,
-        stb,
+        stb_image,
     },
 });

@@ -1,6 +1,5 @@
 #pragma once
-#include "../../../bs.h"
-#include "../../GL/build.def"
+#include "../../bs.h"
 
 static auto const nanovg = cc_library("NanoVG", {
     .srcs = {
@@ -11,6 +10,7 @@ static auto const nanovg = cc_library("NanoVG", {
         "./nanovg.h",
         "./nanovg_gl.h",
         "./NanoVGL.h",
+        "./GL.h",
     },
     .header_namespace = "NanoVG",
     .compile_flags = {
@@ -20,7 +20,5 @@ static auto const nanovg = cc_library("NanoVG", {
     .linker_flags = {},
     .target_triple = {},
     .link_style = "static",
-    .deps = {
-        gl,
-    },
+    .deps = {},
 });

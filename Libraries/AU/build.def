@@ -2,8 +2,9 @@
 #include "../../bs.h"
 #include "../Ty/build.def"
 #include "../Math/build.def"
-#include "../Vendor/SoundIo/build.def"
 #include "../FS/build.def"
+
+#include "../../Vendor/SoundIo/build.def"
 
 static auto const au = cc_library("AU", {
     .srcs = {

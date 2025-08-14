@@ -199,6 +199,7 @@ typedef struct FONSttFontImpl FONSttFontImpl;
 #	define FONS_MAX_FALLBACKS 20
 #endif
 
+__attribute__((no_sanitize("integer")))
 static unsigned int fons__hashint(unsigned int a)
 {
 	a += ~(a<<15);
@@ -468,7 +469,7 @@ static void* fons__tmpalloc(size_t size, void* up)
 	FONScontext* stash = (FONScontext*)up;
 
 	// 16-byte align the returned pointer
-	size = (size + 0xf) & ~0xf;
+	size = (size + 0xfu) & ~0xfu;
 
 	if (stash->nscratch+(int)size > FONS_SCRATCH_BUF_SIZE) {
 		if (stash->handleError)

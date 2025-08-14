@@ -1,6 +1,7 @@
 #pragma once
 #include "../bs.h"
 #include "../Libraries/build.def"
+#include "../Vendor/build.def"
 #include "../Fonts/build.def"
 #include "../Shaders/build.def"
 
@@ -37,8 +38,10 @@ auto const music_studio = cc_binary("music-studio", {
         libraries.fs,
         libraries.cli,
         libraries.main,
-        libraries.soundio,
         libraries.layout,
         libraries.au,
+
+        vendor.wasm3,
+        vendor.soundio,
     }
 });

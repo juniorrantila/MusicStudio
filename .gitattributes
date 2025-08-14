@@ -1,2 +1,3 @@
 */**/build.def linguist-language=C++
-Libraries/Vendor/* linguist-vendored=true
+/Vendor/* linguist-vendored=true
+/Libraries/Rexim/* linguist-vendored=true

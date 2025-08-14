@@ -419,6 +419,7 @@ static void glnvg__dumpProgramError(GLuint prog, const char* name)
 
 static void glnvg__checkError(GLNVGcontext* gl, const char* str)
 {
+    return;
 	GLenum err;
 	if ((gl->flags & NVG_DEBUG) == 0) return;
 	err = glGetError();

@@ -21,11 +21,6 @@
 #include "./AU/build.def"
 #include "./Math/build.def"
 
-#include "./Vendor/SoundIo/build.def"
-#include "./Vendor/WASM3/build.def"
-#include "./Vendor/NanoVG/build.def"
-#include "./Vendor/Clay/build.def"
-#include "./Vendor/STB/build.def"
 
 typedef struct {
     // Core
@@ -54,12 +49,8 @@ typedef struct {
 
     Target ui;
     Target gl;
-    Target wasm3;
-    Target nanovg;
-    Target clay;
     Target layout;
     Target image;
-    Target stb;
     // Target uiview;
 } LibrariesTargets;
 
@@ -76,7 +67,6 @@ static auto const libraries = target([] {
         .au = au,
         .math = math,
         .rexim = rexim,
-        .soundio = soundio,
         .wasm = wasm,
         .ms = ms,
         .vst = vst,
@@ -86,13 +76,7 @@ static auto const libraries = target([] {
         .library = library,
         .ui = ui,
         .gl = gl,
-        .wasm3 = wasm3,
-        .nanovg = nanovg,
-        .clay = clay,
         .layout = layout,
         .image = image,
-        .stb = stb,
     };
-
-    // Target uiview;
 });

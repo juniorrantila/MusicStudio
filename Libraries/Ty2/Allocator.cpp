@@ -3,6 +3,7 @@
 #include "./Verify.h"
 
 #include <string.h>
+#include <stb/sprintf.h>
 
 void* Allocator::alloc(usize byte_count, usize align) { return memalloc(this, byte_count, align); }
 void Allocator::free(void* ptr, usize byte_count, usize align) { return memfree(this, ptr, byte_count, align); }

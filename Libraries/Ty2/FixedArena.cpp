@@ -1,22 +1,10 @@
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wimplicit-fallthrough"
-#pragma clang diagnostic ignored "-Wunused"
-#pragma clang attribute push (__attribute__((no_sanitize("integer"))), apply_to=function)
-
-#define STB_SPRINTF_IMPLEMENTATION
-#define STB_SPRINTF_NOUNALIGNED
-#define STB_SPRINTF_STATIC
-#define STB_SPRINTF_DECORATE(x) stb_##x
-#include "./stb_sprintf.h"
-
-#pragma clang attribute pop
-#pragma clang diagnostic pop
-
 #include "./FixedArena.h"
 
 #include "./Allocator.h"
 #include "./Base.h"
 #include "./Verify.h"
+
+#include <stb/sprintf.h>
 
 static void* dispatch(Allocator*, AllocatorEvent);
 static bool owns(FixedArena const* arena, void* ptr);

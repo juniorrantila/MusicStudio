@@ -5,7 +5,7 @@
 #include "../Midi/build.def"
 #include "../Vst/build.def"
 #include "../Library/build.def"
-#include "../Vendor/WASM3/build.def"
+#include "../../Vendor/WASM3/build.def"
 
 static auto const ms = cc_library("MS", {
     .srcs = {

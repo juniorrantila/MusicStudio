@@ -31,7 +31,9 @@ Checks: >
   -readability-avoid-unconditional-preprocessor-if,
   -readability-math-missing-parentheses,
   -readability-avoid-return-with-void-value,
-  -readability-use-std-min-max
+  -readability-use-std-min-max,
+  -bugprone-assignment-in-if-condition,
+  -readability-convert-member-functions-to-static
 WarningsAsErrors: ''
 FormatStyle: none
 CheckOptions:

@@ -1,3 +1,4 @@
+#pragma once
 #include "./Vendor/build.def"
 #include "./Libraries/build.def"
 #include "./Fonts/build.def"
@@ -5,4 +6,5 @@
 #include "./Tools/build.def"
 #include "./Toys/build.def"
 #include "./MusicStudio/build.def"
+#include "./Piano/build.def"
 #include "./Plugins/build.def"

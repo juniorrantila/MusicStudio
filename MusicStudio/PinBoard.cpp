@@ -1,13 +1,13 @@
 #include "./Context.h"
 
 #include "./Color.h"
-#include "Layout/Layout.h"
 
-#include <Layout/Sugar.h>
+#include <LibLayout/Layout.h>
+#include <LibLayout/Sugar.h>
 
 using namespace LayoutSugar;
 
-void pinboard(Context* context)
+void pinboard(MSContext* context)
 {
     Element().config([=]{
         id("PinBoard"sv);

@@ -1,5 +1,5 @@
 #pragma once
-#include <FS/Forward.h>
+#include <LibCore/Forward.h>
 
 typedef enum {
     UseBakedShaders_No,

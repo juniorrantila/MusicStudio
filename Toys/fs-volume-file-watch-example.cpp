@@ -1,12 +1,12 @@
-#include <Core/Print.h>
-#include <Ty/StringSlice.h>
-#include <Ty2/Base.h>
-#include <Ty2/Allocator.h>
-#include <FS/FSVolume.h>
-#include <Main/Main.h>
-#include <CLI/ArgumentParser.h>
-#include <Ty2/PageAllocator.h>
-#include <Ty2/FixedArena.h>
+#include <Basic/Allocator.h>
+#include <Basic/Base.h>
+#include <Basic/FixedArena.h>
+#include <Basic/PageAllocator.h>
+#include <Basic/StringSlice.h>
+#include <LibCLI/ArgumentParser.h>
+#include <LibCore/FSVolume.h>
+#include <LibCore/Print.h>
+#include <LibMain/Main.h>
 
 ErrorOr<int> Main::main(int argc, c_string argv[])
 {
@@ -21,7 +21,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
     usize path_count = 0;
     TRY(argument_parser.add_option("--file", "-f", "path", "watch file at path (can be used multiple times)", [&](c_string arg){
         VERIFY(path_count + 1 < max_paths);
-        paths[path_count++] = string_slice_from_c_string(arg);
+        paths[path_count++] = sv_from_c_string(arg);
     }));
 
     if (auto result = argument_parser.run(argc, argv); result.is_error()) {
@@ -40,11 +40,11 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
         auto path = paths[i];
         FSFile file;
         if (!fs_system_open(arena, path, &file)) {
-            dprintln("could not open '{}'", path.as_view());
+            dprintln("could not open '{}'", StringView(path));
             return 1;
         }
         if (!fs_volume_mount(&volume, file, nullptr)) {
-            dprintln("could not mount '{}'", path.as_view());
+            dprintln("could not mount '{}'", StringView(path));
             return 1;
         }
     }
@@ -61,21 +61,21 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
             auto kind = events.kind[i];
             switch (kind) {
             case FSEventKind_Modify: {
-                dprintln("modified file: {}", path.as_view());
+                dprintln("modified file: {}", StringView(path));
                 if (!fs_file_reload(file)) {
                     dprintln("could not load modified content");
                     continue;
                 }
                 auto content = fs_content(*file);
                 dprintln("new content:");
-                dprintln("{}", content.as_view());
+                dprintln("{}", StringView(content));
                 continue;
             }
             case FSEventKind_Delete:
-                dprintln("deleted file: {}", path.as_view());
+                dprintln("deleted file: {}", StringView(path));
                 continue;
             case FSEventKind_Create:
-                dprintln("created file: {}", path.as_view());
+                dprintln("created file: {}", StringView(path));
                 continue;
             }
         }

@@ -1,82 +1,85 @@
 #pragma once
 #include "../bs.h"
-#include "./Ty/build.def"
-#include "./Ty2/build.def"
-#include "./Core/build.def"
-#include "./Main/build.def"
-#include "./CLI/build.def"
-#include "./FS/build.def"
-#include "./Rexim/build.def"
-#include "./WASM/build.def"
-#include "./MS/build.def"
-#include "./Midi/build.def"
-#include "./Vst/build.def"
-#include "./Vst2/build.def"
-#include "./Library/build.def"
-#include "./UI/build.def"
-#include "./GL/build.def"
-#include "./Tar/build.def"
-#include "./Layout/build.def"
-#include "./Image/build.def"
-#include "./AU/build.def"
-#include "./Math/build.def"
+#include "./Basic/build.def"
+#include "./LibAudio/build.def"
+#include "./LibCore/build.def"
+#include "./LibMain/build.def"
+#include "./LibCLI/build.def"
+#include "./LibWASM/build.def"
+#include "./LibMusic/build.def"
+#include "./LibMIDI/build.def"
+#include "./LibVST/build.def"
+#include "./LibVST2/build.def"
+#include "./LibUI/build.def"
+#include "./LibGL/build.def"
+#include "./LibTar/build.def"
+#include "./LibLayout/build.def"
+#include "./LibLayout2/build.def"
+#include "./LibImage/build.def"
+#include "./LibMath/build.def"
+#include "./LibDSP/build.def"
+#include "./LibNetwork/build.def"
 
+#include "./LibRexim/build.def"
 
 typedef struct {
     // Core
     Target ty;
-    Target ty2;
+    Target basic;
     Target core;
     Target main;
     Target cli;
-    Target fs;
     Target tar;
     Target au;
     Target math;
 
     // Userspace
-    Target rexim;
-    Target soundio;
-    Target wasm;
-    Target ms;
+    Target music;
 
     Target vst;
     Target vst2;
     Target vst_host;
     Target midi;
-
-    Target library;
+    Target dsp;
+    Target wasm;
 
     Target ui;
     Target gl;
+
     Target layout;
+    Target layout2;
     Target image;
-    // Target uiview;
+    Target net;
+
+    Target rexim;
 } LibrariesTargets;
 
 
 static auto const libraries = target([] {
     return (LibrariesTargets){
         .ty = ty,
-        .ty2 = ty2,
+        .basic = basic,
         .core = core,
         .main = main_,
         .cli = cli,
-        .fs = fs,
         .tar = tar,
         .au = au,
         .math = math,
-        .rexim = rexim,
-        .wasm = wasm,
-        .ms = ms,
+        .music = music,
         .vst = vst,
         .vst2 = vst2,
         .vst_host = vst_host,
         .midi = midi,
-        .library = library,
+        .dsp = dsp,
+        .wasm = wasm,
+
         .ui = ui,
         .gl = gl,
         .layout = layout,
+        .layout2 = layout2,
         .image = image,
+        .net = net,
+        
+        .rexim = rexim,
     };
 });

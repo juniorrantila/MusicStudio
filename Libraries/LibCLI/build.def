@@ -1,0 +1,27 @@
+#pragma once
+#include "../../bs.h"
+#include "../Basic/build.def"
+#include "../LibCore/build.def"
+
+static auto const cli = cc_library("LibCLI", {
+    .srcs = {
+        "./ArgumentParser.cpp",
+        "./ArgumentParserError.cpp",
+        "./CLIParser.cpp",
+    },
+    .exported_headers = {
+        "./ArgumentParser.h",
+        "./ArgumentParserError.h",
+        "./CLIParser.h",
+    },
+    .header_namespace = "LibCLI",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        ty,
+        basic,
+        core,
+    },
+});

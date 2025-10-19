@@ -1,22 +1,26 @@
 #include "./Context.h"
 
-#include <AU/SoundIo.h>
-#include <CLI/ArgumentParser.h>
-#include <Core/Print.h>
-#include <Core/Time.h>
+#include <Basic/FixedArena.h>
+#include <Basic/PageAllocator.h>
+#include <Basic/Defer.h>
+#include <Basic/Array.h>
+
+#include <LibAudio/SoundIo.h>
+#include <LibCLI/ArgumentParser.h>
+#include <LibCore/Print.h>
+#include <LibCore/Time.h>
+#include <LibGL/GL.h>
+#include <LibMusic/PluginManager.h>
+#include <LibMain/Main.h>
+#include <LibMath/Math.h>
+#include <LibUI/Application.h>
+#include <LibUI/KeyCode.h>
+#include <LibUI/Window.h>
+#include <LibCore/FSVolume.h>
+
 #include <Fonts/Fonts.h>
-#include <GL/GL.h>
-#include <MS/PluginManager.h>
-#include <Main/Main.h>
-#include <Math/Math.h>
 #include <SoundIo/SoundIo.h>
 #include <SoundIo/os.h>
-#include <Ty2/FixedArena.h>
-#include <Ty2/PageAllocator.h>
-#include <UI/Application.h>
-#include <UI/KeyCode.h>
-#include <UI/Window.h>
-#include <FS/FSVolume.h>
 
 #include <unistd.h>
 
@@ -33,7 +37,7 @@ ErrorOr<int> Main::main(int argc, c_string* argv)
     dprintln("resources:");
     for (u64 i = 0; i < volume->count; i++) {
         auto path = fs_virtual_path(volume->items[i]);
-        dprintln("  {}", path.as_view());
+        dprintln("  {}", StringView(path));
     }
 
     auto argument_parser = CLI::ArgumentParser();
@@ -85,31 +89,35 @@ ErrorOr<int> Main::main(int argc, c_string* argv)
     auto* arena = &arena_allocator.allocator;
     auto project = MS::Project();
     auto manager = TRY(MS::PluginManager::create(arena)).init(&project);
-    auto plugins = TRY(arena->alloc_many<Id<MS::Plugin>>(1024).or_error(Error::from_errno(ENOMEM)));
 
-    usize plugin_count = 0;
-    for (usize i = 0; i < plugin_paths.size(); i++) {
-        plugin_count += 1;
-        plugins[i] = TRY(manager.instantiate(plugin_paths[i]));
+    struct {
+        Allocator* allocator;
+        Id<MS::Plugin>* items;
+        u64 count;
+        u64 capacity;
+    } plugins = {};
+    plugins.allocator = arena;
+
+    for (u64 i = 0; i < plugin_paths.size(); i++) {
+        TRY(array_push(&plugins, TRY(manager.instantiate(plugin_paths[i]))));
     }
-    (void)plugin_count;
-    for (usize i = 0; i < plugin_count; i++) {
+    for (u64 i = 0; i < plugins.count; i++) {
         manager.plugins[i].init();
     }
 
-    Context context = TRY(context_create(volume));
+    MSContext context = TRY(context_create(volume));
     defer [&] {
         context_destroy(&context);
     };
 
     ui_window_set_resize_callback(window, &context, [](UIWindow* window, void* user) {
         ui_window_gl_make_current_context(window);
-        context_window_did_resize((Context*)user, window);
+        context_window_did_resize((MSContext*)user, window);
         ui_window_gl_flush(window);
     });
 
     ui_window_set_scroll_callback(window, &context, [](UIWindow* window, void* user) {
-        context_window_did_scroll((Context*)user, window);
+        context_window_did_scroll((MSContext*)user, window);
     });
 
     SoundIo* soundio = soundio_create();
@@ -141,7 +149,7 @@ ErrorOr<int> Main::main(int argc, c_string* argv)
     };
     outstream->write_callback = write_callback;
     outstream->underflow_callback = [](SoundIoOutStream* outstream) {
-        auto* context = (Context*)outstream->userdata;
+        auto* context = (MSContext*)outstream->userdata;
         context->rt.underflow_count++;
     };
     outstream->error_callback = [](SoundIoOutStream*, int error) {
@@ -160,7 +168,9 @@ ErrorOr<int> Main::main(int argc, c_string* argv)
         dprintln("SoundIo device change");
     };
 
-    auto device_format = TRY(AU::select_writer_for_device(output_device).or_error(Error::from_string_literal("no suitable device format available")));
+    AUSoundIoWriter device_format = {};
+    if (!au_select_soundio_writer_for_device(output_device, &device_format))
+        return Error::from_string_literal("no suitable device format available");
     outstream->format = device_format.format;
     outstream->userdata = &context;
     context.rt.write = device_format.writer;
@@ -249,7 +259,7 @@ f64 note(f64 x)
     return math_abs_f64(math_mod_f64(x, 1.0)) * (0.25 + math_mod_f64(x * 0.001, 1) * 0.5) * 1.5;
 }
 
-static f64 gen_sample(Context* ctx, f64 time)
+static f64 gen_sample(MSContext* ctx, f64 time)
 {
     u8 const _Atomic* piano_notes = ctx->notes;
     f64 result = 0;
@@ -280,7 +290,7 @@ static f64 gen_sample(Context* ctx, f64 time)
 static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max) noexcept [[clang::nonblocking]]
 {
     (void)frame_count_min;
-    auto* ctx = (Context*)outstream->userdata;
+    auto* ctx = (MSContext*)outstream->userdata;
     f64 float_sample_rate = outstream->sample_rate;
     f64 seconds_per_frame = 1.0 / float_sample_rate;
 

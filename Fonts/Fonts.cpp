@@ -1,6 +1,6 @@
 #include "./Fonts.h"
 
-#include <FS/FSVolume.h>
+#include <LibCore/FSVolume.h>
 
 bool Fonts::add_to_volume(FSVolume* volume)
 {
@@ -8,7 +8,7 @@ bool Fonts::add_to_volume(FSVolume* volume)
         #embed "./OxaniumLight/Oxanium-Light.ttf"
     };
     if (!fs_volume_mount(volume,
-        fs_virtual_open("Fonts/OxaniumLight/Oxanium-Light.ttf"s, string_slice(oxanium_light_bytes, sizeof(oxanium_light_bytes))),
+        fs_virtual_open("Fonts/OxaniumLight/Oxanium-Light.ttf"s, sv_from_parts(oxanium_light_bytes, sizeof(oxanium_light_bytes))),
         nullptr
     )) return false;
 
@@ -16,7 +16,7 @@ bool Fonts::add_to_volume(FSVolume* volume)
         #embed "./VictorMono-Regular.ttf"
     };
     if (!fs_volume_mount(volume,
-        fs_virtual_open("Fonts/VictorMono-Regular.ttf"s, string_slice(victor_mono_bytes, sizeof(victor_mono_bytes))),
+        fs_virtual_open("Fonts/VictorMono-Regular.ttf"s, sv_from_parts(victor_mono_bytes, sizeof(victor_mono_bytes))),
         nullptr
     )) return false;
 
@@ -24,7 +24,7 @@ bool Fonts::add_to_volume(FSVolume* volume)
         #embed "./iosevka-regular.ttf"
     };
     if (!fs_volume_mount(volume,
-        fs_virtual_open("Fonts/iosevka-regular.ttf"s, string_slice(iosevka_bytes, sizeof(iosevka_bytes))),
+        fs_virtual_open("Fonts/iosevka-regular.ttf"s, sv_from_parts(iosevka_bytes, sizeof(iosevka_bytes))),
         nullptr
     )) return false;
 

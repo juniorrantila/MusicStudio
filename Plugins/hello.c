@@ -1,5 +1,5 @@
 #include <MS/WASMPlugin/Plugin.h>
-#include <Math/Math.h>
+#include <LibMath/Math.h>
 
 u32 const ms_plugin_version = 1;
 char const ms_plugin_id[] = "com.music-studio.hello";

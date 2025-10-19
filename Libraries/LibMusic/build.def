@@ -1,0 +1,49 @@
+#pragma once
+#include "../../bs.h"
+#include "../Basic/build.def"
+#include "../LibCore/build.def"
+#include "../LibMIDI/build.def"
+#include "../LibVST/build.def"
+
+#include "../../Vendor/WASM3/build.def"
+
+static auto const music = cc_library("LibMusic", {
+    .srcs = {
+        "./Host.cpp",
+        "./Plugin.cpp",
+        "./PluginManager.cpp",
+        "./Project.cpp",
+        "./VstPlugin.cpp",
+        "./WASMPlugin.cpp",
+        "./WASMPluginManager.cpp",
+    },
+    .exported_headers = {
+        "./Forward.h",
+        "./Host.h",
+        "./Plugin.h",
+        "./PluginManager.h",
+        "./Project.h",
+        "./VstPlugin.h",
+        "./WASMPlugin.h",
+        "./WASMPluginManager.h",
+
+        "./NativePlugin/Host.h",
+        "./NativePlugin/Plugin.h",
+
+        "./WASMPlugin/Base.h",
+        "./WASMPlugin/Plugin.h",
+    },
+    .header_namespace = "LibMusic",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        ty,
+        basic,
+        core,
+        midi,
+        vst_host,
+        wasm3,
+    },
+});

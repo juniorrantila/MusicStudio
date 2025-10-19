@@ -1,68 +1,145 @@
+module Basic {
+    umbrella "Basic"
+    module * {
+        export *
+    }
+}
+
 module Ty {
-    umbrella "Ty"
+    umbrella "Basic/Ty"
     module * {
         export *
     }
 }
 
-module Core {
-    umbrella "Core"
+module LibAudio {
+    umbrella "LibAudio"
     module * {
         export *
     }
 }
 
-module Main {
-    umbrella "Main"
+module LibCLI {
+    umbrella "LibCLI"
     module * {
         export *
     }
 }
 
-module FS {
-    umbrella "FS"
+module LibCore {
+    umbrella "LibCore"
     module * {
         export *
     }
 }
 
-module CLI {
-    umbrella "CLI"
+module LibDSP {
+    umbrella "LibDSP"
     module * {
         export *
     }
 }
 
-module Zip {
-    umbrella "Zip"
+module LibGL {
+    umbrella "LibGL"
     module * {
         export *
     }
 }
 
-module Image {
-    umbrella "Image"
+module LibImage {
+    umbrella "LibImage"
     module * {
         export *
     }
 }
 
-module Rexim {
-    umbrella "Rexim"
+module LibLayout {
+    umbrella "LibLayout"
     module * {
         export *
     }
 }
 
-module SoundIo {
-    umbrella "SoundIo"
+module LibLayout2 {
+    umbrella "LibLayout2"
     module * {
         export *
     }
 }
 
-module UI {
-    umbrella "UI"
+module LibMIDI {
+    umbrella "LibMIDI"
+    module * {
+        export *
+    }
+}
+
+module LibMain {
+    umbrella "LibMain"
+    module * {
+        export *
+    }
+}
+
+module LibMath {
+    umbrella "LibMath"
+    module * {
+        export *
+    }
+}
+
+module LibMusic {
+    umbrella "LibMusic"
+    module * {
+        export *
+    }
+}
+
+module LibNetwork {
+    umbrella "LibNetwork"
+    module * {
+        export *
+    }
+}
+
+module LibRexim {
+    umbrella "LibRexim"
+    module * {
+        export *
+    }
+}
+
+module LibTar {
+    umbrella "LibTar"
+    module * {
+        export *
+    }
+}
+
+module LibUI {
+    umbrella "LibUI"
+    module * {
+        export *
+    }
+}
+
+module LibVST {
+    umbrella "LibVST"
+    module * {
+        export *
+    }
+}
+
+module LibVST2 {
+    umbrella "LibVST2"
+    module * {
+        export *
+    }
+}
+
+module LibWASM {
+    umbrella "LibWASM"
     module * {
         export *
     }

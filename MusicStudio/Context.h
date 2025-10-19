@@ -1,12 +1,12 @@
 #pragma once
-#include <UI/Forward.h>
-#include <Ty/Base.h>
-#include <Midi/Note.h>
-#include <Layout/Layout.h>
-#include <Ty/ErrorOr.h>
-#include <FS/FSVolume.h>
+#include <LibUI/Forward.h>
+#include <LibTy/Base.h>
+#include <LibMIDI/Note.h>
+#include <LibLayout/Layout.h>
+#include <LibTy/ErrorOr.h>
+#include <LibCore/FSVolume.h>
 
-struct Context {
+struct MSContext {
     u8 _Atomic notes[(u8)Midi::Note::__Size];
 
     Layout* layout;
@@ -34,21 +34,21 @@ struct Context {
     } rt;
 };
 
-ErrorOr<Context> context_create(FSVolume* bundle);
-void context_destroy(Context* context);
+ErrorOr<MSContext> context_create(FSVolume* bundle);
+void context_destroy(MSContext* context);
 
-void context_set_notes_from_keymap(Context*, Midi::Note base_note, u8 const* keymap);
+void context_set_notes_from_keymap(MSContext*, Midi::Note base_note, u8 const* keymap);
 
-Clay_RenderCommandArray context_layout(Context* context);
+Clay_RenderCommandArray context_layout(MSContext* context);
 
-void context_window_did_resize(Context* context, UIWindow* window);
-void context_update(Context* context, UIWindow* window);
-void context_window_did_scroll(Context* context, UIWindow* window);
+void context_window_did_resize(MSContext* context, UIWindow* window);
+void context_update(MSContext* context, UIWindow* window);
+void context_window_did_scroll(MSContext* context, UIWindow* window);
 
-void titlebar(Context*);
-void main_content(Context*);
-void browser(Context*);
-void piano_roll_vertical(Context*);
-void piano_roll_horizontal(Context*);
-void piano_tracker(Context*);
-void pinboard(Context*);
+void titlebar(MSContext*);
+void main_content(MSContext*);
+void browser(MSContext*);
+void piano_roll_vertical(MSContext*);
+void piano_roll_horizontal(MSContext*);
+void piano_tracker(MSContext*);
+void pinboard(MSContext*);

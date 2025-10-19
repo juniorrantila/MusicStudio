@@ -16,6 +16,6 @@ static auto const fonts = cc_library("Fonts", {
     .link_style = "static",
     .deps = {
         libraries.ty,
-        libraries.fs,
+        libraries.core,
     },
 });

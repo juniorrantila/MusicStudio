@@ -1,0 +1,26 @@
+#pragma once
+#include "../../bs.h"
+#include "../Basic/build.def"
+#include "../LibCore/build.def"
+
+static auto const layout2 = cc_library("LibLayout2", {
+    .srcs = {
+        "./Layout.cpp",
+        "./UI.cpp",
+    },
+    .exported_headers = {
+        "./Layout.h",
+        "./RenderCommand.h",
+        "./UI.h",
+    },
+    .header_namespace = "LibLayout2",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        ty,
+        basic,
+        core,
+    },
+});

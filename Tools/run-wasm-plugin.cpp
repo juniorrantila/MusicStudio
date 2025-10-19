@@ -1,9 +1,11 @@
-#include <Core/Print.h>
-#include <CLI/ArgumentParser.h>
-#include <MS/WASMPluginManager.h>
-#include <Main/Main.h>
-#include <MS/Project.h>
-#include <MS/WASMPlugin/Plugin.h>
+#include <LibCLI/ArgumentParser.h>
+#include <LibCore/Print.h>
+#include <LibMain/Main.h>
+#include <LibMusic/Project.h>
+#include <LibMusic/WASMPlugin/Plugin.h>
+#include <LibMusic/WASMPluginManager.h>
+
+#include <Basic/Defer.h>
 
 ErrorOr<int> Main::main(int argc, char const* argv[])
 {

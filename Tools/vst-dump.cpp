@@ -1,11 +1,11 @@
-#include <CLI/ArgumentParser.h>
-#include <MS/VstPlugin.h>
-#include <Ty/Defer.h>
-#include <Ty/Defer.h>
-#include <Ty/ErrorOr.h>
-#include <Vst/CanDo.h>
-#include <Vst/Vst.h>
-#include <Main/Main.h>
+#include <LibCLI/ArgumentParser.h>
+#include <LibMain/Main.h>
+#include <LibMusic/VstPlugin.h>
+#include <LibTy/ErrorOr.h>
+#include <LibVST/CanDo.h>
+#include <LibVST/Vst.h>
+
+#include <Basic/Defer.h>
 
 #include <stdio.h>
 

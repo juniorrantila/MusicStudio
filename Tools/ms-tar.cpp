@@ -1,11 +1,12 @@
-#include <Core/File.h>
-#include <Core/MappedFile.h>
-#include <CLI/ArgumentParser.h>
-#include <Main/Main.h>
-#include <Tar/Tar.h>
-#include <Ty2/FixedArena.h>
-#include <Ty2/PageAllocator.h>
-#include <Core/Print.h>
+#include <Basic/FixedArena.h>
+#include <Basic/PageAllocator.h>
+
+#include <LibCLI/ArgumentParser.h>
+#include <LibCore/File.h>
+#include <LibCore/MappedFile.h>
+#include <LibCore/Print.h>
+#include <LibMain/Main.h>
+#include <LibTar/Tar.h>
 
 ErrorOr<int> Main::main(int argc, char const* argv[])
 {

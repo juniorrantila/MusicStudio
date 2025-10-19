@@ -2,8 +2,8 @@
 
 #include "./Color.h"
 
-#include <Layout/Layout.h>
-#include <Layout/Sugar.h>
+#include <LibLayout/Layout.h>
+#include <LibLayout/Sugar.h>
 
 using namespace LayoutSugar;
 

@@ -1,6 +1,6 @@
 #pragma once
 #include <Clay/Clay.h>
-#include <Rexim/LA.h>
+#include <LibRexim/LA.h>
 
 static inline Vec2f zero  = { 0.0, 0.0 };
 static inline Vec4f cyan = { .r = 0.0f, .g = 1.0f, .b = 1.0f, .a = 1.0f };

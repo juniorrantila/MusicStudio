@@ -2,10 +2,10 @@
 
 #include "./Color.h"
 
-#include <UI/KeyCode.h>
-#include <Layout/Layout.h>
-#include <Layout/Sugar.h>
-#include <Core/Print.h>
+#include <LibUI/KeyCode.h>
+#include <LibLayout/Layout.h>
+#include <LibLayout/Sugar.h>
+#include <LibCore/Print.h>
 
 using namespace LayoutSugar;
 
@@ -20,8 +20,8 @@ static void black_note(ID note_name, u8 _Atomic* note, VerticalNotes vertical);
 static void white_block(u8 _Atomic* note, u8 playing, VerticalNotes vertical);
 static void black_block(u8 _Atomic* note, u8 playing, VerticalNotes vertical);
 
-static void piano_octave(Context* context, u8 start_note, VerticalNotes vertical_notes);
-static void block_octave(Context* context, u8 start_note, u32 beat, u32 subdivision, VerticalNotes vertical_notes);
+static void piano_octave(MSContext* context, u8 start_note, VerticalNotes vertical_notes);
+static void block_octave(MSContext* context, u8 start_note, u32 beat, u32 subdivision, VerticalNotes vertical_notes);
 static void note_on_hover(Clay_ElementId element, Clay_PointerData data, iptr user);
 static void block_on_hover(Clay_ElementId element, Clay_PointerData data, iptr user);
 
@@ -31,7 +31,7 @@ static auto white_note_height = 64.0f;
 static auto black_note_width = 24.0f;
 static auto black_note_height = 64.0f;
 
-void piano_roll_vertical(Context* context)
+void piano_roll_vertical(MSContext* context)
 {
     Element().config([=]{
         id("PianoRoll"sv);
@@ -61,7 +61,7 @@ void piano_roll_vertical(Context* context)
 }
 
 
-void piano_roll_horizontal(Context* context)
+void piano_roll_horizontal(MSContext* context)
 {
     Element().config([=]{
         id("PianoRoll"sv);
@@ -94,7 +94,7 @@ void piano_roll_horizontal(Context* context)
 }
 
 
-static void piano_octave(Context* context, u8 start_note, VerticalNotes vertical_notes)
+static void piano_octave(MSContext* context, u8 start_note, VerticalNotes vertical_notes)
 {
     u32 note_index = 0;
     u8 _Atomic* note = nullptr;
@@ -149,7 +149,7 @@ static void piano_octave(Context* context, u8 start_note, VerticalNotes vertical
 }
 
 
-static void block_octave(Context* context, u8 start_note, u32 beat, u32 subdivision, VerticalNotes vertical_notes)
+static void block_octave(MSContext* context, u8 start_note, u32 beat, u32 subdivision, VerticalNotes vertical_notes)
 {
     u32 note_index = 0;
     u8 _Atomic* note = nullptr;
@@ -366,7 +366,7 @@ static void black_block(u8 _Atomic* note, u8 playing, VerticalNotes vertical)
 }
 
 
-void piano_tracker(Context* context)
+void piano_tracker(MSContext* context)
 {
     Element().config([=]{
         id("PianoTracker"sv);

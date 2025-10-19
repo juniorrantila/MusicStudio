@@ -1,12 +1,14 @@
-#include <CLI/ArgumentParser.h>
-#include <Main/Main.h>
-#include <Core/MappedFile.h>
-#include <Core/File.h>
-#include <Ty/System.h>
-#include <Ty2/FixedArena.h>
-#include <Ty2/PageAllocator.h>
+#include <LibAudio/AudioDecoder.h>
+#include <LibCLI/ArgumentParser.h>
+#include <LibCore/File.h>
+#include <LibCore/MappedFile.h>
+#include <LibMain/Main.h>
+#include <LibTy/System.h>
+
+#include <Basic/FixedArena.h>
+#include <Basic/PageAllocator.h>
+
 #include <unistd.h>
-#include <AU/AudioDecoder.h>
 
 ErrorOr<int> Main::main(int argc, c_string argv[]) {
     auto argument_parser = CLI::ArgumentParser();

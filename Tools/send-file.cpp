@@ -1,5 +1,7 @@
-#include <Main/Main.h>
-#include <CLI/ArgumentParser.h>
+#include <LibCLI/ArgumentParser.h>
+#include <LibMain/Main.h>
+#include <Basic/Context.h>
+
 #include <sys/fcntl.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
@@ -9,6 +11,8 @@
 
 ErrorOr<int> Main::main(int argc, c_string argv[])
 {
+    init_default_context("sendfile");
+
     auto argument_parser = CLI::ArgumentParser();
 
     c_string from = nullptr;

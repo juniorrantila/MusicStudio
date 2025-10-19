@@ -1,7 +1,8 @@
-#include <Core/MappedFile.h>
-#include <Main/Main.h>
-#include <Tar/Tar.h>
-#include <CLI/CLIParser.h>
+#include <LibCore/MappedFile.h>
+#include <LibMain/Main.h>
+#include <LibTar/Tar.h>
+#include <LibCLI/CLIParser.h>
+
 #include <stdio.h>
 
 ErrorOr<int> Main::main(int argc, char const* argv[])

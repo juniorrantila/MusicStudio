@@ -1,0 +1,33 @@
+#pragma once
+#include "../../bs.h"
+#include "../Basic/build.def"
+#include "../LibCore/build.def"
+
+static auto const rexim = cc_library("LibRexim", {
+    .srcs = {
+        "./Arena.cpp",
+        "./File.cpp",
+        "./StringView.cpp",
+        "./Util.cpp",
+        "./minirent.cpp",
+    },
+    .exported_headers = {
+        "./Arena.h",
+        "./File.h",
+        "./LA.h",
+        "./StringBuilder.h",
+        "./StringView.h",
+        "./Util.h",
+        "./minirent.h",
+    },
+    .header_namespace = "LibRexim",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        ty,
+        basic,
+        core,
+    },
+});

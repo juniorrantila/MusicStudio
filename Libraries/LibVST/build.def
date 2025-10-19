@@ -1,0 +1,48 @@
+#pragma once
+#include "../../bs.h"
+#include "../Basic/build.def"
+
+static auto const vst = cc_library("LibVST", {
+    .srcs = {
+        "./AudioPlugin.cpp",
+        "./Vst.cpp",
+    },
+    .exported_headers = {
+        "./AEffect.h",
+        "./AudioPlugin.h",
+        "./CanDo.h",
+        "./ChunkType.h",
+        "./Config.h",
+        "./Host.h",
+        "./KnobMode.h",
+        "./Opcodes.h",
+        "./PluginData.h",
+        "./Precision.h",
+        "./Rectangle.h",
+        "./Vst.h",
+    },
+    .header_namespace = "LibVST",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        ty,
+        basic,
+    },
+});
+
+static auto const vst_host = cc_library("VSTHost", {
+    .srcs = {
+        "./VstHost.cpp",
+    },
+    .exported_headers = {},
+    .header_namespace = "VSTHost",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        vst,
+    },
+});

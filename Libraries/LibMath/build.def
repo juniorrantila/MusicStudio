@@ -1,0 +1,19 @@
+#pragma once
+#include "../../bs.h"
+
+static auto const math = cc_library("LibMath", {
+    .srcs = {
+        "./Math.cpp",
+        "./Color.cpp",
+    },
+    .exported_headers = {
+        "./Math.h",
+        "./Color.h",
+    },
+    .header_namespace = "LibMath",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {},
+});

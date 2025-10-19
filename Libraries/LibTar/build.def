@@ -1,0 +1,20 @@
+#pragma once
+#include "../../bs.h"
+#include "../Basic/build.def"
+
+static auto const tar = cc_library("LibTar", {
+    .srcs = {
+        "./Tar.c",
+    },
+    .exported_headers = {
+        "./Tar.h",
+    },
+    .header_namespace = "LibTar",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        basic,
+    },
+});

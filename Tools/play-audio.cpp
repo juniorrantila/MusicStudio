@@ -1,26 +1,29 @@
-#include <AU/AudioDecoder.h>
-#include <AU/Pipeline.h>
-#include <AU/SoundIo.h>
-#include <AU/Transcoder.h>
-#include <CLI/ArgumentParser.h>
-#include <Core/MappedFile.h>
-#include <Core/Print.h>
-#include <Core/Time.h>
-#include <MS/Project.h>
-#include <MS/VstPlugin.h>
-#include <MS/WASMPluginManager.h>
-#include <MacTypes.h>
-#include <Main/Main.h>
-#include <SoundIo/SoundIo.h>
-#include <Ty/Limits.h>
-#include <Ty/Optional.h>
-#include <Ty/Swap.h>
-#include <Ty2/FixedArena.h>
-#include <Ty2/PageAllocator.h>
-#include <UI/Application.h>
-#include <UI/Window.h>
-#include <Vst/Rectangle.h>
+#include <Basic/FixedArena.h>
+#include <Basic/PageAllocator.h>
+#include <Basic/Context.h>
 
+#include <LibAudio/AudioDecoder.h>
+#include <LibAudio/Pipeline.h>
+#include <LibAudio/SoundIo.h>
+#include <LibAudio/Transcoder.h>
+#include <LibCLI/ArgumentParser.h>
+#include <LibCore/MappedFile.h>
+#include <LibCore/Print.h>
+#include <LibCore/Time.h>
+#include <LibMain/Main.h>
+#include <LibMusic/Project.h>
+#include <LibMusic/VstPlugin.h>
+#include <LibMusic/WASMPluginManager.h>
+#include <LibTy/Limits.h>
+#include <LibTy/Optional.h>
+#include <LibTy/Swap.h>
+#include <LibUI/Application.h>
+#include <LibUI/Window.h>
+#include <LibVST/Rectangle.h>
+
+#include <SoundIo/SoundIo.h>
+
+#include <MacTypes.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -35,14 +38,14 @@ static PartTime part_time(u32 seconds);
 static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max);
 static void underflow_callback(SoundIoOutStream *outstream);
 
-struct Context {
+struct AudioContext {
     AU::Pipeline* pipeline;
     void (*write_sample)(void* ptr, f64 sample);
     usize _Atomic* played_frames;
     usize frame_count;
 
-    View<f64> scratch;
-    View<f64> scratch2;
+    f64* scratch;
+    f64* scratch2;
 };
 
 static SmallCapture<void(f64*, f64*, usize, usize)> vst2_process_audio(FixedArena* arena, MS::Plugin* plugin);
@@ -138,7 +141,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         (void)plugin.vst->set_process_precision(Vst::Precision::F64);
         ui_window_set_resizable(window, false);
         plugin.on_editor_resize = [=](i32 width, i32 height) {
-            ui_window_set_size(window, vec2f((float)width, (float)height));
+            ui_window_set_size(window, (v2){(f32)width, (f32)height});
         };
         if (!plugin.open_editor(ui_window_native_handle(window))) {
             dprintln("could not open editor for {}", plugin_name);
@@ -168,9 +171,10 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
     if (device->probe_error) {
         return Error::from_string_literal(soundio_strerror(device->probe_error));
     }
-    auto stream_writer = TRY(AU::select_writer_for_device(device).or_throw([]{
-        return Error::from_string_literal("could find suitable stream format");
-    }));
+
+    AUSoundIoWriter stream_writer = {};
+    if (!au_select_soundio_writer_for_device(device, &stream_writer))
+        fatalf("could not select writer for device");
 
     auto audio_pipeline = AU::Pipeline();
 
@@ -202,13 +206,19 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         TRY(audio_pipeline.pipe(vst2_process_audio(&pipe_arena, &plugin)));
     }
 
-    auto context = Context {
+    f64* scratch = arena->alloc<f64>(SOUNDIO_MAX_CHANNELS * (u64)audio.sample_rate);
+    if (!scratch) fatalf("could not allocate scratch buffer");
+
+    f64* scratch2 = arena->alloc<f64>(SOUNDIO_MAX_CHANNELS * (u64)audio.sample_rate);
+    if (!scratch2) fatalf("could not allocate scratch buffer 2");
+
+    auto context = AudioContext {
         .pipeline = &audio_pipeline,
         .write_sample = stream_writer.writer,
         .played_frames = &played_frames,
         .frame_count = audio.frame_count,
-        .scratch = TRY(arena->alloc_many<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.sample_rate).or_error(Error::from_string_literal("could not create scratch buffer"))),
-        .scratch2 = TRY(arena->alloc_many<f64>(SOUNDIO_MAX_CHANNELS * (usize)audio.sample_rate).or_error(Error::from_string_literal("could not create scratch buffer 2"))),
+        .scratch = scratch,
+        .scratch2 = scratch2,
     };
 
     SoundIoOutStream *outstream = soundio_outstream_create(device);
@@ -268,7 +278,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
 static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max) {
     (void)frame_count_min;
     int frames_left = frame_count_max;
-    auto* ctx = (Context*)outstream->userdata;
+    auto* ctx = (AudioContext*)outstream->userdata;
     usize played_frames = *ctx->played_frames;
 
     for (;;) {
@@ -285,8 +295,8 @@ static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int
 
         SoundIoChannelLayout const* layout = &outstream->layout;
         usize channel_count = layout->channel_count;
-        f64* scratch = ctx->scratch.data();
-        f64* scratch2 = ctx->scratch2.data();
+        f64* scratch = ctx->scratch;
+        f64* scratch2 = ctx->scratch2;
         f64* out = ctx->pipeline->run(scratch, scratch2, frame_count, channel_count);
         for (int frame = 0; frame < frame_count; frame += 1, played_frames += 1) {
             for (usize channel = 0; channel < channel_count; channel += 1) {

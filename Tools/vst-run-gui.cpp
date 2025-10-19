@@ -1,12 +1,12 @@
-#include <CLI/ArgumentParser.h>
-#include <MS/VstPlugin.h>
-#include <Ty/Defer.h>
-#include <Ty/ErrorOr.h>
-#include <UI/Application.h>
-#include <UI/Window.h>
-#include <Vst/Rectangle.h>
-#include <Vst/Vst.h>
-#include <Main/Main.h>
+#include <LibCLI/ArgumentParser.h>
+#include <LibMusic/VstPlugin.h>
+#include <LibTy/Defer.h>
+#include <LibTy/ErrorOr.h>
+#include <LibUI/Application.h>
+#include <LibUI/Window.h>
+#include <LibVST/Rectangle.h>
+#include <LibVST/Vst.h>
+#include <LibMain/Main.h>
 
 #include <stdio.h>
 #include <libgen.h>

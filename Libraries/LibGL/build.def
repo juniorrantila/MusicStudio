@@ -1,0 +1,22 @@
+#pragma once
+#include "../../bs.h"
+#include "../Basic/build.def"
+
+static auto const gl = cc_library("LibGL", {
+    .srcs = {
+        "./Renderer.cpp",
+    },
+    .exported_headers = {
+        "./GL.h",
+        "./Renderer.h",
+    },
+    .header_namespace = "LibGL",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        basic,
+        ty,
+    },
+});

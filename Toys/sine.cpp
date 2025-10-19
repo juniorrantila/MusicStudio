@@ -5,10 +5,13 @@
  * See http://opensource.org/licenses/MIT
  */
 
-#include <CLI/ArgumentParser.h>
-#include <Main/Main.h>
+#include <Basic/Context.h>
+
+#include <LibCLI/ArgumentParser.h>
+#include <LibMain/Main.h>
+#include <LibTy/Parse.h>
+
 #include <SoundIo/SoundIo.h>
-#include <Ty/Parse.h>
 
 #include <stdio.h>
 #include <math.h>
@@ -29,6 +32,8 @@ static void (*write_sample)(char *ptr, f64 sample);
 namespace Main {
 
 ErrorOr<int> main(int argc, c_string argv[]) {
+    init_default_context("sine");
+
     auto argument_parser = CLI::ArgumentParser();
     
     auto backend_name = "default"sv;
@@ -49,8 +54,8 @@ ErrorOr<int> main(int argc, c_string argv[]) {
     f64 latency = 0.0;
     TRY(argument_parser.add_option("--latency"sv, "-l"sv, "seconds"sv, "add latency"sv, [&](c_string arg) {
         latency = Parse<f32>::from(StringView::from_c_string(arg)).or_else([&] {
-            fprintf(stderr, "Invalid value '%s' provided for '--latency'\n\n", arg);
-            argument_parser.print_usage_and_exit(argv[0], 1);
+            print("Invalid value '%s' provided for '--latency'\n\n", arg);
+            argument_parser.print_usage_and_exit(1);
             return 0.0f;
         });
     }));
@@ -58,8 +63,8 @@ ErrorOr<int> main(int argc, c_string argv[]) {
     u32 sample_rate = 0;
     TRY(argument_parser.add_option("--sample-rate"sv, "-s"sv, "hz"sv, "sample rate"sv, [&](c_string arg) {
         sample_rate = Parse<u32>::from(StringView::from_c_string(arg)).or_else([&] {
-            fprintf(stderr, "Invalid value '%s' provided for '--sample-rate'\n\n", arg);
-            argument_parser.print_usage_and_exit(argv[0], 1);
+            print("Invalid value '%s' provided for '--sample-rate'\n\n", arg);
+            argument_parser.print_usage_and_exit(1);
             return 0.0f;
         });
     }));
@@ -83,19 +88,17 @@ ErrorOr<int> main(int argc, c_string argv[]) {
 
     SoundIo *soundio = soundio_create();
     if (!soundio) {
-        fprintf(stderr, "out of memory\n");
-        return 1;
+        fatalf("out of memory");
     }
 
     int err = (backend == SoundIoBackendNone) ?
         soundio_connect(soundio) : soundio_connect_backend(soundio, backend);
 
     if (err) {
-        fprintf(stderr, "Unable to connect to backend: %s\n", soundio_strerror(err));
-        return 1;
+        fatalf("Unable to connect to backend: %s", soundio_strerror(err));
     }
 
-    fprintf(stderr, "Backend: %s\n", soundio_backend_name(soundio->current_backend));
+    infof("Backend: %s", soundio_backend_name(soundio->current_backend));
 
     soundio_flush_events(soundio);
 
@@ -116,27 +119,24 @@ ErrorOr<int> main(int argc, c_string argv[]) {
     }
 
     if (selected_device_index < 0) {
-        fprintf(stderr, "Output device not found\n");
+        fatalf("Output device not found");
         return 1;
     }
 
     SoundIoDevice *device = soundio_get_output_device(soundio, selected_device_index);
     if (!device) {
-        fprintf(stderr, "out of memory\n");
-        return 1;
+        fatalf("out of memory");
     }
 
-    fprintf(stderr, "Output device: %s\n", device->name);
+    infof("Output device: %s", device->name);
 
     if (device->probe_error) {
-        fprintf(stderr, "Cannot probe device: %s\n", soundio_strerror(device->probe_error));
-        return 1;
+        fatalf("Cannot probe device: %s", soundio_strerror(device->probe_error));
     }
 
     SoundIoOutStream *outstream = soundio_outstream_create(device);
     if (!outstream) {
-        fprintf(stderr, "out of memory\n");
-        return 1;
+        fatalf("out of memory");
     }
 
     outstream->write_callback = write_callback;
@@ -158,52 +158,48 @@ ErrorOr<int> main(int argc, c_string argv[]) {
         outstream->format = SoundIoFormatS16NE;
         write_sample = write_sample_s16ne;
     } else {
-        fprintf(stderr, "No suitable device format available.\n");
-        return 1;
+        fatalf("No suitable device format available.");
     }
 
     if ((err = soundio_outstream_open(outstream))) {
-        fprintf(stderr, "unable to open device: %s", soundio_strerror(err));
-        return 1;
+        fatalf("unable to open device: %s", soundio_strerror(err));
     }
 
-    fprintf(stderr, "Software latency: %f\n", outstream->software_latency);
-    fprintf(stderr,
-            "'p\\n' - pause\n"
-            "'u\\n' - unpause\n"
-            "'P\\n' - pause from within callback\n"
-            "'c\\n' - clear buffer\n"
-            "'q\\n' - quit\n");
+    infof("Software latency: %f\n", outstream->software_latency);
+    infof("'p\\n' - pause\n"
+          "'u\\n' - unpause\n"
+          "'P\\n' - pause from within callback\n"
+          "'c\\n' - clear buffer\n"
+          "'q\\n' - quit\n");
 
     if (outstream->layout_error)
-        fprintf(stderr, "unable to set channel layout: %s\n", soundio_strerror(outstream->layout_error));
+        fatalf("unable to set channel layout: %s\n", soundio_strerror(outstream->layout_error));
 
     if ((err = soundio_outstream_start(outstream))) {
-        fprintf(stderr, "unable to start device: %s\n", soundio_strerror(err));
-        return 1;
+        fatalf("unable to start device: %s\n", soundio_strerror(err));
     }
 
     for (;;) {
         soundio_flush_events(soundio);
         int c = getc(stdin);
         if (c == 'p') {
-            fprintf(stderr, "pausing result: %s\n",
+            infof("pausing result: %s",
                     soundio_strerror(soundio_outstream_pause(outstream, true)));
         } else if (c == 'P') {
             want_pause = true;
         } else if (c == 'u') {
             want_pause = false;
-            fprintf(stderr, "unpausing result: %s\n",
+            infof("unpausing result: %s",
                     soundio_strerror(soundio_outstream_pause(outstream, false)));
         } else if (c == 'c') {
-            fprintf(stderr, "clear buffer result: %s\n",
+            infof("clear buffer result: %s",
                     soundio_strerror(soundio_outstream_clear_buffer(outstream)));
         } else if (c == 'q') {
             break;
         } else if (c == '\r' || c == '\n') {
             // ignore
         } else {
-            fprintf(stderr, "Unrecognized command: %c\n", c);
+            infof("Unrecognized command: %c\n", c);
         }
     }
 
@@ -253,8 +249,7 @@ static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int
     for (;;) {
         int frame_count = frames_left;
         if ((err = soundio_outstream_begin_write(outstream, &areas, &frame_count))) {
-            fprintf(stderr, "unrecoverable stream error: %s\n", soundio_strerror(err));
-            exit(1);
+            fatalf("unrecoverable stream error: %s\n", soundio_strerror(err));
         }
 
         if (!frame_count)
@@ -276,8 +271,7 @@ static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int
         if ((err = soundio_outstream_end_write(outstream))) {
             if (err == SoundIoErrorUnderflow)
                 return;
-            fprintf(stderr, "unrecoverable stream error: %s\n", soundio_strerror(err));
-            exit(1);
+            fatalf("unrecoverable stream error: %s\n", soundio_strerror(err));
         }
 
         frames_left -= frame_count;
@@ -291,7 +285,7 @@ static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int
 static void underflow_callback(SoundIoOutStream *outstream) {
     (void)outstream;
     static int count = 0;
-    fprintf(stderr, "underflow %d\n", count++);
+    errorf("underflow %d\n", count++);
 }
 
 static ErrorOr<SoundIoBackend> parse_backend(StringView name)

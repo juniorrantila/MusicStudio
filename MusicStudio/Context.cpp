@@ -2,23 +2,24 @@
 
 #include "./Color.h"
 
-#include <Layout/Layout.h>
-#include <Core/Time.h>
-#include <UI/KeyCode.h>
-#include <UI/Window.h>
-#include <GL/GL.h>
-#include <Layout/Sugar.h>
-#include <Core/Print.h>
+#include <LibLayout/Layout.h>
+#include <LibCore/Time.h>
+#include <LibUI/KeyCode.h>
+#include <LibUI/Window.h>
+#include <LibGL/GL.h>
+#include <LibLayout/Sugar.h>
+#include <LibCore/Print.h>
+#include <LibCore/FSVolume.h>
+
 #include <Clay/Clay.h>
 
 #include "./UI.h"
-#include <FS/FSVolume.h>
 
 using namespace LayoutSugar;
 
 static f64 average(f64 entries, f64 current, f64 value);
 
-ErrorOr<Context> context_create(FSVolume* bundle)
+ErrorOr<MSContext> context_create(FSVolume* bundle)
 {
     auto const* main_typeface = TRY(bundle->open("Fonts/OxaniumLight/Oxanium-Light.ttf"s).or_error(Error::from_string_literal("could not open main typeface")));
 
@@ -35,7 +36,7 @@ ErrorOr<Context> context_create(FSVolume* bundle)
         return Error::from_string_literal("could not load main typeface");
     }
 
-    return Context {
+    return MSContext {
         .notes = {},
         .layout = layout,
         .main_typeface = (u16)main_typeface_id,
@@ -61,12 +62,12 @@ ErrorOr<Context> context_create(FSVolume* bundle)
     };
 }
 
-void context_destroy(Context* context)
+void context_destroy(MSContext* context)
 {
     layout_destroy(context->layout);
 }
 
-void context_window_did_resize(Context* context, UIWindow* window)
+void context_window_did_resize(MSContext* context, UIWindow* window)
 {
     auto size = ui_window_size(window);
     auto pixel_ratio = ui_window_pixel_ratio(window);
@@ -74,7 +75,7 @@ void context_window_did_resize(Context* context, UIWindow* window)
     glViewport(0, 0, (i32)(size.x * pixel_ratio), (i32)(size.y * pixel_ratio));
 }
 
-void context_window_did_scroll(Context* context, UIWindow* window)
+void context_window_did_scroll(MSContext* context, UIWindow* window)
 {
     // FIXME: Scroll behaves strangely
     static f64 last;
@@ -88,7 +89,7 @@ void context_window_did_scroll(Context* context, UIWindow* window)
     last = now;
 }
 
-void context_update(Context* context, UIWindow *window)
+void context_update(MSContext* context, UIWindow *window)
 {
     auto start = Core::time();
     auto mouse_state = ui_window_mouse_state(window);
@@ -113,7 +114,7 @@ void context_update(Context* context, UIWindow *window)
 }
 
 
-Clay_RenderCommandArray context_layout(Context* context)
+Clay_RenderCommandArray context_layout(MSContext* context)
 {
     Clay_BeginLayout();
 
@@ -126,7 +127,7 @@ Clay_RenderCommandArray context_layout(Context* context)
 }
 
 
-void titlebar(Context*)
+void titlebar(MSContext*)
 {
     Element().config([=]{
         id("Titlebar"sv);
@@ -153,7 +154,7 @@ void titlebar(Context*)
 }
 
 
-void main_content(Context* context)
+void main_content(MSContext* context)
 {
     hstack("MainContent"sv, [=]{
         Element().config([]{
@@ -182,7 +183,7 @@ void main_content(Context* context)
                 },
                 .on_hover_user = (iptr)context,
                 .on_hover = [](Clay_ElementId, Clay_PointerData pointer, iptr data){
-                    Context* context = (Context*)data;
+                    MSContext* context = (MSContext*)data;
                     if (pointer.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
                         context->is_playing = !context->is_playing;
                         context->rt.seconds_offset = 0;
@@ -198,7 +199,7 @@ void main_content(Context* context)
 }
 
 
-void context_set_notes_from_keymap(Context* context, Midi::Note base_note, u8 const* keymap)
+void context_set_notes_from_keymap(MSContext* context, Midi::Note base_note, u8 const* keymap)
 {
     u8 base = (u8)base_note;
     if (base >= ((u8)Midi::Note::__Size) - 2 * 12) {

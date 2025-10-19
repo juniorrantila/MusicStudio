@@ -1,0 +1,21 @@
+#pragma once
+#include "../../bs.h"
+#include "../Basic/build.def"
+
+static auto const dsp = cc_library("LibDSP", {
+    .srcs = {
+        "Position.cpp",
+    },
+    .exported_headers = {
+        "Position.h",
+    },
+    .header_namespace = "LibDSP",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        basic,
+        ty,
+    },
+});

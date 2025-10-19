@@ -1,17 +1,21 @@
-#include <Core/Print.h>
-#include <Ty/StringSlice.h>
-#include <Ty2/Base.h>
-#include <Ty2/Allocator.h>
-#include <FS/FSVolume.h>
-#include <Main/Main.h>
-#include <CLI/ArgumentParser.h>
-#include <Ty2/PageAllocator.h>
-#include <Ty2/FixedArena.h>
+#include <Basic/Allocator.h>
+#include <Basic/Base.h>
+#include <Basic/Context.h>
+#include <Basic/FixedArena.h>
+#include <Basic/PageAllocator.h>
+#include <Basic/StringSlice.h>
+
+#include <LibCLI/ArgumentParser.h>
+#include <LibCore/FSVolume.h>
+#include <LibCore/Print.h>
+#include <LibMain/Main.h>
 
 #include <stdio.h>
 
 ErrorOr<int> Main::main(int argc, c_string argv[])
 {
+    init_default_context("watchf");
+
     constexpr u64 arena_size = 16LLU * 1024LLU * 1024LLU * 1024LLU;
     auto arena_instance = fixed_arena_init(page_alloc(arena_size), arena_size);
     auto* arena = &arena_instance.allocator;
@@ -22,8 +26,8 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
     static StringSlice paths[max_paths];
     usize path_count = 0;
     TRY(argument_parser.add_option("--file", "-f", "path", "watch file at path (can be used multiple times)", [&](c_string arg){
-        auto path = string_slice_from_c_string(arg);
-        if (!path.equal("-"s)) {
+        auto path = sv_from_c_string(arg);
+        if (!sv_equal(path, "-"s)) {
             VERIFY(path_count + 1 < max_paths);
             paths[path_count++] = path;
             return;
@@ -33,7 +37,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
         usize len = 0;
         ssize_t read = 0;
         while ((read = getline(&line, &len, stdin)) != -1) {
-            auto path = string_slice(line, read).as_view();
+            auto path = StringView::from_parts(line, read);
             if (!path.starts_with("../")) {
                 continue;
             }
@@ -43,7 +47,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
             }
             VERIFY(path_count + 1 < max_paths);
             char* buf = (char*)memclone(arena, path.data(), path.size(), 1);
-            paths[path_count++] = string_slice(buf, path.size());
+            paths[path_count++] = sv_from_parts(buf, path.size());
         }
         free(line);
     }));
@@ -69,11 +73,11 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
         auto path = paths[i];
         FSFile file;
         if (!fs_system_open(arena, path, &file)) {
-            dprintln("could not open '{}'", path.as_view());
+            dprintln("could not open '{}'", StringView(path));
             return 1;
         }
         if (!fs_volume_mount(volume, file, nullptr)) {
-            dprintln("could not mount '{}'", path.as_view());
+            dprintln("could not mount '{}'", StringView(path));
             return 1;
         }
     }

@@ -1,10 +1,12 @@
-#include <CLI/ArgumentParser.h>
-#include <Main/Main.h>
+#include <LibCLI/ArgumentParser.h>
+#include <LibMain/Main.h>
+#include <LibCore/Print.h>
+#include <LibAudio/SoundIo.h>
+#include <LibAudio/Pipeline.h>
+#include <LibTy/System.h>
+
 #include <SoundIo/SoundIo.h>
-#include <Core/Print.h>
-#include <AU/SoundIo.h>
-#include <AU/Pipeline.h>
-#include <Ty/System.h>
+
 #include <unistd.h>
 
 static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max);
@@ -50,9 +52,10 @@ ErrorOr<int> Main::main(int, c_string[]) {
     if (device->probe_error) {
         return Error::from_string_literal(soundio_strerror(device->probe_error));
     }
-    auto stream_writer = TRY(AU::select_writer_for_device(device).or_throw([]{
+    AUSoundIoWriter stream_writer = {};
+    if (!au_select_soundio_writer_for_device(device, &stream_writer)) {
         return Error::from_string_literal("could find suitable stream format");
-    }));
+    }
 
     bool done = false;
     SoundIoOutStream* outstream = nullptr;

@@ -3,12 +3,12 @@
 #include "./Color.h"
 #include "./UI.h"
 
-#include <Layout/Sugar.h>
-#include <Core/Print.h>
+#include <LibLayout/Sugar.h>
+#include <LibCore/Print.h>
 
 using namespace LayoutSugar;
 
-void browser(Context* context)
+void browser(MSContext* context)
 {
     box({
         .id = "Browser"sv,

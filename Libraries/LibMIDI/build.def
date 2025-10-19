@@ -1,0 +1,22 @@
+#pragma once
+#include "../../bs.h"
+#include "../Basic/build.def"
+
+static auto const midi = cc_library("LibMIDI", {
+    .srcs = {
+        "./Dummy.cpp"
+    },
+    .exported_headers = {
+        "./Note.h",
+        "./Packet.h",
+    },
+    .header_namespace = "LibMIDI",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        ty,
+        basic,
+    },
+});

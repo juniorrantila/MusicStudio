@@ -45,8 +45,8 @@ auto const fs_volume_file_watch_example = cc_binary("fs-volume-file-watch-exampl
     .target_triple = {},
     .deps = {
         libraries.main,
-        libraries.ty2,
-        libraries.fs,
+        libraries.basic,
+        libraries.core,
         libraries.cli,
     }
 });

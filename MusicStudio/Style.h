@@ -1,5 +1,5 @@
 #pragma once
-#include <Rexim/LA.h>
+#include <LibRexim/LA.h>
 
 struct Style {
     f32 border_size() const { return 2.0f; }

@@ -1,0 +1,39 @@
+#pragma once
+#include "../../bs.h"
+#include "../Basic/build.def"
+#include "../LibMath/build.def"
+#include "../LibCore/build.def"
+
+#include "../../Vendor/SoundIo/build.def"
+
+static auto const au = cc_library("LibAudio", {
+    .srcs = {
+        "./AudioDecoder.cpp",
+        "./SoundIo.cpp",
+        "./Pipeline.cpp",
+        "./Transcoder.cpp",
+        "./AudioManager.cpp",
+    },
+    .exported_headers = {
+        "./Forward.h",
+        "./AudioDecoder.h",
+        "./SoundIo.h",
+        "./Pipeline.h",
+        "./Transcoder.h",
+        "./AudioManager.h",
+    },
+    .header_namespace = "LibAudio",
+    .compile_flags = {
+        "-O3",
+    },
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        ty,
+        basic,
+        soundio,
+        math,
+        core,
+    },
+});

@@ -1,0 +1,29 @@
+#pragma once
+#include "../../bs.h"
+#include "../Basic/build.def"
+#include "../LibGL/build.def"
+#include "../LibRexim/build.def"
+
+static auto const ui = cc_library("LibUI", {
+    .srcs = {
+        "./AppKit/Application.mm",
+        "./AppKit/Window.mm",
+    },
+    .exported_headers = {
+        "./Application.h",
+        "./Forward.h",
+        "./KeyCode.h",
+        "./Window.h",
+    },
+    .header_namespace = "LibUI",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        ty,
+        basic,
+        gl,
+        rexim,
+    },
+});

@@ -1,15 +1,16 @@
-#include <AU/AudioManager.h>
-#include <AU/SoundIo.h>
-#include <CLI/ArgumentParser.h>
-#include <Core/MappedFile.h>
-#include <FS/FSVolume.h>
-#include <Main/Main.h>
-#include <Ty/StringSlice.h>
-#include <Ty2/Bits.h>
-#include <Ty2/DeferredFileLogger.h>
-#include <Ty2/FileLogger.h>
-#include <Ty2/MemoryPoker.h>
-#include <Ty2/PageAllocator.h>
+#include <Basic/Bits.h>
+#include <Basic/DeferredFileLogger.h>
+#include <Basic/FileLogger.h>
+#include <Basic/MemoryPoker.h>
+#include <Basic/PageAllocator.h>
+#include <Basic/StringSlice.h>
+
+#include <LibAudio/AudioManager.h>
+#include <LibAudio/SoundIo.h>
+#include <LibCLI/ArgumentParser.h>
+#include <LibCore/FSVolume.h>
+#include <LibCore/MappedFile.h>
+#include <LibMain/Main.h>
 
 #include <SoundIo/SoundIo.h>
 
@@ -55,18 +56,23 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         return 1;
     }
 
+    static auto log = file_logger_init(stderr);
+
     Context* context = (Context*)page_alloc(sizeof(*context));
-    if (!memory_poker_init(&context->memory_poker))
-        return Error::from_string_literal("could not initialize memory poker");
+    memory_poker_init(&context->memory_poker);
+
     if (!mailbox_init(64 * KiB, &context->mailbox).ok)
         return Error::from_string_literal("could not initialize mailbox");
     context->mailbox.attach_memory_poker(&context->memory_poker);
 
     context->audio_log = deferred_file_logger_init(wav_path, &context->mailbox, stderr);
-    context->audio_manager_log = file_logger_init("audio-manager", stderr);
-    context->audio_name = string_slice_from_c_string(wav_path);
-    if (!au_audio_manager_init(&context->audio_manager, &context->audio_manager_log.logger))
+    context->audio_name = sv_from_c_string(wav_path);
+    if (!au_audio_manager_init(&context->audio_manager, &context->memory_poker))
         return Error::from_string_literal("could not initialize audio manager");
+
+    if (!context->memory_poker.start()) {
+        log->error("could not start memory poker");
+    }
 
     {
         auto wav_file = TRY(Core::MappedFile::open(wav_path));
@@ -100,9 +106,10 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
     if (device->probe_error) {
         return Error::from_string_literal(soundio_strerror(device->probe_error));
     }
-    auto stream_writer = TRY(AU::select_writer_for_device(device).or_throw([]{
+    AUSoundIoWriter stream_writer = {};
+    if (!au_select_soundio_writer_for_device(device, &stream_writer)) {
         return Error::from_string_literal("could find suitable stream format");
-    }));
+    }
     context->write_sample = stream_writer.writer;
 
     SoundIoOutStream *outstream = soundio_outstream_create(device);

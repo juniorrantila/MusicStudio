@@ -1,6 +1,6 @@
 #pragma once
-#include <Layout/Layout.h>
-#include <Layout/Sugar.h>
+#include <LibLayout/Layout.h>
+#include <LibLayout/Sugar.h>
 
 struct ButtonConfig {
     LayoutSugar::ID id;

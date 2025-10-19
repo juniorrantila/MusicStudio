@@ -1,0 +1,42 @@
+#pragma once
+#include "../../bs.h"
+#include "../Basic/build.def"
+
+static auto const core = cc_library("LibCore", {
+    .srcs = {
+        "./File.cpp",
+        "./MappedFile.cpp",
+        "./Time.cpp",
+        "./Thread.cpp",
+        "./Core.c",
+        "./Library.c",
+        "./Actor.c",
+        "./FSVolume.cpp",
+        "./OS.cpp",
+    },
+    .exported_headers = {
+        "./Error.def",
+        "./File.h",
+        "./Forward.h",
+        "./Library.h",
+        "./MappedFile.h",
+        "./Print.h",
+        "./Time.h",
+        "./Thread.h",
+        "./Core.h",
+        "./Library.h",
+        "./Actor.h",
+        "./Resource.h",
+        "./FSVolume.h",
+        "./OS.h",
+    },
+    .header_namespace = "LibCore",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        ty,
+        basic,
+    },
+});

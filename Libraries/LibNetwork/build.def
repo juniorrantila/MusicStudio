@@ -1,0 +1,22 @@
+#pragma once
+#include "../../bs.h"
+#include "../Basic/build.def"
+
+static auto const net = cc_library("LibNetwork", {
+    .srcs = {
+        "./TCPListener.cpp",
+        "./TCPClientConnection.cpp",
+    },
+    .exported_headers = {
+        "./TCPListener.h",
+        "./TCPClientConnection.h",
+    },
+    .header_namespace = "LibNetwork",
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        basic,
+    },
+});

@@ -5,8 +5,8 @@
  * See http://opensource.org/licenses/MIT
  */
 
-#include <CLI/ArgumentParser.h>
-#include <Main/Main.h>
+#include <LibCLI/ArgumentParser.h>
+#include <LibMain/Main.h>
 #include <SoundIo/SoundIo.h>
 
 #include <stdio.h>

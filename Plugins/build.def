@@ -1,7 +1,8 @@
 #pragma once
 #include "../bs.h"
-#include "../Libraries/MS/WASMPlugin/build.def"
-#include "../Libraries/Math/build.def"
+#include "../Libraries/LibMusic/WASMPlugin/build.def"
+#include "../Libraries/LibMath/build.def"
+#include "./WASMVstShell/build.def"
 
 static Target ms_wasm_plugin_target(c_string name, Strings sources) {
     return cc_library(name, {

@@ -1,8 +1,8 @@
 #include "./Shaders.h"
 
-#include <FS/FSVolume.h>
-#include <FS/Resource.h>
-#include <Ty2/PageAllocator.h>
+#include <Basic/PageAllocator.h>
+#include <LibCore/FSVolume.h>
+#include <LibCore/Resource.h>
 
 #define BUNDLE(path, bytes)                         \
     FS::ResourceView::create_with_resolved_path(    \
@@ -26,31 +26,44 @@ static constexpr auto simple_color_frag = BUNDLE(
     simple_color_frag_bytes
 );
 
+static u8 const simple_frag_bytes[] = {
+#embed "./simple.frag"
+};
+static constexpr auto simple_frag = BUNDLE(
+    "Shaders/simple.frag"sv,
+    simple_frag_bytes
+);
+
 #undef BUNDLE
+
+static bool add(FS::ResourceView view, FSVolume*, UseBakedShaders);
 
 bool Shaders::add_to_volume(FSVolume* volume, UseBakedShaders use_baked_shaders)
 {
-    FSFile vert {};
-    FSFile frag {};
+    if (!add(simple_vert, volume, use_baked_shaders))
+        return false;
+    if (!add(simple_frag, volume, use_baked_shaders))
+        return false;
+    if (!add(simple_color_frag, volume, use_baked_shaders))
+        return false;
+    return true;
+}
+
+static bool add(FS::ResourceView view, FSVolume* volume, UseBakedShaders use_baked_shaders)
+{
+    FSFile file {};
 
     switch (use_baked_shaders) {
     case UseBakedShaders_Yes:
-        vert = fs_virtual_open(simple_vert.resolved_path(), simple_vert.view());
-        frag = fs_virtual_open(simple_color_frag.resolved_path(), simple_color_frag.view());
+        file = fs_virtual_open(view.resolved_path(), view.view());
         break;
     case UseBakedShaders_No:
-        if (!fs_system_open(page_allocator(), simple_vert.resolved_path(), &vert))
-            return false;
-        if (!fs_system_open(page_allocator(), simple_color_frag.resolved_path(), &frag))
+        if (!fs_system_open(page_allocator(), view.resolved_path(), &file))
             return false;
         break;
     }
 
-    if (!fs_volume_mount(volume, vert, nullptr))
+    if (!fs_volume_mount(volume, file, nullptr))
         return false;
-
-    if (!fs_volume_mount(volume, frag, nullptr))
-        return false;
-
     return true;
 }

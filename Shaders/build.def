@@ -16,6 +16,6 @@ static auto const shaders = cc_library("Shaders", {
     .link_style = "static",
     .deps = {
         libraries.ty,
-        libraries.fs,
+        libraries.core,
     },
 });

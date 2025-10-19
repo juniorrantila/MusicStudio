@@ -1,0 +1,26 @@
+#pragma once
+#include "../../bs.h"
+#include "../Basic/build.def"
+#include "../LibCore/build.def"
+
+static auto const main_ = cc_library("LibMain", {
+    .srcs = {
+        "./Main.cpp",
+    },
+    .exported_headers = {
+        "./Main.h",
+    },
+    .header_namespace = "LibMain",
+    .compile_flags = {},
+    .linker_flags = {
+        // "-Wl,-undefined",
+        // "-Wl,suppress",
+    },
+    .target_triple = {},
+    .link_style = "static",
+    .deps = {
+        ty,
+        basic,
+        core,
+    },
+});

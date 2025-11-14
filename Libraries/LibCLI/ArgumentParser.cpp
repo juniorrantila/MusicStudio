@@ -162,15 +162,25 @@ void ArgumentParser::print_usage_and_exit(int exit_code) const
     }
     log->format("\n\n");
     log->format("FLAGS:\n");
+    u32 longest_short_flag = 0;
+    u32 longest_long_flag = 0;
     for (u32 i = 0; i < flags.count; i++) {
         auto flag = flags.items[i];
-        log->format("        %.*s, %.*s",
+        if (flag.short_name.size() > longest_short_flag)
+            longest_short_flag = flag.short_name.size();
+        if (flag.long_name.size() > longest_long_flag)
+            longest_long_flag = flag.long_name.size();
+    }
+
+    for (u32 i = 0; i < flags.count; i++) {
+        auto flag = flags.items[i];
+        log->format("        %.*s%*c%.*s%*c",
             flag.short_name.size(), flag.short_name.data(),
-            flag.long_name.size(), flag.long_name.data()
+            (longest_short_flag - flag.short_name.size() + 1), ' ',
+            flag.long_name.size(), flag.long_name.data(),
+            (longest_long_flag - flag.long_name.size() + 1), ' '
         );
-        // for (; bytes < 40; bytes++)
-        //     out.write(" "sv).ignore();
-        log->format("%.*s", flag.explanation.size(), flag.explanation.data());
+        log->format("%.*s\n", flag.explanation.size(), flag.explanation.data());
     }
     log->format("\n");
     if (options.count != 0) {

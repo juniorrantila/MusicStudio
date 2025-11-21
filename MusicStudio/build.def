@@ -1,0 +1,85 @@
+#pragma once
+#include "../bs.h"
+#include "../Libraries/build.def"
+#include "../Fonts/build.def"
+#include "../Shaders/build.def"
+
+auto const music_studio_ui = cc_library("music-studio-ui", {
+    .srcs = {
+        "./UI/UI.cpp",
+    },
+    .exported_headers = {},
+    .header_namespace = nullptr,
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "both",
+    .deps = {
+        libraries.ui,
+        libraries.ty,
+        libraries.basic,
+        libraries.layout2,
+        libraries.au,
+
+        vendor.soundio,
+    }
+});
+
+auto const music_studio_audio = cc_library("music-studio-audio", {
+    .srcs = {
+        "./Audio/Audio.cpp",
+    },
+    .exported_headers = {},
+    .header_namespace = nullptr,
+    .compile_flags = {},
+    .linker_flags = {},
+    .target_triple = {},
+    .link_style = "both",
+    .deps = {
+        libraries.ui,
+        libraries.ty,
+        libraries.basic,
+        libraries.layout2,
+        libraries.au,
+
+        vendor.soundio,
+    }
+});
+
+auto const music_studio = cc_binary("music-studio", {
+    .srcs = {
+        "./main.cpp",
+        "./State.cpp",
+    },
+    .compile_flags = {},
+    .linker_flags = {
+#ifdef __APPLE__
+    "-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks",
+    "-framework", "AppKit",
+    "-framework", "OpenGL",
+    "-framework", "CoreAudio",
+    "-framework", "AudioUnit",
+#endif
+    },
+    .target_triple = {},
+    .deps = {
+        fonts,
+        shaders,
+        music_studio_ui,
+        music_studio_audio,
+
+        libraries.ui,
+        libraries.ty,
+        libraries.basic,
+        libraries.core,
+        libraries.cli,
+        libraries.main,
+        libraries.layout2,
+        libraries.au,
+
+        libraries.wasm,
+
+        vendor.soundio,
+    }
+});
+

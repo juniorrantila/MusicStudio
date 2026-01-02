@@ -93,7 +93,13 @@ C_INLINE v4 v4f(f32 x, f32 y, f32 z, f32 w)
 #endif
 
 #ifndef ARRAY_SIZE
+#ifndef __cplusplus
+#define ARRAY_SSIZE(a) ((i64)(_Countof(a)))
+#define ARRAY_SIZE(a) (_Countof(a))
+#else
+#define ARRAY_SSIZE(a) ((i64)(sizeof(a) / sizeof(a[0])))
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+#endif
 #endif
 
 #ifndef BIT_ARRAY_SIZE

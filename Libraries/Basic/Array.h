@@ -7,6 +7,12 @@
 
 #include <errno.h>
 
+#define ARRAY_REMOVE_UNORDERED(array, index) do {                   \
+    if ((array)->count >= 1) {                                      \
+        (array)->items[(index)] = (array)->items[--(array)->count]; \
+    }                                                               \
+} while(0)
+
 #ifndef __cplusplus
 
 /// requires `array` to have a shape similar to:
@@ -210,7 +216,7 @@ static_assert(sizeof(Index<void>) == 8);
 
 template <typename T>
 struct Slice {
-    static inline _Atomic u32 serial_number;
+    static inline _Atomic u32 serial_number = 0;
 
     T* items = nullptr;
     u8 slice_id : 4 = ++serial_number & 0x0F;

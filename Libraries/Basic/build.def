@@ -30,6 +30,7 @@ static auto const basic = cc_library("Basic", {
         "Error.c",
         "String.c",
         "StringBuilder.cpp",
+        "RingBuffer.c",
     },
     .exported_headers = {
         "Allocator.h",
@@ -74,6 +75,7 @@ static auto const basic = cc_library("Basic", {
         "Verify.h",
         "Try.h",
         "Types.h",
+        "RingBuffer.h",
     },
     .header_namespace = "Basic",
     .compile_flags = {},

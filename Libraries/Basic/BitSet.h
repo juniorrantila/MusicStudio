@@ -1,9 +1,14 @@
 #pragma once
-#include "./Base.h"
+#include "./Types.h"
 
 C_INLINE bool bit_is_set(u8 const* bitset, u64 index)
 {
     return (bitset[index / 8] & (1 << index % 8)) != 0;
+}
+
+C_INLINE u64 bit_byte(u64 index)
+{
+    return index / 8;
 }
 
 C_INLINE bool bit_set(u8* bitset, u64 index, bool value)

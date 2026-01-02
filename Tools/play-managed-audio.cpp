@@ -1,5 +1,4 @@
 #include <Basic/Bits.h>
-#include <Basic/DeferredFileLogger.h>
 #include <Basic/FileLogger.h>
 #include <Basic/MemoryPoker.h>
 #include <Basic/PageAllocator.h>
@@ -11,6 +10,7 @@
 #include <LibCore/FSVolume.h>
 #include <LibCore/MappedFile.h>
 #include <LibMain/Main.h>
+#include <LibThread/Logger.h>
 
 #include <SoundIo/SoundIo.h>
 
@@ -27,13 +27,12 @@ static PartTime part_time(u32 milliseconds);
 static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max);
 static void underflow_callback(SoundIoOutStream *outstream);
 
-struct Context {
+struct State {
     FileLogger audio_manager_log;
-    DeferredFileLogger audio_log;
+    THLogger audio_log;
     AUAudioManager audio_manager;
     StringSlice audio_name;
 
-    Mailbox mailbox;
     MemoryPoker memory_poker;
 
     void (*write_sample)(void* ptr, f64 sample);
@@ -56,16 +55,14 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         return 1;
     }
 
-    static auto log = file_logger_init(stderr);
+    auto log = file_logger_init(stderr);
 
-    Context* context = (Context*)page_alloc(sizeof(*context));
+    State* context = (State*)page_alloc(sizeof(*context));
     memory_poker_init(&context->memory_poker);
 
-    if (!mailbox_init(64 * KiB, &context->mailbox).ok)
-        return Error::from_string_literal("could not initialize mailbox");
-    context->mailbox.attach_memory_poker(&context->memory_poker);
-
-    context->audio_log = deferred_file_logger_init(wav_path, &context->mailbox, stderr);
+    KError err = th_logger_init(&context->audio_log, &log.logger);
+    if (!err.ok) fatalf("could not initialize audio logger: %s", kerror_strerror(err));
+    th_logger_start(&context->audio_log);
     context->audio_name = sv_from_c_string(wav_path);
     if (!au_audio_manager_init(&context->audio_manager, &context->memory_poker))
         return Error::from_string_literal("could not initialize audio manager");
@@ -137,17 +134,6 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
         soundio_flush_events(soundio);
         if (context->played_frames >= context->frame_count)
             break;
-
-        context->mailbox.reader()->wait();
-        u16 tag = 0;
-        if (!context->mailbox.reader()->peek(&tag).found)
-            continue;
-        if (tag == Ty2::type_id<decltype(nullptr)>())
-            break;
-        DeferredLogEvent event;
-        if (!context->mailbox.reader()->read(&event).ok)
-            continue;
-        context->audio_log.handle_event(&event);
     }
 
     soundio_outstream_destroy(outstream);
@@ -159,7 +145,11 @@ ErrorOr<int> Main::main(int argc, c_string argv[]) {
 static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max) {
     (void)frame_count_min;
     int frames_left = frame_count_max;
-    auto* ctx = (Context*)outstream->userdata;
+    auto* ctx = (State*)outstream->userdata;
+
+    auto context = Context{};
+    context.log = &ctx->audio_log.logger;
+    set_context(&context);
 
     for (;;) {
         int frame_count = frames_left;
@@ -179,7 +169,7 @@ static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int
                 ctx->next_print = ctx->played_frames + ctx->sample_rate;
                 auto current_time = part_time(ctx->played_frames / ctx->sample_rate);
                 auto end_time = part_time(ctx->frame_count / ctx->sample_rate);
-                ctx->audio_log->info(
+                infof(
                     "%02dh%02dm%02ds / %02dh%02dm%02ds",
                     current_time.hours, current_time.minutes, current_time.seconds,
                     end_time.hours, end_time.minutes, end_time.seconds
@@ -206,7 +196,6 @@ static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int
     }
 
     if (ctx->played_frames >= ctx->frame_count) {
-        while (!ctx->mailbox.writer()->post(nullptr).ok);
         soundio_outstream_pause(outstream, true);
     }
 }
@@ -214,7 +203,7 @@ static void write_callback(SoundIoOutStream *outstream, int frame_count_min, int
 static void underflow_callback(SoundIoOutStream *outstream) {
     (void)outstream;
     static usize count = 0;
-    auto* ctx = (Context*)outstream->userdata;
+    auto* ctx = (State*)outstream->userdata;
     ctx->audio_manager_log->warning("underflow %zu", ++count);
 }
 

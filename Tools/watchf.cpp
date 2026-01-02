@@ -14,8 +14,6 @@
 
 ErrorOr<int> Main::main(int argc, c_string argv[])
 {
-    init_default_context("watchf");
-
     constexpr u64 arena_size = 16LLU * 1024LLU * 1024LLU * 1024LLU;
     auto arena_instance = fixed_arena_init(page_alloc(arena_size), arena_size);
     auto* arena = &arena_instance.allocator;

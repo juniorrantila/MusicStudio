@@ -27,8 +27,6 @@ static void ui_frame(State*);
 
 ErrorOr<int> Main::main(int argc, char const* argv[])
 {
-    init_default_context("shadertoy");
-
     FSVolume volume = (FSVolume){};
     fs_volume_init(&volume);
 

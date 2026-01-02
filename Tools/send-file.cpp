@@ -11,8 +11,6 @@
 
 ErrorOr<int> Main::main(int argc, c_string argv[])
 {
-    init_default_context("sendfile");
-
     auto argument_parser = CLI::ArgumentParser();
 
     c_string from = nullptr;

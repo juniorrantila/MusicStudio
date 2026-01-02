@@ -32,8 +32,6 @@ static void (*write_sample)(char *ptr, f64 sample);
 namespace Main {
 
 ErrorOr<int> main(int argc, c_string argv[]) {
-    init_default_context("sine");
-
     auto argument_parser = CLI::ArgumentParser();
     
     auto backend_name = "default"sv;

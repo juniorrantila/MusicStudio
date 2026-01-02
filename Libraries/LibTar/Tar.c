@@ -9,7 +9,7 @@
 #include <inttypes.h>
 
 static constexpr u64 tar_path_max = 100;
-static constexpr u64 tar_file_size_max = 077777777777;
+static constexpr u64 tar_file_size_max = 0o77777777777;
 
 typedef struct TarHeader {
     char path[tar_path_max];
@@ -94,7 +94,7 @@ static void header_init(char const* path, u64 path_size, u64 content_size, TarHe
     memset(header->path, ' ', sizeof(header->path));
     memcpy(header->path, path, path_size);
 
-    snprintf(header->mode, sizeof(header->mode), "%06o ", 0666);
+    snprintf(header->mode, sizeof(header->mode), "%06o ", 0o666);
 
     snprintf(header->file_size, sizeof(header->file_size), "%010o ", (unsigned)content_size);
     memset(header->checksum, ' ', sizeof(header->checksum));
@@ -102,7 +102,7 @@ static void header_init(char const* path, u64 path_size, u64 content_size, TarHe
     for (u64 i = 0; i < OFFSET_OF(TarHeader, checksum); i++) {
         checksum += ((u8*)header)[i];
     }
-    checksum %= 0777777;
+    checksum %= 0o777777;
     snprintf(header->checksum, sizeof(header->checksum), "%06o ", checksum);
 }
 

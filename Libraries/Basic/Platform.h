@@ -1,0 +1,9 @@
+#pragma once
+
+#if (TARGET_OS_OSX | TARGET_OS_UNIX | TARGET_OS_LINUX)
+#define PLATFORM_POSIX   1
+#define PLATFORM_WINDOWS 0
+#elif TARGET_OS_WINDOWS
+#define PLATFORM_POSIX   0
+#define PLATFORM_WINDOWS 1
+#endif

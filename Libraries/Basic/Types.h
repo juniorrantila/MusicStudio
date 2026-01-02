@@ -191,3 +191,5 @@ typedef __builtin_va_list va_list;
 
 #define CSTRING_U64(s) CSTRING_U64_2(s "\0\0\0\0\0\0\0\0")
 #define CSTRING_U64(s) CSTRING_U64_2(s "\0\0\0\0\0\0\0\0")
+
+#define U64_CSTRING(value) ((c_string)(&value))

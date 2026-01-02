@@ -19,12 +19,12 @@ C_API void layout_init(Layout* layout, Logger* debug)
 void Layout::begin(LayoutInputState begin) { return layout_begin(this, begin); }
 C_API void layout_begin(Layout* layout, LayoutInputState begin)
 {
-    layout->last_begin = layout->current_begin;
-    layout->current_begin = begin;
+    layout->last_input_state = layout->input_state;
+    layout->input_state = begin;
 
     if (
-        layout->last_begin.frame_bounds_x != begin.frame_bounds_x
-        || layout->last_begin.frame_bounds_y != begin.frame_bounds_y
+        layout->last_input_state.frame_bounds_x != begin.frame_bounds_x
+        || layout->last_input_state.frame_bounds_y != begin.frame_bounds_y
     ) {
         auto command = (LayoutRenderSetResolution){
             .width = begin.frame_bounds_x,
@@ -54,6 +54,7 @@ C_API void layout_begin(Layout* layout, LayoutInputState begin)
     layout->element_pool.count = 0;
     layout->child_pool.count = 0;
     layout->current_element = layout_element_null;
+    layout->current_id.hash = 0;
 }
 
 void Layout::end() { return layout_end(this); }
@@ -524,6 +525,19 @@ static void layout_draw_pass(Layout* layout, LayoutElement* root_node)
             },
             .debug_id = element->debug_id,
         };
+        if (layout->input_state.mouse_x >= position.x && layout->input_state.mouse_x <= position.x + size.width) {
+            if (layout->input_state.mouse_y >= position.y && layout->input_state.mouse_y <= position.y + size.height) {
+                layout->active_id = element->id;
+                layout->mouse_down_id = layout->input_state.mouse_left_down ? layout->active_id : layout_id_null;
+                if (layout->pressed_id.hash == layout->active_id.hash) {
+                    layout->pressed_id = layout_id_null;
+                } else {
+                    if (!layout->last_input_state.mouse_left_down) {
+                        layout->pressed_id = layout->input_state.mouse_left_down ? layout->active_id : layout_id_null;
+                    }
+                }
+            }
+        }
 
         if (!th_message_send(layout->input_state.render_command_sink, command).ok) {
             if (layout->debug) layout->debug->error("could not push layout command");
@@ -589,10 +603,10 @@ C_API [[nodiscard]] bool box_begin(Layout* layout)
         if (!node.is_valid()) return false;
         auto* e = layout->resolve_element(element);
         VERIFY(e != nullptr);
-        e->size.width = layout->current_begin.frame_bounds_x;
-        e->size.height = layout->current_begin.frame_bounds_y;
-        e->max_size.width = layout->current_begin.frame_bounds_x;
-        e->max_size.height = layout->current_begin.frame_bounds_y;
+        e->size.width = layout->input_state.frame_bounds_x;
+        e->size.height = layout->input_state.frame_bounds_y;
+        e->max_size.width = layout->input_state.frame_bounds_x;
+        e->max_size.height = layout->input_state.frame_bounds_y;
     }
     auto node = layout->parent_push(element);
     if (!node.is_valid()) return false;
@@ -879,6 +893,13 @@ C_API void box_outline_color4(Layout* l,
             .a = bottom_a,
         },
     };
+}
+
+C_API bool box_mouse_down(Layout* l)
+{
+    auto* current = layout_resolve_element(l, l->current_element);
+    VERIFY(current);
+    return l->mouse_down_id.hash == current->id.hash;
 }
 
 C_API bool box_pressed(Layout* l)

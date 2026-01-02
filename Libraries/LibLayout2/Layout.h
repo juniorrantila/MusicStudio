@@ -292,12 +292,13 @@ typedef struct LayoutPass {
 typedef struct Layout {
     Logger* debug;
 
-    LayoutBegin last_begin;
-    LayoutBegin current_begin;
+    LayoutInputState last_input_state;
+    LayoutInputState input_state;
 
     LayoutID current_id;
     LayoutID active_id;
     LayoutID pressed_id;
+    LayoutID mouse_down_id;
     LayoutElementID current_element;
 
     f32 hover_duration;

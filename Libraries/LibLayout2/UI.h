@@ -74,6 +74,7 @@ C_API void box_outline_color4(Layout*,
     f32 bottom_r,   f32 bottom_g,   f32 bottom_b,   f32 bottom_a
 );
 
+C_API bool box_mouse_down(Layout*);
 C_API bool box_pressed(Layout*);
 C_API u8   box_clicked(Layout*);
 C_API bool box_hovered(Layout*);

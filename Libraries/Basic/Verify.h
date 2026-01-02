@@ -35,7 +35,7 @@ typedef struct [[nodiscard]] { bool failed; } VerifyFail;
     } while (0)
 #endif
 
-#ifndef ASSERT
+#ifndef DEBUG_ASSERT
 #ifndef NDEBUG
 #define DEBUG_ASSERT(__expression)                      \
     do {                                                \
@@ -45,6 +45,10 @@ typedef struct [[nodiscard]] { bool failed; } VerifyFail;
         }                                               \
     } while (0)
 #endif
+#endif
+
+#ifndef C_ASSERT
+#define C_ASSERT(__expression) ((__expression) ? (true) : (__builtin_printf(VERIFY_RED "ASSERT" VERIFY_NORMAL ": %s: \"" VERIFY_CYAN "%s" VERIFY_NORMAL "\" " VERIFY_RED "failed" VERIFY_NORMAL " [%s:%d]\n", __FUNCTION__, #__expression, __FILE__, __LINE__), false))
 #endif
 
 

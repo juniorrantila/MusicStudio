@@ -22,6 +22,11 @@ C_INLINE bool bit_set(u8* bitset, u64 index, bool value)
     return old_value;
 }
 
+C_INLINE bool bit_toggle(u8* bitset, u64 index)
+{
+    return bit_set(bitset, index, !bit_is_set(bitset, index));
+}
+
 C_INLINE u64 bit_popcount(u8 const* bitset, u64 byte_count)
 {
     u64 bit_count = byte_count * 8;

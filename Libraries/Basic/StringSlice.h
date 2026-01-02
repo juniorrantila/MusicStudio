@@ -8,6 +8,7 @@ typedef struct StringSlice {
     char const* items;
     uptr count;
 } StringSlice;
+#define SV(chars) (StringSlice){("" chars ""), sizeof("" chars "") - 1}
 
 C_API StringSlice sv_from_parts(char const*, uptr);
 C_API StringSlice sv_from_c_string(c_string);

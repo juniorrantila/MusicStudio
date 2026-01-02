@@ -8,3 +8,4 @@
 #include "./MusicStudio/build.def"
 #include "./Piano/build.def"
 #include "./Plugins/build.def"
+#include "./MusicStudio/build.def"

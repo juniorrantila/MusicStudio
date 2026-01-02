@@ -14,7 +14,7 @@ C_API Allocator* page_allocator(void)
     return &a;
 }
 
-C_API u64 page_size(void)
+C_API u32 page_size(void)
 {
     static _Atomic u32 size = 0;
     if (size == 0) {

@@ -49,6 +49,34 @@ C_INLINE u64 u64_popcount(u64 value)
     return bit_popcount((u8*)&value, sizeof(value));
 }
 
+C_INLINE u64 bit_leading_ones(u8 const* bitset, u64 byte_count)
+{
+    u64 bit_count = byte_count * 8;
+    u64 count = 0;
+    for (u64 i = 0; i < bit_count; i++) {
+        if (bit_is_set(bitset, i)) {
+            count += 1;
+            continue;
+        }
+        return count;
+    }
+    return count;
+}
+
+C_INLINE u64 bit_leading_zeros(u8 const* bitset, u64 byte_count)
+{
+    u64 bit_count = byte_count * 8;
+    u64 count = 0;
+    for (u64 i = 0; i < bit_count; i++) {
+        if (!bit_is_set(bitset, i)) {
+            count += 1;
+            continue;
+        }
+        return count;
+    }
+    return count;
+}
+
 C_INLINE u64 popcount_u64(u64 bitset)
 {
     return bit_popcount((u8 const*)&bitset, sizeof(bitset));

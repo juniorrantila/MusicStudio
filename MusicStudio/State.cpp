@@ -18,30 +18,31 @@
 #include <LibLayout2/RenderCommand.h>
 #include <LibTy/StringView.h>
 
+#include <LibThread/Thread.h>
+#include <LibThread/MessageQueue.h>
+
 #include <Shaders/Shaders.h>
 
 #include <stdlib.h>
 #include <math.h>
 #include <pthread.h>
 
-static void persisted_init(PersistedState*);
-static void persisted_settings_init(PersistedSettings*);
-static void persisted_playback_init(PersistedPlayback*);
+static constexpr bool log_render_rects = false;
 
-static void stable_init(StableState*, StateFlags);
-static void stable_main_init(StableState*, StateFlags);
-static void stable_actor_reloader_init(StableActorReloader*, StateFlags);
-static void stable_io_init(StableIO*, StateFlags);
-static void stable_priority_io_init(StablePriorityIO*, StateFlags);
-static void stable_layout_init(StableState*, StateFlags);
-static void stable_render_init(StableState*, StateFlags);
-static void stable_audio_init(StableState*, StateFlags);
+static void persisted_init(State*, PersistedState*);
+static void persisted_settings_init(State*, PersistedSettings*);
+static void persisted_playback_init(State*, PersistedPlayback*);
 
-static void trans_init(TransState*);
+static void stable_init(State*, StableState*, StateFlags);
+static void stable_main_init(State*, StableState*, StateFlags);
+static void stable_actor_reloader_init(State*, StableActorReloader*, StateFlags);
+static void stable_layout_init(State*, StableState*, StateFlags);
+static void stable_render_init(State*, StableState*, StateFlags);
+static void stable_audio_init(State*, StableState*, StateFlags);
+
+static void trans_init(State*, TransState*);
 
 static SoundIoOutStream* create_default_outstream(State*, SoundIo*);
-static void* io_loop(void* user);
-static void* priority_io_loop(void* user);
 
 static void audio_frame(SoundIoOutStream *outstream, int frame_count_min, int frame_count_max) noexcept [[clang::nonblocking]];
 
@@ -50,13 +51,13 @@ C_API void state_init(State* state, StateFlags flags)
     VERIFY(!ty_is_initialized(state));
     defer [=] { ty_set_initialized(state); };
 
-    persisted_init(&state->persisted);
+    persisted_init(state, &state->persisted);
     VERIFY(ty_is_initialized(&state->persisted));
 
-    stable_init(&state->stable, flags);
+    stable_init(state, &state->stable, flags);
     VERIFY(ty_is_initialized(&state->stable));
 
-    trans_init(&state->trans);
+    trans_init(state, &state->trans);
     VERIFY(ty_is_initialized(&state->trans));
 }
 
@@ -64,11 +65,10 @@ static SoundIoOutStream* create_default_outstream(State* state, SoundIo* soundio
 {
     VERIFY(ty_is_initialized(&state->persisted.sections));
     VERIFY(ty_is_initialized(state->persisted.sections.playback));
-    VERIFY(ty_is_initialized(&state->stable.audio));
 
     int index = soundio_default_output_device_index(soundio);
     if (index < 0) {
-        state->stable.audio.log->error("could not get default output device index");
+        errorf("could not get default output device index");
         return nullptr;
     }
     auto* device = soundio_get_output_device(soundio, index);
@@ -76,118 +76,21 @@ static SoundIoOutStream* create_default_outstream(State* state, SoundIo* soundio
     device->software_latency_min = 0;
     auto* outstream = soundio_outstream_create(device);
     if (!outstream) {
-        state->stable.audio.log->error("could not create outstream");
+        errorf("could not create outstream");
         return nullptr;
     }
     outstream->userdata = state;
     outstream->format = SoundIoFormatFloat64NE;
     outstream->write_callback = audio_frame;
     outstream->sample_rate = (i32)state->persisted.sections.settings->frames_per_second;
-    outstream->error_callback = [](SoundIoOutStream* stream, int err){
-        auto* host = (State*)stream->userdata;
-        host->stable.audio.log->error("soundio: %s", soundio_strerror(err));
+    outstream->error_callback = [](SoundIoOutStream*, int err){
+        errorf("soundio: %s", soundio_strerror(err));
     };
     outstream->underflow_callback = [](SoundIoOutStream* stream){
         auto* state = (State*)stream->userdata;
-        state->stable.audio.log->warning("underflow %zu", ++state->persisted.sections.playback->underflow_count);
+        warnf("underflow %zu", ++state->persisted.sections.playback->underflow_count);
     };
     return outstream;
-}
-
-static void* io_loop(void* user)
-{
-    init_default_context("io");
-
-    State* ctx = (State*)user;
-    auto* io = &ctx->stable.io;
-    auto* trans = &ctx->trans.io;
-    auto* mailbox_grid = &ctx->stable.main.mailbox_grid;
-    auto* mailboxes = &(*mailbox_grid)[SystemID_IO];
-    auto arena = fixed_arena_init(&trans->arena_buffer, ARRAY_SIZE(trans->arena_buffer));
-    auto* volume = &io->volume;
-    volume->automount_when_not_found = true;
-
-    u64 mailbox_count = ARRAY_SIZE(*mailboxes);
-    for (u64 i = 0; i < mailbox_count; i++) {
-        (*mailboxes)[i].reader();
-    }
-
-    for (;;) {
-        reset_temporary_arena();
-        arena.drain();
-
-        mailbox_wait_any();
-
-        for (u64 i = 0; i < mailbox_count; i++) {
-            auto* mailbox = &(*mailboxes)[i];
-            u16 tag = 0;
-            while (mailbox->reader()->peek(&tag).found) {
-                arena.drain();
-
-                switch (tag) {
-                case Ty2::type_id<DeferredLogEvent>(): {
-                    DeferredLogEvent event;
-                    if (verify(mailbox->reader()->read(&event).ok).failed) continue;
-                    event.logger->handle_event(&event);
-                    continue;
-                }
-                default:
-                    io->log->warning("unknown message kind %s, ignoring it", ty_type_name(tag));
-                    mailbox->reader()->toss(tag);
-                }
-            }
-        }
-    }
-    UNREACHABLE();
-    return nullptr;
-}
-
-static void* priority_io_loop(void* user)
-{
-    init_default_context("priority-io");
-
-    State* ctx = (State*)user;
-    auto* io = &ctx->stable.priority_io;
-    auto* trans = &ctx->trans.priority_io;
-    auto* mailbox_grid = &ctx->stable.main.mailbox_grid;
-    auto* mailboxes = &(*mailbox_grid)[SystemID_PriorityIO];
-    auto arena = fixed_arena_init(&trans->arena_buffer, ARRAY_SIZE(trans->arena_buffer));
-    auto* volume = &io->volume;
-    volume->automount_when_not_found = true;
-
-    u64 mailbox_count = ARRAY_SIZE(*mailboxes);
-    for (u64 i = 0; i < mailbox_count; i++) {
-        (*mailboxes)[i].reader();
-    }
-
-    for (;;) {
-        reset_temporary_arena();
-        arena.drain();
-
-        mailbox_wait_any();
-
-        for (u64 i = 0; i < mailbox_count; i++) {
-            auto* mailbox = &(*mailboxes)[i];
-            u16 tag = 0;
-            while (mailbox->reader()->peek(&tag).found) {
-                arena.drain();
-
-                switch (tag) {
-                case Ty2::type_id<DeferredLogEvent>(): {
-                    DeferredLogEvent event;
-                    if (verify(mailbox->reader()->read(&event).ok).failed) continue;
-                    event.logger->handle_event(&event);
-                    continue;
-                }
-                default:
-                    io->log->warning("unknown message kind %s, ignoring it", ty_type_name(tag));
-                    mailbox->reader()->toss(tag);
-                }
-            }
-        }
-    }
-    UNREACHABLE();
-    return nullptr;
 }
 
 static void audio_frame(SoundIoOutStream* outstream, int, int frame_count_max) noexcept [[clang::nonblocking]]
@@ -208,6 +111,7 @@ static void audio_frame(SoundIoOutStream* outstream, int, int frame_count_max) n
     Context context = (Context){
         .log = &stable->log.logger,
         .temp_arena = &arena,
+        .thread_id = stable->thread_id,
     };
     set_context(&context);
 
@@ -215,7 +119,7 @@ static void audio_frame(SoundIoOutStream* outstream, int, int frame_count_max) n
     for (;;) {
         int frame_count = frames_left;
         if (auto err = soundio_outstream_begin_write(outstream, &areas, &frame_count)) {
-            stable->log->fatal("unrecoverable stream error: %s", soundio_strerror(err));
+            fatalf("unrecoverable stream error: %s", soundio_strerror(err));
         }
 
         if (!frame_count)
@@ -240,7 +144,7 @@ static void audio_frame(SoundIoOutStream* outstream, int, int frame_count_max) n
         if (auto err = soundio_outstream_end_write(outstream)) {
             if (err == SoundIoErrorUnderflow)
                 return;
-            stable->log->fatal("unrecoverable stream error: %s", soundio_strerror(err));
+            fatalf("unrecoverable stream error: %s", soundio_strerror(err));
         }
 
         frames_left -= frame_count;
@@ -249,7 +153,7 @@ static void audio_frame(SoundIoOutStream* outstream, int, int frame_count_max) n
     }
 }
 
-C_API void layout_frame(StableLayout* stable, TransLayout* trans, UIWindow* window, Mailbox* render_sink)
+C_API void layout_frame(StableLayout* stable, TransLayout* trans, UIWindow* window, THMessageQueue* layout_render_command_sink)
 {
     VERIFY(ty_is_initialized(stable));
     ty_trans_migrate(trans);
@@ -260,7 +164,7 @@ C_API void layout_frame(StableLayout* stable, TransLayout* trans, UIWindow* wind
     auto mouse_state = ui_window_mouse_state(window);
 
     layout_begin(&stable->layout, (LayoutInputState){
-        .render_sink = render_sink,
+        .render_command_sink = layout_render_command_sink,
         .current_time = (f32)core_time_since_unspecified_epoch(),
         .frame_bounds_x = size.x,
         .frame_bounds_y = size.y,
@@ -277,7 +181,7 @@ C_API void layout_frame(StableLayout* stable, TransLayout* trans, UIWindow* wind
     layout_end(&stable->layout);
 }
 
-C_API void render_frame(StableRender* stable, TransRender* trans, Mailbox* sink)
+C_API void render_frame(StableRender* stable, TransRender* trans, THMessageQueue* layout_render_command_source)
 {
     VERIFY(ty_is_initialized(stable));
     ty_trans_migrate(trans);
@@ -317,36 +221,33 @@ C_API void render_frame(StableRender* stable, TransRender* trans, Mailbox* sink)
     render->clear((v4){0.4, 0.2, 0.2, 1});
 
     f32 z_index = 0;
-    u16 tag = 0;
 
-    while (sink->reader()->peek(&tag).found) {
-        switch (tag) {
-        case Ty2::type_id<LayoutRenderSetResolution>(): {
-            LayoutRenderSetResolution command;
-            if (!sink->reader()->read(&command).ok) {
-                log->error("could not unwrap resolution update command");
-                continue;
-            }
+    THMessage message = {};
+    while (th_message_try_read(layout_render_command_source, &message)) {
+        defer [mark=tmark()] { tsweep(mark); };
+
+        switch (message.kind.tag) {
+        case LayoutRenderCommandKind_SetResolution.tag: {
+            if (!C_ASSERT(message.size == sizeof(LayoutRenderSetResolution))) continue;
+            if (!C_ASSERT(message.align == alignof(LayoutRenderSetResolution))) continue;
+            LayoutRenderSetResolution command = *(LayoutRenderSetResolution*)message.data;
             trans->resolution.x = command.width;
             trans->resolution.y = command.height;
             render->uniform2f(render->uniform("resolution"), trans->resolution);
             continue;
         }
-
-        case Ty2::type_id<LayoutRenderFlush>(): {
-            sink->reader()->toss(tag);
+        case LayoutRenderCommandKind_Flush.tag: {
+            if (!C_ASSERT(message.size == sizeof(LayoutRenderFlush))) continue;
+            if (!C_ASSERT(message.align == alignof(LayoutRenderFlush))) continue;
             render->flush();
             trans->z_max = z_index;
             z_index = 0;
             continue;
         }
-
-        case Ty2::type_id<LayoutRenderRectangle>(): {
-            LayoutRenderRectangle command;
-            if (!sink->reader()->read(&command).ok) {
-                log->error("could not unwrap resolution update command");
-                continue;
-            }
+        case LayoutRenderCommandKind_Rectangle.tag: {
+            if (!C_ASSERT(message.size == sizeof(LayoutRenderRectangle))) continue;
+            if (!C_ASSERT(message.align == alignof(LayoutRenderRectangle))) continue;
+            LayoutRenderRectangle command = *(LayoutRenderRectangle*)message.data;
 
             z_index += 1;
 
@@ -358,6 +259,14 @@ C_API void render_frame(StableRender* stable, TransRender* trans, Mailbox* sink)
             s *= (v2){2, -2};
 
             v4 color = (v4){command.color.r, command.color.g, command.color.b, command.color.a};
+            if (log_render_rects && command.debug_id) {
+                debugf("rendering %u (%.0f %.0f %.0f %.0f) (%.2f %.2f %.2f %.2f)",
+                    command.debug_id,
+                    command.bounding_box.point.x, command.bounding_box.point.y,
+                    command.bounding_box.size.width, command.bounding_box.size.height,
+                    command.color.r, command.color.g, command.color.b, command.color.a
+                );
+            }
             render->push_quad(shader((GLShaderSource){
                 .vert = "Shaders/simple.vert"s,
                 .frag = "Shaders/simple.frag"s,
@@ -393,10 +302,8 @@ C_API void render_frame(StableRender* stable, TransRender* trans, Mailbox* sink)
             });
             continue;
         }
-
         default:
-            log->error("unknown render command: %s, ignoring it", ty_type_name(tag));
-            sink->reader()->toss(tag);
+            log->error("unknown render command: %s, ignoring it", message.kind.name);
             continue;
         }
     }
@@ -426,27 +333,27 @@ static void actor_reloader_loop(State* state)
     }
 }
 
-static void persisted_init(PersistedState* state)
+static void persisted_init(State* state, PersistedState* persisted)
 {
-    VERIFY(!ty_is_initialized(state));
-    memzero(state);
-    defer [=] { ty_set_initialized(state); };
+    VERIFY(!ty_is_initialized(persisted));
+    memzero(persisted);
+    defer [=] { ty_set_initialized(persisted); };
 
-    state->magic = Magic_MS_State;
+    persisted->magic = Magic_MS_State;
 
-    auto* sections = &state->sections;
+    auto* sections = &persisted->sections;
     VERIFY(!ty_is_initialized(sections));
     memzero(sections);
     defer [=] { ty_set_initialized(sections); };
 
-    sections->settings = &state->unsafe.settings;
-    persisted_settings_init(sections->settings);
+    sections->settings = &persisted->unsafe.settings;
+    persisted_settings_init(state, sections->settings);
 
-    sections->playback = &state->unsafe.playback;
-    persisted_playback_init(sections->playback);
+    sections->playback = &persisted->unsafe.playback;
+    persisted_playback_init(state, sections->playback);
 }
 
-static void persisted_settings_init(PersistedSettings* settings)
+static void persisted_settings_init(State*, PersistedSettings* settings)
 {
     *settings = (PersistedSettings){
         .magic = Magic_Settings,
@@ -458,7 +365,7 @@ static void persisted_settings_init(PersistedSettings* settings)
     };
 }
 
-static void persisted_playback_init(PersistedPlayback* playback)
+static void persisted_playback_init(State*, PersistedPlayback* playback)
 {
     *playback = (PersistedPlayback){
         .magic = Magic_Playback,
@@ -470,24 +377,23 @@ static void persisted_playback_init(PersistedPlayback* playback)
     };
 }
 
-static void stable_init(StableState* stable, StateFlags flags)
+static void stable_init(State* state, StableState* stable, StateFlags flags)
 {
     VERIFY(!ty_is_initialized(stable));
     memzero(stable);
     defer [=] { ty_set_initialized(stable); };
 
-    stable_main_init(stable, flags);
-    stable_actor_reloader_init(&stable->actor_reloader, flags);
-    stable_io_init(&stable->io, flags);
-    stable_priority_io_init(&stable->priority_io, flags);
-    stable_layout_init(stable, flags);
-    stable_render_init(stable, flags);
-    stable_audio_init(stable, flags);
+    stable_main_init(state, stable, flags);
+    stable_actor_reloader_init(state, &stable->actor_reloader, flags);
+    stable_layout_init(state, stable, flags);
+    stable_render_init(state, stable, flags);
+    stable_audio_init(state, stable, flags);
 }
 
-static void stable_main_init(StableState* state, StateFlags flags)
+static void stable_main_init(State* state, StableState* stable, StateFlags flags)
 {
-    auto* main = &state->main;
+    (void)state;
+    auto* main = &stable->main;
     VERIFY(!ty_is_initialized(main));
     memzero(main);
     defer [=] { ty_set_initialized(main); };
@@ -509,23 +415,23 @@ static void stable_main_init(StableState* state, StateFlags flags)
             if (sender == SystemID_Render && !flags.use_ui)
                 continue;
 
-            auto* mailbox = &main->mailbox_grid[receiver][sender];
+            auto* mailbox = &main->message_queues[receiver][sender];
 
             if (receiver == SystemID_Audio || sender == SystemID_Audio) {
-                if (!mailbox_init(64 * KiB, mailbox).ok) {
+                if (!th_message_queue_init(mailbox, 64 * KiB).ok) {
                     fatalf("could not initialize mailboxes");
                 }
-                mailbox->attach_memory_poker(&main->memory_poker);
+                // FIXME: mailbox->attach_memory_poker(&main->memory_poker);
                 continue;
             }
-            if (!mailbox_lazy_init(64 * KiB, mailbox).ok) {
+            if (!th_message_queue_lazy_init(mailbox, 64 * KiB).ok) {
                 fatalf("could not initialize mailboxes");
             }
         }
     }
 }
 
-static void stable_actor_reloader_init(StableActorReloader* actor, StateFlags flags)
+static void stable_actor_reloader_init(State* state, StableActorReloader* actor, StateFlags flags)
 {
     VERIFY(!ty_is_initialized(actor));
     memzero(actor);
@@ -543,36 +449,17 @@ static void stable_actor_reloader_init(StableActorReloader* actor, StateFlags fl
         if (!audio_actor_init(&actor->audio, &actor->volume, flags.use_auto_reload))
             fatalf("could not create audio actor");
     }
+
+    KError error = th_thread_init(&actor->thread, "actor-reloader", {}, state, [](void* user){
+        actor_reloader_loop((State*)user);
+        UNREACHABLE();
+    });
+    VERIFY(error.ok);
 }
 
-static void stable_io_init(StableIO* io, StateFlags)
+static void stable_layout_init(State* state, StableState* stable, StateFlags flags)
 {
-    VERIFY(!ty_is_initialized(io));
-    memzero(io);
-    defer [=] { ty_set_initialized(io); };
-
-    c_string name = "io";
-    io->log = file_logger_init(name, stderr);
-
-    fs_volume_init(&io->volume);
-    io->volume.automount_when_not_found = true;
-}
-
-static void stable_priority_io_init(StablePriorityIO* io, StateFlags)
-{
-    VERIFY(!ty_is_initialized(io));
-    memzero(io);
-    defer [=] { ty_set_initialized(io); };
-
-    c_string name = "priority-io";
-    io->log = file_logger_init(name, stderr);
-
-    fs_volume_init(&io->volume);
-    io->volume.automount_when_not_found = true;
-}
-
-static void stable_layout_init(StableState* stable, StateFlags flags)
-{
+    (void)state;
     if (!flags.use_ui) return;
     VERIFY(ty_is_initialized(&stable->actor_reloader));
     auto* layout = &stable->layout;
@@ -587,7 +474,7 @@ static void stable_layout_init(StableState* stable, StateFlags flags)
     layout_init(&layout->layout, &layout->log.logger);
 }
 
-static void stable_render_init(StableState* stable, StateFlags flags)
+static void stable_render_init(State*, StableState* stable, StateFlags flags)
 {
     if (!flags.use_ui) return;
     auto* render = &stable->render;
@@ -604,7 +491,7 @@ static void stable_render_init(StableState* stable, StateFlags flags)
     render->volume.automount_when_not_found = flags.use_auto_reload;
 }
 
-static void stable_audio_init(StableState* stable, StateFlags flags)
+static void stable_audio_init(State* state, StableState* stable, StateFlags flags)
 {
     if (!flags.use_audio) return;
 
@@ -616,19 +503,35 @@ static void stable_audio_init(StableState* stable, StateFlags flags)
     memzero(audio);
     defer [=] { ty_set_initialized(audio); };
 
-    stable->main.memory_poker.push(&stable->audio, sizeof(stable->audio));
+    audio->thread_id = kthread_id_next();
 
-    VERIFY(ty_is_initialized(&stable->io));
-    audio->log = deferred_file_logger_init("audio", &stable->main.mailbox_grid[SystemID_IO][SystemID_Audio], stderr);
+    audio->file_logger = file_logger_init("audio", stderr);
+    KError err = th_logger_init(&audio->log, &audio->file_logger.logger);
+    if (!err.ok) fatalf("could not initialize audio logger: %s", kerror_strerror(err));
+
+    stable->main.memory_poker.push(&stable->audio, sizeof(stable->audio));
 
     if (!au_audio_manager_init(&audio->audio_manager, &stable->main.memory_poker))
         fatalf("could not initialize audio manager");
 
     audio->actor = (AudioActor const*)&stable->actor_reloader.audio.dispatch;
     VERIFY(audio->actor != nullptr);
+
+    audio->soundio = soundio_create();
+    if (!audio->soundio)
+        fatalf("could not create soundio");
+    if (auto error = soundio_connect(audio->soundio))
+        fatalf("could not connect soundio: %s", soundio_strerror(error));
+
+    soundio_flush_events(audio->soundio);
+    audio->outstream = create_default_outstream(state, audio->soundio);
+    if (!audio->outstream) fatalf("could not create default outstream");
+
+    if (soundio_outstream_open(stable->audio.outstream) != 0)
+        fatalf("could not open audio outstream");
 }
 
-static void trans_init(TransState* trans)
+static void trans_init(State*, TransState* trans)
 {
     VERIFY(!ty_is_initialized(trans));
     memzero(trans);
@@ -651,38 +554,7 @@ C_API [[nodiscard]] bool actor_reloader_start(State* state)
     VERIFY(ty_is_initialized(&state->stable.actor_reloader));
     VERIFY(state->stable.main.flags.use_auto_reload);
     infof("starting actor-reloader loop");
-
-    pthread_t thread;
-    if (pthread_create(&thread, nullptr, [](void* user) -> void* {
-        init_default_context("actor-reloader");
-        actor_reloader_loop((State*)user);
-        UNREACHABLE();
-        return nullptr;
-    }, state) != 0)
-        return false;
-    pthread_detach(thread);
-    return true;
-}
-
-C_API [[nodiscard]] bool io_start(State* state)
-{
-    pthread_t io_thread;
-    int res = pthread_create(&io_thread, nullptr, io_loop, state);
-    if (res < 0) {
-        return false;
-    }
-    pthread_detach(io_thread);
-    return true;
-}
-
-C_API [[nodiscard]] bool priority_io_start(State* state)
-{
-    pthread_t io_thread;
-    int res = pthread_create(&io_thread, nullptr, priority_io_loop, state);
-    if (res < 0) {
-        return false;
-    }
-    pthread_detach(io_thread);
+    th_thread_start(&state->stable.actor_reloader.thread);
     return true;
 }
 
@@ -696,29 +568,17 @@ C_API [[nodiscard]] bool audio_start(State* state)
 
     auto* audio = &state->stable.audio;
 
-    if (!au_audio_manager_start(&audio->audio_manager)) {
-        errorf("could not start audio manager");
-        return false;
-    }
+    infof("starting audio logger");
+    th_logger_start(&audio->log);
 
-    audio->soundio = soundio_create();
-    if (!audio->soundio)
-        fatalf("could not create soundio");
-    if (auto error = soundio_connect(audio->soundio))
-        fatalf("could not connect soundio: %s", soundio_strerror(error));
-
-    soundio_flush_events(audio->soundio);
-    audio->outstream = create_default_outstream(state, audio->soundio);
-    if (!audio->outstream) fatalf("could not create default outstream");
+    infof("starting audio manager");
+    au_audio_manager_start(&audio->audio_manager);
 
     infof("starting audio loop");
-    if (soundio_outstream_open(stable->audio.outstream) != 0) {
-        errorf("could not open audio outstream");
-        return false;
-    }
     if (soundio_outstream_start(stable->audio.outstream) != 0) {
         errorf("could not start audio outstream");
         return false;
     }
+
     return true;
 }

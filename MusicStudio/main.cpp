@@ -14,12 +14,12 @@
 #include <LibCore/Core.h>
 #include <Basic/Defer.h>
 
+#include <LibThread/DispatchQueue.h>
+
 #include "./State.h"
 
 ErrorOr<int> Main::main(int argc, c_string argv[])
 {
-    init_default_context("main");
-
     auto argument_parser = CLI::ArgumentParser();
 
     u32 app_hints = 0;
@@ -56,10 +56,6 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
     state_init(state, flags);
     if (!flags.use_audio && !flags.use_ui)
         return 0;
-    if (!io_start(state))
-        fatalf("could not start io");
-    if (!priority_io_start(state))
-        fatalf("could not start priority io");
     if (!main_start(state))
         fatalf("could not start main");
 
@@ -89,7 +85,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
 
             VERIFY(ty_is_initialized(&stable->layout));
             VERIFY(ty_is_initialized(&stable->render));
-            auto* sink = &stable->main.mailbox_grid[SystemID_Render][SystemID_Layout];
+            auto* sink = &stable->main.message_queues[SystemID_Render][SystemID_Layout];
             layout_frame(&stable->layout, &trans->layout, window, sink);
             ui_window_gl_make_current_context(window);
             render_frame(&stable->render, &trans->render, sink);
@@ -132,7 +128,7 @@ ErrorOr<int> Main::main(int argc, c_string argv[])
             auto* stable = &state->stable;
             auto* trans = &state->trans;
 
-            auto* sink = &state->stable.main.mailbox_grid[SystemID_Render][SystemID_Layout];
+            auto* sink = &state->stable.main.message_queues[SystemID_Render][SystemID_Layout];
             layout_frame(&stable->layout, &trans->layout, window, sink);
             ui_window_gl_make_current_context(window);
             render_frame(&stable->render, &trans->render, sink);

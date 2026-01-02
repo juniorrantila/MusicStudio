@@ -8,7 +8,6 @@
 #include <Basic/Arena.h>
 #include <Basic/Bits.h>
 #include <Basic/Context.h>
-#include <Basic/DeferredFileLogger.h>
 #include <Basic/FileLogger.h>
 #include <Basic/Mailbox.h>
 #include <Basic/MemoryPoker.h>
@@ -19,6 +18,10 @@
 #include <LibGL/Renderer.h>
 #include <LibLayout2/Layout.h>
 #include <LibUI/Window.h>
+
+#include <LibThread/Thread.h>
+#include <LibThread/Logger.h>
+#include <LibThread/MessageQueue.h>
 
 #include <SoundIo/SoundIo.h>
 
@@ -88,7 +91,7 @@ typedef struct StableMain {
 
     MemoryPoker memory_poker;
 
-    Mailbox mailbox_grid[SystemID__Count][SystemID__Count]; // [receiver][sender]
+    THMessageQueue message_queues[SystemID__Count][SystemID__Count]; // [receiver][sender]
 } StableMain;
 
 typedef struct StableActorReloader {
@@ -100,16 +103,9 @@ typedef struct StableActorReloader {
     Actor layout;
     Actor render;
     Actor audio;
+
+    THThread thread;
 } StableActorReloader;
-
-typedef struct StableIO {
-    u64 version; // sizeof(*this)
-
-    struct IOActor const* actor;
-
-    FileLogger log;
-    FSVolume volume;
-} StableIO;
 
 typedef struct StablePriorityIO {
     u64 version; // sizeof(*this)
@@ -118,6 +114,8 @@ typedef struct StablePriorityIO {
 
     FileLogger log;
     FSVolume volume;
+
+    THThread thread;
 } StablePriorityIO;
 
 typedef struct StableLayout {
@@ -144,9 +142,12 @@ typedef struct StableRender {
 typedef struct StableAudio {
     u64 version; // sizeof(*this)
 
+    KThreadID thread_id;
+
     AudioActor const* actor;
 
-    DeferredFileLogger log;
+    FileLogger file_logger;
+    THLogger log;
 
     SoundIo* soundio;
     SoundIoOutStream* outstream;
@@ -161,7 +162,6 @@ typedef struct StableState {
 
     StableMain main;
     StableActorReloader actor_reloader;
-    StableIO io;
     StablePriorityIO priority_io;
     StableLayout layout;
     StableRender render;
@@ -185,16 +185,6 @@ typedef union TransActorReloader {
 } TransActorReloader;
 static_assert(sizeof(TransActorReloader) == 64 * KiB);
 static_assert(alignof(TransActorReloader) >= 8);
-
-typedef union TransIO {
-    u8 buffer[64 * KiB];
-    struct {
-        u64 version; // sizeof(*this)
-        u8 arena_buffer[8 * KiB];
-    };
-} TransIO;
-static_assert(sizeof(TransIO) == 64 * KiB);
-static_assert(alignof(TransIO) >= 8);
 
 typedef union TransPriorityIO {
     u8 buffer[64 * KiB];
@@ -241,7 +231,6 @@ typedef struct TransState {
 
     TransMain main;
     TransActorReloader actor_reloader;
-    TransIO io;
     TransPriorityIO priority_io;
     TransLayout layout;
     TransRender render;
@@ -278,13 +267,9 @@ typedef struct State {
 C_API void state_init(State*, StateFlags);
 
 C_API void actor_reloader_frame(StableActorReloader*, TransActorReloader*);
-C_API void io_frame(StableIO*, TransIO*);
-C_API void priority_io_frame(StablePriorityIO*, TransPriorityIO*);
-C_API void layout_frame(StableLayout* stable, TransLayout* trans, UIWindow* window, Mailbox* render_sink);
-C_API void render_frame(StableRender*, TransRender*, Mailbox* sink);
+C_API void layout_frame(StableLayout* stable, TransLayout* trans, UIWindow* window, THMessageQueue* layout_render_command_sink);
+C_API void render_frame(StableRender*, TransRender*, THMessageQueue* layout_render_command_source);
 
 C_API [[nodiscard]] bool main_start(State*);
 C_API [[nodiscard]] bool actor_reloader_start(State*);
-C_API [[nodiscard]] bool io_start(State*);
-C_API [[nodiscard]] bool priority_io_start(State*);
 C_API [[nodiscard]] bool audio_start(State*);

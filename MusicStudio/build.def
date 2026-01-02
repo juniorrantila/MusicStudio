@@ -20,6 +20,7 @@ auto const music_studio_ui = cc_library("music-studio-ui", {
         libraries.basic,
         libraries.layout2,
         libraries.au,
+        libraries.thread,
 
         vendor.soundio,
     }
@@ -41,6 +42,7 @@ auto const music_studio_audio = cc_library("music-studio-audio", {
         libraries.basic,
         libraries.layout2,
         libraries.au,
+        libraries.thread,
 
         vendor.soundio,
     }
@@ -76,6 +78,7 @@ auto const music_studio = cc_binary("music-studio", {
         libraries.main,
         libraries.layout2,
         libraries.au,
+        libraries.thread,
 
         libraries.wasm,
 

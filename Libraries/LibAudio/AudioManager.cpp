@@ -19,7 +19,7 @@
 
 static_assert(au_audio_channel_max <= SOUNDIO_MAX_CHANNELS);
 
-static void* io_thread(void*);
+static void audio_manager_loop(void*);
 static u16 path_slot(AUAudioID);
 static u16 block_slot(AUAudioBlockID);
 static bool did_just_prefetch(AUAudioManager*, AUAudioBlockID);
@@ -52,14 +52,15 @@ C_API [[nodiscard]] bool au_audio_manager_init(AUAudioManager* audio, MemoryPoke
         return false;
     if (poker) audio->io_mailbox.attach_memory_poker(poker);
 
+    KError error = th_thread_init(&audio->io_thread, "audio-manager", {}, audio, audio_manager_loop);
+    if (!error.ok) return false;
+
     return true;
 }
 
-C_API [[nodiscard]] bool au_audio_manager_start(AUAudioManager* audio)
+C_API void au_audio_manager_start(AUAudioManager* audio)
 {
-    if (pthread_create(&audio->io_thread, nullptr, io_thread, audio) != 0)
-        return false;
-    return true;
+    th_thread_start(&audio->io_thread);
 }
 
 AUAudioID AUAudioManager::audio(StringSlice file_name) { return au_audio_id(this, file_name); }
@@ -87,6 +88,16 @@ C_API AUAudioID au_audio_id(AUAudioManager* audio, StringSlice file_name)
     if (!audio->io_mailbox.writer()->post(open).ok)
         return au_audio_id_null;
     return id;
+}
+
+C_API AUAudioID au_audio_reserve_id(StringSlice file_name)
+{
+    VERIFY(file_name.count < PATH_MAX);
+    VERIFY(file_name.count > 0);
+
+    u64 hash = djb2(djb2_initial_seed, file_name.items, file_name.count);
+    if (hash == au_audio_id_null.hash) hash += 1;
+    return (AUAudioID){hash};
 }
 
 AUAudioBlockID AUAudioManager::block(AUAudioID id, u64 frame, u16 channel) { return au_audio_block_id(id, frame, channel); }
@@ -158,14 +169,12 @@ static u16 path_slot(AUAudioID id)
     return id.hash % au_audio_file_max;
 }
 
- static void* io_thread(void* user)
+ static void audio_manager_loop(void* user)
 {
-    init_default_context("audio-manager");
-
     auto* audio = (AUAudioManager*)user;
 
     for (;;) {
-        drain_temporary_arena();
+        reset_temporary_arena();
         audio->io_mailbox.reader()->wait();
 
         u16 tag = 0;
@@ -254,7 +263,6 @@ static u16 path_slot(AUAudioID id)
     }
 
     UNREACHABLE();
-    return nullptr;
 }
 
 static bool block_equal(AUAudioBlockID a, AUAudioBlockID b) { return memcmp(&a, &b, sizeof(a)) == 0; }

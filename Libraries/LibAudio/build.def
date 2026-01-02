@@ -3,6 +3,7 @@
 #include "../Basic/build.def"
 #include "../LibMath/build.def"
 #include "../LibCore/build.def"
+#include "../LibThread/build.def"
 
 #include "../../Vendor/SoundIo/build.def"
 
@@ -35,5 +36,6 @@ static auto const au = cc_library("LibAudio", {
         soundio,
         math,
         core,
+        thread,
     },
 });

@@ -9,7 +9,7 @@
 
 #include <LibCore/FSVolume.h>
 
-#include <pthread.h>
+#include <LibThread/Thread.h>
 #include <sys/syslimits.h>
 
 constexpr i64 au_audio_frames_per_block = 512;
@@ -22,7 +22,8 @@ static_assert(au_audio_file_path_max <= PATH_MAX);
 static_assert(au_audio_file_path_max <= message_size_max);
 
 typedef struct { u64 hash; } AUAudioID;
-constexpr AUAudioID au_audio_id_null = { 0 };
+static constexpr AUAudioID au_audio_id_null = { 0 };
+C_INLINE bool au_audio_id_is_valid(AUAudioID id) { return id.hash != au_audio_id_null.hash; }
 
 typedef struct {
     AUAudioID audio_id;
@@ -41,7 +42,7 @@ typedef struct AUAudioManager {
     char paths[au_audio_file_max][au_audio_file_path_max];
 
     Mailbox io_mailbox;
-    pthread_t io_thread;
+    THThread io_thread;
 
     struct {
         u32 head;
@@ -66,8 +67,9 @@ typedef struct AUAudioManager {
 static_assert(sizeof(AUAudioManager) <= 96 * MiB);
 
 C_API [[nodiscard]] bool au_audio_manager_init(AUAudioManager*, MemoryPoker* poker);
-C_API [[nodiscard]] bool au_audio_manager_start(AUAudioManager*);
+C_API void au_audio_manager_start(AUAudioManager*);
 
+C_API AUAudioID au_audio_reserve_id(StringSlice file_name);
 C_API AUAudioID au_audio_id(AUAudioManager*, StringSlice file_name);
 C_API AUAudioBlockID au_audio_block_id(AUAudioID audio, u64 frame, u16 channel);
 

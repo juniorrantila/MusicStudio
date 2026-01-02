@@ -71,6 +71,13 @@ static const v4 v4_zero = { 0, 0, 0, 0 };
 #define C_INLINE static inline
 #endif
 
+typedef struct KThreadID { i64 raw; } KThreadID;
+static constexpr KThreadID kthread_id_null = { 0 };
+C_INLINE bool kthread_id_is_valid(KThreadID id) { return id.raw != kthread_id_null.raw; }
+C_INLINE i64 kthread_index(KThreadID id) { return id.raw - 1; }
+C_INLINE bool kthread_id_equal(KThreadID a, KThreadID b) { return a.raw == b.raw; }
+C_API KThreadID kthread_id_next(void);
+
 C_INLINE v2 v2f(f32 x, f32 y)
 {
     return (v2){x, y};

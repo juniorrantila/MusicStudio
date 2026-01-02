@@ -5,7 +5,7 @@ set -e
 BASE_PATH=`realpath $(dirname $0)`
 INSTALL_DIR="$BASE_PATH/Tools"
 BUILD_DIR="$BASE_PATH/Build/llvm"
-VERSION="release/20.x"
+VERSION="release/21.x"
 REPO="https://github.com/llvm/llvm-project"
 REPO_DIR="$BASE_PATH/Vendor/llvm"
 DONE="$BASE_PATH/Done"

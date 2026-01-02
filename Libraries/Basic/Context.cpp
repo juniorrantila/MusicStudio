@@ -156,17 +156,32 @@ C_API void* tclone(void const* data, u64 size, u64 align)
     return memclone(&context()->temp_arena->allocator, data, size, align);
 }
 
-C_API void drain_temporary_arena(void)
+C_API void const* tmark(void)
+{
+    return context()->temp_arena->mark().value;
+}
+
+C_API void tsweep(void const* address)
+{
+    context()->temp_arena->sweep(make_fixed_mark((u8*)address));
+}
+
+C_API void reset_temporary_arena(void)
 {
 #ifndef NDEBUG
     {
+        static thread_local u64 last_used;
+        static thread_local u64 last_max;
+        static thread_local u32 report;
+        report++;
         u64 used = tbytes_used();
-        if (!used) return;
-            static thread_local u32 report;
-            if (report++ % 500 == 0) {
-                u64 left = tbytes_left();
-                debugf("arena used: %lu left: %lu", used, left);
-            }
+        u64 max = context()->temp_arena->largest_size;
+        if (last_used != used || last_max != max || report % 5000 == 0) {
+            u64 left = tbytes_left();
+            debugf("arena used: %lu left: %lu allocations: %lu max used: %lu", used, left, context()->temp_arena->allocation_count, max);
+        }
+        last_max = max;
+        last_used = used;
     }
 #endif
     context()->temp_arena->drain();

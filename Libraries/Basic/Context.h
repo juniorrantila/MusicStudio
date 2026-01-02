@@ -62,7 +62,9 @@ C_API [[gnu::format(printf, 2, 0)]] KError tvprints(StringSlice*, c_string, va_l
 C_API Allocator* temporary_arena(void);
 C_API void* tpush(u64 size, u64 align);
 C_API void* tclone(void const*, u64 size, u64 align);
-C_API void drain_temporary_arena(void);
+C_API void const* tmark(void);
+C_API void tsweep(void const*);
+C_API void reset_temporary_arena(void);
 C_API u64 tbytes_used(void);
 C_API u64 tbytes_left(void);
 

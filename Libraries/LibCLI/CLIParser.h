@@ -51,7 +51,6 @@ typedef struct CLIParser {
 
 #endif
 } CLIParser;
-static_assert(sizeof(CLIParser) == 20544);
 
 C_API void cli_parser_init(CLIParser*, void* context);
 

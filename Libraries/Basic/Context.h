@@ -68,6 +68,9 @@ C_API void reset_temporary_arena(void);
 C_API u64 tbytes_used(void);
 C_API u64 tbytes_left(void);
 
+#define TPUSH(T) ((T*)tpush(sizeof(T), alignof(T)))
+#define TCLONE(value) ((__typeof(value))tclone((value), sizeof(__typeof(*value)), alignof(__typeof(*value))))
+
 #ifdef __cplusplus
 template <typename T>
 T* tclone(T value) { return (T*)tclone(&value, sizeof(T), alignof(T)); }

@@ -7,6 +7,7 @@
 #include "./Error.h"
 #include "./StringSlice.h"
 #include "./Verify.h"
+#include "./Types.h"
 
 #include <errno.h>
 #include <pthread.h>
@@ -29,6 +30,7 @@ C_API void push_context(Context* next)
     VERIFY(g_context_is_initialized);
     VERIFY(next != nullptr);
     next->previous = context();
+    next->thread_id = context()->thread_id;
     if (!next->log) next->log = context()->log;
     if (!next->temp_arena) next->temp_arena = context()->temp_arena;
     set_context(next);
@@ -42,6 +44,8 @@ C_API void pop_context(void)
 
 C_API void set_context(Context* context)
 {
+    VERIFY(context != nullptr);
+    VERIFY(kthread_id_is_valid(context->thread_id));
     g_context = context;
     g_context_is_initialized = true;
 }
@@ -50,6 +54,7 @@ C_API void init_context(Context* context)
 {
     DEBUG_ASSERT(!g_context_is_initialized);
     set_context(context);
+    debugf("initialized context");
 }
 
 C_API Context* context(void)
@@ -70,34 +75,31 @@ C_API Context* context(void)
     return g_context;
 }
 
-
 void init_default_context(c_string thread_name)
 {
-    DEBUG_ASSERT(!g_context_is_initialized);
-    static thread_local Context context;
-    init_default_context_into(thread_name, &context);
-    set_context(&context);
-}
-
-void init_default_context_into(c_string thread_name, Context* out)
-{
     VERIFY(thread_name != nullptr);
-
+    DEBUG_ASSERT(!g_context_is_initialized);
     pthread_setname_np(thread_name);
 
     static thread_local struct {
         FileLogger log;
         u8 arena_buffer[16 * KiB];
         FixedArena arena;
-    } context;
-
-    context.log = file_logger_init(thread_name, stderr);
-    context.arena = fixed_arena_init(context.arena_buffer, sizeof(context.arena_buffer));
-    *out = (Context){
-        .log = &context.log.logger,
-        .temp_arena = &context.arena,
+    } data;
+    data.log = file_logger_init(thread_name, stderr);
+    data.arena = fixed_arena_init(data.arena_buffer, sizeof(data.arena_buffer));
+    static thread_local Context context = (Context){
+        .log = &data.log.logger,
+        .temp_arena = &data.arena,
     };
+    context.thread_id = kthread_id_next();
+    context.thread_name = thread_name;
+    set_context(&context);
+
+    debugf("initialized default context");
 }
+
+C_API KThreadID current_thread_id(void) { return context()->thread_id; }
 
 C_API c_string tprint(c_string fmt, ...)
 {

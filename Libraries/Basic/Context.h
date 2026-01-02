@@ -8,13 +8,14 @@ typedef struct Context Context;
 typedef struct Context {
     Context* previous IF_CPP(= nullptr);
 
+    c_string thread_name IF_CPP(= nullptr);
+    KThreadID thread_id IF_CPP(= kthread_id_null);
     Logger* log IF_CPP(= nullptr);
     FixedArena* temp_arena IF_CPP(= nullptr);
 } Context;
 
-C_INLINE void init_context(Context*);
+C_API void init_context(Context*);
 C_API void init_default_context(c_string thread_name);
-C_API void init_default_context_into(c_string thread_name, Context*);
 
 C_API void push_context(Context*);
 C_API void pop_context(void);
@@ -22,6 +23,7 @@ C_API void pop_context(void);
 C_API void set_context(Context* context);
 C_API Context* context(void);
 
+C_API KThreadID current_thread_id(void);
 
 C_API [[gnu::format(printf, 1, 2)]] void print(c_string, ...);
 C_API [[gnu::format(printf, 1, 2)]] void debugf_(c_string, ...);

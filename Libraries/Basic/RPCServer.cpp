@@ -17,8 +17,8 @@ C_API RPCServer rpc_server_init(Mailbox* worker)
     return s;
 }
 
-Promise* RPCServer::request(u16 tag, u64 data_size, u64 data_align, void const* data) { return rpc_server_request(this, tag, data_size, data_align, data); }
-C_API Promise* rpc_server_request(RPCServer* s, u16 tag, u64 data_size, u64 data_align, void const* data)
+Promise* RPCServer::request(u16 tag, u64 data_size, u64 data_align, void const* data) { return rpc_request(this, tag, data_size, data_align, data); }
+C_API Promise* rpc_request(RPCServer* s, u16 tag, u64 data_size, u64 data_align, void const* data)
 {
     if (verify(data_size <= promise_payload_size_max).failed) return nullptr;
     if (verify(data_align <= promise_payload_align_max).failed) return nullptr;
@@ -28,7 +28,7 @@ C_API Promise* rpc_server_request(RPCServer* s, u16 tag, u64 data_size, u64 data
     Promise* promise = &s->items[slot];
     if (verify(promise_is_empty(promise)).failed) return nullptr;
     if (verify(promise_init(promise, seq, tag, data_size, data_align, data).ok).failed) return nullptr;
-    if (verify(s->worker->writer()->post(RPCServerRequest(promise)).ok).failed) {
+    if (verify(s->worker->writer()->post(RPCRequest(promise)).ok).failed) {
         *promise = promise_empty();
         return nullptr;
     }
@@ -38,8 +38,8 @@ C_API Promise* rpc_server_request(RPCServer* s, u16 tag, u64 data_size, u64 data
 }
 
 
-KError RPCServer::signal(u16 tag, u64 data_size, u64 data_align, void const* data) { return rpc_server_signal(this, tag, data_size, data_align, data); }
-C_API KError rpc_server_signal(RPCServer* s, u16 tag, u64 data_size, u64 data_align, void const* data)
+KError RPCServer::signal(u16 tag, u64 data_size, u64 data_align, void const* data) { return rpc_signal(this, tag, data_size, data_align, data); }
+C_API KError rpc_signal(RPCServer* s, u16 tag, u64 data_size, u64 data_align, void const* data)
 {
     if (verify(data_size <= message_size_max).failed) return kerror_unix(EINVAL);
     if (verify(data_align <= message_align_max).failed) return kerror_unix(EINVAL);

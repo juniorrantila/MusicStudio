@@ -1,11 +1,11 @@
 #pragma once
-#include "./Base.h"
+#include "./Types.h"
 #include "./Mailbox.h"
 #include "./Promise.h"
 
-typedef struct RPCServerRequest {
+typedef struct RPCRequest {
     Promise* promise;
-} RPCServerRequest;
+} RPCRequest;
 
 static constexpr u64 rpc_capacity = 1024;
 typedef struct RPCServer {
@@ -26,5 +26,5 @@ typedef struct RPCServer {
 } RPCServer;
 
 C_API RPCServer rpc_server_init(Mailbox* worker);
-C_API Promise* rpc_server_request(RPCServer* s, u16 tag, u64 data_size, u64 data_align, void const* data);
-C_API KError rpc_server_signal(RPCServer* s, u16 tag, u64 data_size, u64 data_align, void const* data);
+C_API Promise* rpc_request(RPCServer* s, u16 tag, u64 data_size, u64 data_align, void const* data);
+C_API KError rpc_signal(RPCServer* s, u16 tag, u64 data_size, u64 data_align, void const* data);

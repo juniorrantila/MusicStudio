@@ -3,6 +3,7 @@
 #include "./RenderCommand.h"
 #include "./UI.h"
 
+#include <Basic/Context.h>
 #include <Basic/Verify.h>
 #include <Basic/Defer.h>
 
@@ -15,8 +16,8 @@ C_API void layout_init(Layout* layout, Logger* debug)
     layout->debug = debug;
 }
 
-void Layout::begin(LayoutBegin begin) { return layout_begin(this, begin); }
-C_API void layout_begin(Layout* layout, LayoutBegin begin)
+void Layout::begin(LayoutInputState begin) { return layout_begin(this, begin); }
+C_API void layout_begin(Layout* layout, LayoutInputState begin)
 {
     layout->last_begin = layout->current_begin;
     layout->current_begin = begin;
@@ -29,12 +30,10 @@ C_API void layout_begin(Layout* layout, LayoutBegin begin)
             .width = begin.frame_bounds_x,
             .height = begin.frame_bounds_y,
         };
-        if (!begin.render_sink->writer()->post(command).ok) {
-            if (layout->debug) layout->debug->error("could not post layout resolution to renderer");
-        }
+        if (!th_message_send(begin.render_command_sink, command).ok) errorf("could not post layout resolution to renderer");
     }
 
-    if (!begin.render_sink->writer()->post((LayoutRenderRectangle){
+    if (!th_message_send(begin.render_command_sink, (LayoutRenderRectangle){
         .bounding_box = {
             .point = { 0, 0 },
             .size = { begin.frame_bounds_x, begin.frame_bounds_y },
@@ -45,6 +44,7 @@ C_API void layout_begin(Layout* layout, LayoutBegin begin)
             .b = 0,
             .a = 1,
         },
+        .debug_id = 0,
     }).ok) {
         if (layout->debug) layout->debug->error("could not post layout initial rectangle to renderer");
     }
@@ -59,7 +59,7 @@ C_API void layout_begin(Layout* layout, LayoutBegin begin)
 void Layout::end() { return layout_end(this); }
 C_API void layout_end(Layout* l)
 {
-    if (!l->current_begin.render_sink->writer()->post(LayoutRenderFlush{}).ok) {
+    if (!th_message_send(l->input_state.render_command_sink, LayoutRenderFlush{}).ok) {
         if (l->debug) l->debug->error("could not post flush command");
     }
 
@@ -154,6 +154,7 @@ C_API LayoutElement layout_element(LayoutID id, LayoutElementID parent)
     return (LayoutElement){
         .id = id,
         .parent = parent,
+        .debug_id = 0,
         .position = {
             .x = 0,
             .y = 0,
@@ -434,7 +435,7 @@ static void layout_pass_breadth_first(Layout* layout, LayoutElement* root_node, 
 
     layout_pass_init(layout_pass);
 
-    LayoutElementQueue queue;
+    LayoutElementQueue queue = (LayoutElementQueue){};
     layout_element_queue_init(&queue);
 
     auto* root_children = layout->resolve_child_pool(root_node->children.pool);
@@ -521,9 +522,10 @@ static void layout_draw_pass(Layout* layout, LayoutElement* root_node)
                 .b = color.b,
                 .a = color.a,
             },
+            .debug_id = element->debug_id,
         };
 
-        if (!layout->current_begin.render_sink->writer()->post(command).ok) {
+        if (!th_message_send(layout->input_state.render_command_sink, command).ok) {
             if (layout->debug) layout->debug->error("could not push layout command");
             return;
         }
@@ -638,6 +640,13 @@ C_API void box_end(Layout* layout)
         }
         break;
     }
+}
+
+C_API void box_debug(Layout* l, u32 id)
+{
+    auto* current = layout_resolve_element(l, l->current_element);
+    VERIFY(current);
+    current->debug_id = id;
 }
 
 C_API void box_position_x(Layout* l, f32 x)

@@ -4,7 +4,8 @@
 #include <Basic/Types.h>
 #include <Basic/Allocator.h>
 #include <Basic/StringSlice.h>
-#include <Basic/Mailbox.h>
+
+#include <LibThread/MessageQueue.h>
 
 #include <LibCore/FSVolume.h>
 
@@ -197,6 +198,8 @@ typedef struct LayoutElement {
 
     LayoutElementID parent;
 
+    u32 debug_id;
+
     struct {
         f32 x;
         f32 y;
@@ -259,8 +262,8 @@ typedef struct LayoutElement {
     u8 flex_factor_y;
 } LayoutElement;
 
-typedef struct LayoutBegin {
-    Mailbox* render_sink;
+typedef struct LayoutInputState {
+    THMessageQueue* render_command_sink;
 
     f32 current_time;
 
@@ -275,7 +278,7 @@ typedef struct LayoutBegin {
 
     f32 scroll_delta_x;
     f32 scroll_delta_y;
-} LayoutBegin;
+} LayoutInputState;
 
 typedef struct LayoutPass {
     LayoutElementID items[layout_element_pool_max];
@@ -331,7 +334,7 @@ typedef struct Layout {
     u8 arena_buffer[32 * KiB];
 
 #ifdef __cplusplus
-    void begin(LayoutBegin);
+    void begin(LayoutInputState);
     void end();
 
     LayoutParentID parent_push(LayoutElementID);
@@ -351,7 +354,7 @@ typedef struct Layout {
 
 C_API void layout_init(Layout*, Logger* debug);
 
-C_API void layout_begin(Layout*, LayoutBegin);
+C_API void layout_begin(Layout*, LayoutInputState);
 C_API void layout_end(Layout*);
 
 C_API LayoutParentID layout_parent_push(Layout*, LayoutElementID);

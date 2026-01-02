@@ -22,5 +22,6 @@ static auto const layout2 = cc_library("LibLayout2", {
         ty,
         basic,
         core,
+        thread,
     },
 });

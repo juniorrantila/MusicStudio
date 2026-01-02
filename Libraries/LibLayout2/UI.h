@@ -30,6 +30,7 @@ typedef enum OverflowBehavior {
 
 C_API [[nodiscard]] bool box_begin(Layout*);
 C_API void box_end(Layout*);
+C_API void box_debug(Layout*, u32 id);
 
 C_API void box_position_x(Layout*, f32);
 C_API void box_position_y(Layout*, f32);

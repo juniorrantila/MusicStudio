@@ -3,15 +3,23 @@
 
 #include "./Layout.h"
 
-DEFINE_MESSAGE(LayoutRenderSetResolution) {
+static constexpr THMessageKind LayoutRenderCommandKind_SetResolution = TH_MESSAGE_KIND("la.sr");
+static constexpr THMessageKind LayoutRenderCommandKind_Flush = TH_MESSAGE_KIND("la.f");
+static constexpr THMessageKind LayoutRenderCommandKind_Rectangle = TH_MESSAGE_KIND("la.r");
+
+typedef struct LayoutRenderSetResolution {
+    IF_CPP(static constexpr THMessageKind kind = LayoutRenderCommandKind_SetResolution;)
     f32 width;
     f32 height;
-};
+} LayoutRenderSetResolution;
 
-DEFINE_MESSAGE(LayoutRenderFlush) {
-};
+typedef struct LayoutRenderFlush {
+    IF_CPP(static constexpr THMessageKind kind = LayoutRenderCommandKind_Flush;)
+} LayoutRenderFlush;
 
-DEFINE_MESSAGE(LayoutRenderRectangle) {
+typedef struct LayoutRenderRectangle {
+    IF_CPP(static constexpr THMessageKind kind = LayoutRenderCommandKind_Rectangle;)
     LayoutBox bounding_box;
     LayoutColor color;
-};
+    u32 debug_id;
+} LayoutRenderRectangle;

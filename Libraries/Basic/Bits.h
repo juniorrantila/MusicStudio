@@ -1,6 +1,6 @@
 #pragma once
 #include "./Base.h"
-#include "Verify.h"
+#include "./Verify.h"
 
 static constexpr u64 KiB = 1024;
 static constexpr u64 MiB = 1024 * KiB;
@@ -123,5 +123,6 @@ static consteval u64 ty_bituint_max(u8 bits)
 #else
 
 #define ty_bits_fitting(v) ((u8)(64 - __builtin_clzll((u64)(v)) - 1))
+#define ty_bituint_max(bits) ((bits == 64) ? ((u64)-1) : ((1LLU << (bits + 1)) - 1))
 
 #endif

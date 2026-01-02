@@ -27,3 +27,4 @@ struct Resource;
 typedef struct FSBundle FSBundle;
 typedef struct FSFile FSFile;
 typedef struct FSVolume FSVolume;
+typedef struct Actor Actor;

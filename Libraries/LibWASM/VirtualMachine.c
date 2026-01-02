@@ -267,7 +267,6 @@ C_API KError wasm_mod_init(WASMModule** out, void* module_memory, u64 module_mem
                     );
                 }
             }
-            infof("%ld:%ld", actual_content.cursor, actual_content.bytes.count);
             VERIFY(actual_content.cursor == actual_content.bytes.count);
             continue;
         }
@@ -303,11 +302,11 @@ C_API u64 wasm_vm_min_align() { return alignof(WASMVirtualMachine); }
 
 C_API KError wasm_vm_init(WASMVirtualMachine** out, void* vm_memory, u64 vm_memory_size, u64 vm_memory_align, WASMModule const* module)
 {
-    if (vm_memory_size < sizeof(WASMModule)) {
+    if (vm_memory_size < sizeof(WASMVirtualMachine)) {
         errorf("vm_memory has insufficient space for WASMVirtualMachine");
         return kerror_unix(EINVAL);
     }
-    if (vm_memory_align < alignof(WASMModule)) {
+    if (vm_memory_align < alignof(WASMVirtualMachine)) {
         errorf("vm_memory has insufficient alignment for WASMVirtualMachine");
         return kerror_unix(EINVAL);
     }
@@ -317,7 +316,7 @@ C_API KError wasm_vm_init(WASMVirtualMachine** out, void* vm_memory, u64 vm_memo
     }
 
     WASMVirtualMachine* vm = (WASMVirtualMachine*)vm_memory;
-    memzero(vm, sizeof(*module));
+    memzero(vm, sizeof(*vm));
 
     vm->module = module;
     vm->globals = module->globals;
@@ -1010,6 +1009,8 @@ static KError wasm_expect_expression(ByteDecoder* decoder, WASMExpression* out)
         VERIFY(byte_parse_u8(&d, &byte).found);
 
         if (byte == 0x0B) {
+            warnf("UNIMPLEMENTED: 0x0B");
+            goto eof;
             if (block_stack.count == 0) goto eof;
             u32 offset = block_stack.items[block_stack.count - 1];
             WASMInstruction* i = &out->items[out->count - 1 - offset];
@@ -1576,7 +1577,9 @@ C_API KError wasm_vm_call(WASMVirtualMachine* vm, WASMFunctionID function)
         }
         
         u64 stack_index = vm->stack.count;
-        u64 expected_index = stack_index - func.inputs + func.outputs;
+        if ((stack_index + func.outputs) < func.inputs)
+            warnf("stack underflow");
+        u64 expected_index = stack_index + func.outputs - func.inputs;
         KError result = func.callback(vm);
         if (!result.ok) return result;
         if (vm->stack.count != expected_index) {

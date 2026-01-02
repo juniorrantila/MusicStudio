@@ -3,6 +3,7 @@
 #include "./Allocator.h"
 #include "./Types.h"
 #include "./Verify.h"
+#include "./BitSet.h"
 
 #include <stb/sprintf.h>
 
@@ -19,6 +20,8 @@ C_API FixedArena fixed_arena_init(void* memory, u64 size)
         .base = (u8*)memory,
         .head = (u8*)memory,
         .end = ((u8*)memory) + size,
+        .allocation_count = 0,
+        .largest_size = 0,
     };
 }
 
@@ -42,6 +45,7 @@ C_API void fixed_arena_drain(FixedArena* arena)
     u64 size = ((u64)arena->end) - ((u64)arena->base);
     arena->head = arena->base;
     mempoison(arena->head, size);
+    arena->allocation_count = 0;
 }
 
 FixedMark FixedArena::mark() const { return fixed_arena_mark(this); }
@@ -64,7 +68,12 @@ C_API void fixed_arena_sweep(FixedArena* arena, FixedMark mark)
 void* FixedArena::push(u64 size, u64 align) { return fixed_arena_push(this, size, align); }
 C_API void* fixed_arena_push(FixedArena* arena, u64 size, u64 align)
 {
+    if (!C_ASSERT(arena != nullptr)) return nullptr;
+    if (!C_ASSERT(size != 0)) return nullptr;
+    if (!C_ASSERT(align != 0)) return nullptr;
+    if (!C_ASSERT(u64_popcount(align) == 1)) return nullptr;
     u8* new_head = __builtin_align_up(arena->head, align);
+    if (!C_ASSERT(new_head != nullptr)) return nullptr;
     if ((new_head + size) > arena->end)
         return nullptr;
     arena->head = new_head;
@@ -72,6 +81,11 @@ C_API void* fixed_arena_push(FixedArena* arena, u64 size, u64 align)
     void* ptr = arena->head;
     arena->head += size;
     memunpoison(ptr, size);
+    memzero(ptr, size);
+    arena->allocation_count += 1;
+    if (fixed_arena_bytes_used(arena) > arena->largest_size) {
+        arena->largest_size = fixed_arena_bytes_used(arena);
+    }
     return ptr;
 }
 

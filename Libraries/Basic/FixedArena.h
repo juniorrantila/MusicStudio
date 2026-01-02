@@ -11,6 +11,8 @@ typedef struct FixedArena {
     u8* base;
     u8* head;
     u8* end;
+    u64 allocation_count;
+    u64 largest_size;
 
 #ifdef __cplusplus
     u64 bytes_used() const;

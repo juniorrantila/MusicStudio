@@ -70,7 +70,7 @@ static void* poker_thread(void* user)
     MemoryPoker const* poker = (MemoryPoker const*)user; 
     u64 page_size = ::page_size();
     for (;;) {
-        drain_temporary_arena();
+        reset_temporary_arena();
         u64 count = poker->count;
         for (u64 i = 0; i < count; i++) {
             u8 volatile const* start = poker->pages[i];

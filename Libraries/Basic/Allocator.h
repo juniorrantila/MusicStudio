@@ -116,6 +116,8 @@ template <typename T>
 T* memzero(T* ptr) { return (T*)memzero(ptr, sizeof(T)); }
 #endif
 
+#define MEMZERO(ptr) memzero((ptr), sizeof(*(ptr)))
+
 #if __has_feature(memory_sanitizer)
 C_API void __asan_poison_memory_region(void const volatile *addr, usize size);
 C_API void __asan_unpoison_memory_region(void const volatile *addr, usize size);

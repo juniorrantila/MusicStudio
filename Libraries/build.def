@@ -19,6 +19,7 @@
 #include "./LibMath/build.def"
 #include "./LibDSP/build.def"
 #include "./LibNetwork/build.def"
+#include "./LibThread/build.def"
 
 #include "./LibRexim/build.def"
 
@@ -52,6 +53,8 @@ typedef struct {
     Target net;
 
     Target rexim;
+
+    Target thread;
 } LibrariesTargets;
 
 
@@ -81,5 +84,7 @@ static auto const libraries = target([] {
         .net = net,
         
         .rexim = rexim,
+
+        .thread = thread,
     };
 });

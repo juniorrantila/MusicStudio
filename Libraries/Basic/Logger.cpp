@@ -1,35 +1,39 @@
 #include "./Logger.h"
 
 #include "./Verify.h"
+#include "./Context.h"
 
 #include <stdarg.h>
 #include <pthread.h>
 #include <stb/sprintf.h>
+#include <unistd.h>
 
 struct Format {
     char* buf;
     u64 buf_len;
 };
 
-[[gnu::format(printf, 2, 0)]]
-static Format format_resolve(Allocator*, c_string fmt, va_list args);
+[[gnu::format(printf, 1, 0)]]
+static Format resolve_format(c_string fmt, va_list args);
 
 [[gnu::format(printf, 3, 0)]]
 static void log_generic(Logger* l, LoggerEventTag tag, c_string fmt, va_list args)
 {
+    void const* mark = tmark();
     static _Atomic u32 seq;
 
-    auto arena = fixed_arena_init(l->arena_buffer, sizeof(l->arena_buffer));
-
-    Format format = format_resolve(&arena.allocator, fmt, args);
-    if (!format.buf) return;
+    Format format = resolve_format(fmt, args);
+    if (!C_ASSERT(format.buf)) return;
 
     l->dispatch(l, (LoggerEvent){
         .message = format.buf,
         .message_size = format.buf_len,
         .tag = tag,
         .seq = seq++,
+        .pid = getpid(),
+        .originator = current_thread_id(),
     });
+    tsweep(mark);
 }
 
 C_API void vlog_format(Logger* l, c_string fmt, va_list args) { log_generic(l, LoggerEventTag_Format, fmt, args); }
@@ -142,71 +146,7 @@ void Logger::fatal(c_string fmt, ...)
 }
 
 
-C_API void log_debug_if(Logger* l, c_string fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-
-    vlog_debug_if(l, fmt, args);
-
-    va_end(args);
-}
-__attribute__((format(printf, 2, 0)))
-C_API void vlog_debug_if(Logger* l, c_string fmt, va_list args)
-{
-    if (!l) return;
-    vlog_debug(l, fmt, args);
-}
-
-C_API void log_info_if(Logger* l, c_string fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-
-    vlog_info_if(l, fmt, args);
-
-    va_end(args);
-}
-
-C_API void vlog_info_if(Logger* l, c_string fmt, va_list args)
-{
-    if (!l) return;
-    vlog_info(l, fmt, args);
-}
-
-C_API void log_warning_if(Logger* l, c_string fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-
-    vlog_warning_if(l, fmt, args);
-
-    va_end(args);
-}
-
-C_API void vlog_warning_if(Logger* l, c_string fmt, va_list args)
-{
-    if (!l) return;
-    vlog_warning(l, fmt, args);
-}
-
-C_API void log_error_if(Logger* l, c_string fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-
-    vlog_error_if(l, fmt, args);
-
-    va_end(args);
-}
-
-C_API void vlog_error_if(Logger* l, c_string fmt, va_list args)
-{
-    if (!l) return;
-    vlog_error(l, fmt, args);
-}
-
-static Format format_resolve(Allocator* a, c_string fmt, va_list args)
+static Format resolve_format(c_string fmt, va_list args)
 {
     va_list args2;
     va_copy(args2, args);
@@ -214,9 +154,11 @@ static Format format_resolve(Allocator* a, c_string fmt, va_list args)
     int len = stb_vsnprintf(0, 0, fmt, args);
     VERIFY(len >= 0);
 
-    char* buf = (char*)memalloc(a, len + 1, 1);
-    VERIFY(buf != nullptr);
-    __builtin_memset(buf, 0, len);
+    char* buf = (char*)tpush(len + 1, 1);
+    if (!C_ASSERT(buf != nullptr)) {
+        va_end(args2);
+        return (Format){};
+    }
 
     int len2 = stb_vsnprintf(buf, len + 1, fmt, args2);
     VERIFY(len == len2);

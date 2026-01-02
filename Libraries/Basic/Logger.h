@@ -4,8 +4,6 @@
 #include "./FixedArena.h"
 #include "./Bits.h"
 
-#include <stdarg.h>
-
 typedef enum LoggerEventTag {
     LoggerEventTag_Format,
     LoggerEventTag_Debug,
@@ -20,11 +18,12 @@ typedef struct LoggerEvent {
     u64 message_size;
     LoggerEventTag tag;
     u32 seq;
+    i32 pid;
+    KThreadID originator;
 } LoggerEvent;
 
 typedef struct Logger {
     void (*dispatch)(struct Logger*, LoggerEvent);
-    char arena_buffer[64 * KiB];
 
 #ifdef __cplusplus
 
@@ -69,7 +68,6 @@ C_API inline Logger logger_init(void(*dispatch)(struct Logger*, LoggerEvent))
 {
     return (Logger) {
         .dispatch = dispatch,
-        .arena_buffer = {},
     };
 }
 
@@ -103,23 +101,3 @@ C_API void log_fatal(Logger*, c_string, ...);
 
 __attribute__((noreturn, format(printf, 2, 0)))
 C_API void vlog_fatal(Logger*, c_string, va_list);
-
-__attribute__((format(printf, 2, 3)))
-C_API void log_debug_if(Logger*, c_string, ...);
-__attribute__((format(printf, 2, 0)))
-C_API void vlog_debug_if(Logger*, c_string, va_list);
-
-__attribute__((format(printf, 2, 3)))
-C_API void log_info_if(Logger*, c_string, ...);
-__attribute__((format(printf, 2, 0)))
-C_API void vlog_info_if(Logger*, c_string, va_list);
-
-__attribute__((format(printf, 2, 3)))
-C_API void log_warning_if(Logger*, c_string, ...);
-__attribute__((format(printf, 2, 0)))
-C_API void vlog_warning_if(Logger*, c_string, va_list);
-
-__attribute__((format(printf, 2, 3)))
-C_API void log_error_if(Logger*, c_string, ...);
-__attribute__((format(printf, 2, 0)))
-C_API void vlog_error_if(Logger*, c_string, va_list);
